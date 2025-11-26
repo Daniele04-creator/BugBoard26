@@ -12,6 +12,7 @@ export default function IssueManage({
   handleUpdate,
   currentUser,
   isAdmin,
+  onLogout,
 }) {
   const canEditIssue = (issue) => isAdmin || issue.assignee === currentUser;
 

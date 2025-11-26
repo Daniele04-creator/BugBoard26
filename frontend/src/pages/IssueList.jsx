@@ -10,6 +10,7 @@ export default function IssueList({
   sortBy,
   setSortBy,
   issues,
+  onLogout,
 }) {
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">

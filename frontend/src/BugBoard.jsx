@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar.jsx';
 import IssueCreate from './pages/IssueCreate.jsx';
 import IssueList from './pages/IssueList.jsx';
 import IssueManage from './pages/IssueManage.jsx';
 
-export default function BugBoard() {
+export default function BugBoard({ onLogout }) {
   const [currentView, setCurrentView] = useState('none');
 
   // STATO CREAZIONE
@@ -122,7 +123,7 @@ export default function BugBoard() {
       className="flex h-screen"
       style={{ background: 'linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)' }}
     >
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+      <Sidebar currentView={currentView} setCurrentView={setCurrentView} onLogout={onLogout} />
 
       {/* CONTENUTO PRINCIPALE */}
       {currentView === 'new' && (
@@ -142,6 +143,7 @@ export default function BugBoard() {
           getPriorityGradient={getPriorityGradient}
           onCreate={handleCreate}
           onCancel={() => setCurrentView('none')}
+          onLogout={onLogout}
         />
       )}
 
@@ -156,6 +158,7 @@ export default function BugBoard() {
           sortBy={sortBy}
           setSortBy={setSortBy}
           issues={sortedIssues}
+          onLogout={onLogout}
         />
       )}
 
@@ -171,6 +174,7 @@ export default function BugBoard() {
           handleUpdate={handleUpdate}
           currentUser={currentUser}
           isAdmin={isAdmin}
+          onLogout={onLogout}
         />
       )}
     </div>

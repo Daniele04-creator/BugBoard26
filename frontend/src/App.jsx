@@ -9,9 +9,13 @@ export default function App() {
     setCurrentUser(userInfo);
   };
 
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
+
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
-  return <BugBoard currentUser={currentUser} />;
+  return <BugBoard currentUser={currentUser} onLogout={handleLogout} />;
 }

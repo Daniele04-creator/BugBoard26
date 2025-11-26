@@ -1,7 +1,7 @@
 import React from 'react';
-import { Plus, FileText, Edit } from 'lucide-react';
+import { Plus, FileText, Edit, LogOut } from 'lucide-react';
 
-export default function Sidebar({ currentView, setCurrentView }) {
+export default function Sidebar({ currentView, setCurrentView, onLogout }) {
   const getTitle = () => {
     if (currentView === 'new') return 'Nuova Issue';
     if (currentView === 'list') return 'Elenco Issue';
@@ -10,8 +10,18 @@ export default function Sidebar({ currentView, setCurrentView }) {
   };
 
   return (
-    <div className="w-80 p-6 flex flex-col justify-center">
-      <div className="bg-white rounded-3xl p-6 shadow-lg flex flex-col gap-6">
+    <div className="w-80 p-6 flex flex-col">
+      <div className="mb-6">
+        <button
+          onClick={onLogout}
+          className="p-3 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-full hover:shadow-lg transition-all border-4 border-white"
+          title="Logout"
+        >
+          <LogOut size={20} />
+        </button>
+      </div>
+      <div className="flex-1 flex flex-col justify-center">
+        <div className="bg-white rounded-3xl p-6 shadow-lg flex flex-col gap-6">
         <h1
           className={`text-2xl font-bold text-center mb-2 ${
             currentView !== 'none'
@@ -45,6 +55,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
           <Edit size={24} />
           Gestisci Issue
         </button>
+      </div>
       </div>
     </div>
   );
