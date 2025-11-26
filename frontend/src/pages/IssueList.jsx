@@ -12,10 +12,9 @@ export default function IssueList({
   issues,
 }) {
   return (
-    <div className="flex-1 p-8 flex items-start justify-center overflow-auto">
+    <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8">
         <h2 className="text-3xl font-bold mb-8">Elenco Issue</h2>
-
         {/* Filtri */}
         <div className="mb-6 flex items-center gap-4 flex-wrap">
           <span className="text-lg font-semibold italic">Filtri:</span>

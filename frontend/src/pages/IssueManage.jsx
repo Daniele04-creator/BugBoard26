@@ -17,9 +17,7 @@ export default function IssueManage({
 
   return (
     <div
-      className={`flex-1 p-8 flex ${
-        editingItem ? 'items-center' : 'items-start'
-      } justify-center overflow-auto`}
+      className="flex-1 p-8 flex items-center justify-center overflow-auto"
     >
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8 relative">
         {!editingItem && (
