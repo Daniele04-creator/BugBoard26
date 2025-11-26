@@ -1,5 +1,5 @@
-import React from 'react';
-import { Edit, Trash2, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Edit, Trash2, X, Image as ImageIcon } from 'lucide-react';
 
 export default function IssueManage({
   issues,
@@ -14,7 +14,22 @@ export default function IssueManage({
   isAdmin,
   onLogout,
 }) {
+  const [imagePreview, setImagePreview] = useState(null);
+
   const canEditIssue = (issue) => isAdmin || issue.assignee === currentUser?.email;
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target.result;
+        setEditingItem({ ...editingItem, image: base64 });
+        setImagePreview(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div
@@ -101,6 +116,41 @@ export default function IssueManage({
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Immagine */}
+            <div className="col-span-2 mb-6">
+              <label className="block text-lg font-semibold mb-3">Immagine:</label>
+              <div className="flex gap-4 items-start">
+                <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                  <ImageIcon className="inline mr-2" size={20} />
+                  Carica Immagine
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                {(imagePreview || editingItem?.image) && (
+                  <div className="relative">
+                    <img
+                      src={imagePreview || editingItem?.image}
+                      alt="Preview"
+                      className="h-24 w-24 object-cover rounded-lg shadow-lg"
+                    />
+                    <button
+                      onClick={() => {
+                        setImagePreview(null);
+                        setEditingItem({ ...editingItem, image: null });
+                      }}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

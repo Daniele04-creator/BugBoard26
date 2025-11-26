@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Image as ImageIcon, X } from 'lucide-react';
 
 export default function IssueCreate({
   title,
@@ -18,10 +19,39 @@ export default function IssueCreate({
   onCancel,
   onLogout,
 }) {
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageData, setImageData] = useState(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target.result;
+        setImageData(base64);
+        setImagePreview(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateWithImage = () => {
+    onCreate(imageData);
+    setImagePreview(null);
+    setImageData(null);
+  };
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8">
-        <h2 className="text-3xl font-bold mb-8">Nuova Issue</h2>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold">Nuova Issue</h2>
+          <button
+            onClick={onCancel}
+            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-all"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
         {/* Titolo */}
         <div className="mb-6">
@@ -106,6 +136,41 @@ export default function IssueCreate({
           </div>
         </div>
 
+        {/* Immagine */}
+        <div className="mb-8">
+          <label className="block text-lg font-semibold mb-3">Immagine (opzionale):</label>
+          <div className="flex gap-4 items-start">
+            <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">
+              <ImageIcon className="inline mr-2" size={20} />
+              Carica Immagine
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </label>
+            {imagePreview && (
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="h-24 w-24 object-cover rounded-lg shadow-lg"
+                />
+                <button
+                  onClick={() => {
+                    setImagePreview(null);
+                    setImageData(null);
+                  }}
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 hover:bg-red-600 rounded-bl-lg"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Bottoni azione */}
         <div className="flex gap-4 justify-end">
           <button
@@ -115,7 +180,7 @@ export default function IssueCreate({
             Annulla
           </button>
           <button
-            onClick={onCreate}
+            onClick={handleCreateWithImage}
             className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
           >
             Crea

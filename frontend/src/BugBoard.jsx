@@ -4,11 +4,13 @@ import Sidebar from './components/Sidebar.jsx';
 import IssueCreate from './pages/IssueCreate.jsx';
 import IssueList from './pages/IssueList.jsx';
 import IssueManage from './pages/IssueManage.jsx';
+import IssuePreview from './pages/IssuePreview.jsx';
 import UserAdmin from './pages/UserAdmin.jsx';
 
 export default function BugBoard({ onLogout, currentUser }) {
   const [currentView, setCurrentView] = useState('none');
   const [showUserAdminModal, setShowUserAdminModal] = useState(false);
+  const [selectedIssuePreview, setSelectedIssuePreview] = useState(null);
 
   // STATO CREAZIONE
   const [title, setTitle] = useState('');
@@ -86,7 +88,7 @@ export default function BugBoard({ onLogout, currentUser }) {
   });
 
   // AZIONI
-  const handleCreate = () => {
+  const handleCreate = (imageData) => {
     const newErrors = {
       title: !title.trim(),
       description: !description.trim(),
@@ -97,11 +99,13 @@ export default function BugBoard({ onLogout, currentUser }) {
       const newIssue = {
         id: Math.floor(Math.random() * 10000),
         title,
+        description,
         type: selectedType || 'Bug',
         priority: selectedPriority || 'Bassa',
         status: 'TODO',
         assignee: currentUser?.email || 'unknown',
         date: new Date().toLocaleDateString('it-IT'),
+        image: imageData || null,
       };
 
       setIssues([newIssue, ...issues]);
@@ -181,6 +185,8 @@ export default function BugBoard({ onLogout, currentUser }) {
           setSortOrder={setSortOrder}
           issues={sortedIssues}
           onLogout={onLogout}
+          onSelectIssue={setSelectedIssuePreview}
+          getPriorityGradient={getPriorityGradient}
         />
       )}
 
@@ -204,6 +210,14 @@ export default function BugBoard({ onLogout, currentUser }) {
         <UserAdmin
           onClose={() => setShowUserAdminModal(false)}
           onCreateUser={handleCreateUser}
+        />
+      )}
+
+      {selectedIssuePreview && (
+        <IssuePreview
+          issue={selectedIssuePreview}
+          onClose={() => setSelectedIssuePreview(null)}
+          getPriorityGradient={getPriorityGradient}
         />
       )}
     </div>

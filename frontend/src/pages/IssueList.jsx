@@ -14,6 +14,8 @@ export default function IssueList({
   setSortOrder,
   issues,
   onLogout,
+  onSelectIssue,
+  getPriorityGradient,
 }) {
   const handleReset = () => {
     setFilterType('Tutti');
@@ -124,7 +126,8 @@ export default function IssueList({
               {issues.map((issue) => (
                 <tr
                   key={issue.id}
-                  className="text-gray-600 border-b border-gray-300"
+                  onDoubleClick={() => onSelectIssue(issue)}
+                  className="text-gray-600 border-b border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <td className="py-3">{issue.title}</td>
                   <td className="py-3">{issue.type}</td>
