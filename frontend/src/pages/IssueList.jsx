@@ -12,6 +12,13 @@ export default function IssueList({
   issues,
   onLogout,
 }) {
+  const handleReset = () => {
+    setFilterType('Tutti');
+    setFilterStatus('Tutti');
+    setFilterPriority('Tutti');
+    setSortBy('Data');
+  };
+
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8">
@@ -61,6 +68,16 @@ export default function IssueList({
               <option>Media</option>
               <option>Alta</option>
             </select>
+          </div>
+
+          <div className="ml-auto">
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
+              title="Reset filtri"
+            >
+              Reset filtri
+            </button>
           </div>
         </div>
 
