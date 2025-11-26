@@ -4,9 +4,11 @@ import Sidebar from './components/Sidebar.jsx';
 import IssueCreate from './pages/IssueCreate.jsx';
 import IssueList from './pages/IssueList.jsx';
 import IssueManage from './pages/IssueManage.jsx';
+import UserAdmin from './pages/UserAdmin.jsx';
 
-export default function BugBoard({ onLogout }) {
+export default function BugBoard({ onLogout, currentUser }) {
   const [currentView, setCurrentView] = useState('none');
+  const [showUserAdminModal, setShowUserAdminModal] = useState(false);
 
   // STATO CREAZIONE
   const [title, setTitle] = useState('');
@@ -20,6 +22,7 @@ export default function BugBoard({ onLogout }) {
   const [filterStatus, setFilterStatus] = useState('Tutti');
   const [filterPriority, setFilterPriority] = useState('Tutti');
   const [sortBy, setSortBy] = useState('Data');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   // DATI
   const [issues, setIssues] = useState([
@@ -30,9 +33,8 @@ export default function BugBoard({ onLogout }) {
     { id: 65,  title: 'Come configurare il database?', type: 'Question', priority: 'Bassa', status: 'DONE', assignee: 'anna',  date: '21/05/2004' },
   ]);
 
-  // UTENTE CORRENTE (per ora mock, poi verrà dal login)
-  const currentUser = 'luca';
-  const isAdmin = true;
+  // UTENTE CORRENTE - viene dal login
+  const isAdmin = currentUser?.role === 'ADMIN';
   const [editingItem, setEditingItem] = useState(null);
 
   const types = ['Question', 'Bug', 'Documentation', 'Feature'];
@@ -57,25 +59,30 @@ export default function BugBoard({ onLogout }) {
   });
 
   const sortedIssues = [...filteredIssues].sort((a, b) => {
+    let result = 0;
     switch (sortBy) {
       case 'Data':
-        return (
+        result =
           new Date(b.date.split('/').reverse().join('-')) -
-          new Date(a.date.split('/').reverse().join('-'))
-        );
+          new Date(a.date.split('/').reverse().join('-'));
+        break;
       case 'Titolo':
-        return a.title.localeCompare(b.title);
+        result = a.title.localeCompare(b.title);
+        break;
       case 'Priorità': {
         const priorityOrder = { Alta: 3, Media: 2, Bassa: 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
+        result = priorityOrder[b.priority] - priorityOrder[a.priority];
+        break;
       }
       case 'Stato': {
         const statusOrder = { TODO: 1, DOING: 2, DONE: 3 };
-        return statusOrder[a.status] - statusOrder[b.status];
+        result = statusOrder[a.status] - statusOrder[b.status];
+        break;
       }
       default:
-        return 0;
+        result = 0;
     }
+    return sortOrder === 'asc' ? result : -result;
   });
 
   // AZIONI
@@ -93,7 +100,7 @@ export default function BugBoard({ onLogout }) {
         type: selectedType || 'Bug',
         priority: selectedPriority || 'Bassa',
         status: 'TODO',
-        assignee: currentUser,
+        assignee: currentUser?.email || 'unknown',
         date: new Date().toLocaleDateString('it-IT'),
       };
 
@@ -118,12 +125,25 @@ export default function BugBoard({ onLogout }) {
     setEditingItem(null);
   };
 
+  const handleCreateUser = (userData) => {
+    // Mock: in futuro sarà una chiamata API al backend
+    console.log('Nuovo utente creato:', userData);
+    alert(`Utente ${userData.email} creato con successo!`);
+    setShowUserAdminModal(false);
+  };
+
   return (
     <div
       className="flex h-screen"
       style={{ background: 'linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)' }}
     >
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} onLogout={onLogout} />
+      <Sidebar 
+        currentView={currentView} 
+        setCurrentView={setCurrentView} 
+        onLogout={onLogout}
+        isAdmin={isAdmin}
+        onOpenUserAdmin={() => setShowUserAdminModal(true)}
+      />
 
       {/* CONTENUTO PRINCIPALE */}
       {currentView === 'new' && (
@@ -157,6 +177,8 @@ export default function BugBoard({ onLogout }) {
           setFilterPriority={setFilterPriority}
           sortBy={sortBy}
           setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
           issues={sortedIssues}
           onLogout={onLogout}
         />
@@ -175,6 +197,13 @@ export default function BugBoard({ onLogout }) {
           currentUser={currentUser}
           isAdmin={isAdmin}
           onLogout={onLogout}
+        />
+      )}
+
+      {showUserAdminModal && (
+        <UserAdmin
+          onClose={() => setShowUserAdminModal(false)}
+          onCreateUser={handleCreateUser}
         />
       )}
     </div>

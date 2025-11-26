@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export default function LoginScreen({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState('USER');
   const [errors, setErrors] = useState({ email: false, password: false });
 
   const handleSubmit = () => {
@@ -16,7 +17,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     if (!newErrors.email && !newErrors.password) {
       const fakeUser = {
         email,
-        role: email === 'admin@bugboard.com' ? 'ADMIN' : 'USER'
+        role: selectedRole
       };
 
       if (onLoginSuccess) {
@@ -44,6 +45,33 @@ export default function LoginScreen({ onLoginSuccess }) {
           </h1>
 
           <div className="space-y-6">
+            {/* Selezione Ruolo */}
+            <div className="mb-8">
+              <p className="text-center text-gray-600 font-semibold mb-3 italic">Accedi come:</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedRole('USER')}
+                  className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
+                    selectedRole === 'USER'
+                      ? 'bg-gradient-to-r from-teal-500 to-green-400 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  User
+                </button>
+                <button
+                  onClick={() => setSelectedRole('ADMIN')}
+                  className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
+                    selectedRole === 'ADMIN'
+                      ? 'bg-gradient-to-r from-red-400 to-pink-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+            </div>
+
             {/* Email */}
             <div className="transform transition-all hover:scale-105">
               <input

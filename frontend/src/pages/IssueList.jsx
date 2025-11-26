@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 export default function IssueList({
   filterType,
@@ -9,6 +10,8 @@ export default function IssueList({
   setFilterPriority,
   sortBy,
   setSortBy,
+  sortOrder,
+  setSortOrder,
   issues,
   onLogout,
 }) {
@@ -17,6 +20,7 @@ export default function IssueList({
     setFilterStatus('Tutti');
     setFilterPriority('Tutti');
     setSortBy('Data');
+    setSortOrder('asc');
   };
 
   return (
@@ -94,6 +98,13 @@ export default function IssueList({
             <option>Priorità</option>
             <option>Stato</option>
           </select>
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-all"
+            title={sortOrder === 'asc' ? 'Ordine crescente (clicca per decrescente)' : 'Ordine decrescente (clicca per crescente)'}
+          >
+            {sortOrder === 'asc' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
         </div>
 
         {/* Tabella */}

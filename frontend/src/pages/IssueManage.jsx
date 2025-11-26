@@ -14,7 +14,7 @@ export default function IssueManage({
   isAdmin,
   onLogout,
 }) {
-  const canEditIssue = (issue) => isAdmin || issue.assignee === currentUser;
+  const canEditIssue = (issue) => isAdmin || issue.assignee === currentUser?.email;
 
   return (
     <div
