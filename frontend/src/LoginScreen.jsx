@@ -3,26 +3,51 @@ import React, { useState } from 'react';
 export default function LoginScreen({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState('USER');
   const [errors, setErrors] = useState({ email: false, password: false });
+  const [apiError, setApiError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // reset errore API
+    setApiError('');
+
     const newErrors = {
       email: !email.trim(),
-      password: !password.trim()
+      password: !password.trim(),
     };
 
     setErrors(newErrors);
 
-    if (!newErrors.email && !newErrors.password) {
-      const fakeUser = {
-        email,
-        role: selectedRole
-      };
+    if (newErrors.email || newErrors.password) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        // 401, 500 ecc.
+        setApiError('Email o password non valide');
+        return;
+      }
+
+      const data = await response.json();
+      // data = { id, email, role }
 
       if (onLoginSuccess) {
-        onLoginSuccess(fakeUser);
+        onLoginSuccess(data); // lo passiamo ad App.jsx
       }
+    } catch (err) {
+      console.error('Errore chiamata login', err);
+      setApiError('Errore di connessione al server');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,33 +70,6 @@ export default function LoginScreen({ onLoginSuccess }) {
           </h1>
 
           <div className="space-y-6">
-            {/* Selezione Ruolo */}
-            <div className="mb-8">
-              <p className="text-center text-gray-600 font-semibold mb-3 italic">Accedi come:</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setSelectedRole('USER')}
-                  className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
-                    selectedRole === 'USER'
-                      ? 'bg-gradient-to-r from-teal-500 to-green-400 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  User
-                </button>
-                <button
-                  onClick={() => setSelectedRole('ADMIN')}
-                  className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
-                    selectedRole === 'ADMIN'
-                      ? 'bg-gradient-to-r from-red-400 to-pink-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Admin
-                </button>
-              </div>
-            </div>
-
             {/* Email */}
             <div className="transform transition-all hover:scale-105">
               <input
@@ -81,12 +79,13 @@ export default function LoginScreen({ onLoginSuccess }) {
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setErrors({ ...errors, email: false });
+                  setApiError('');
                 }}
                 className={`w-full px-6 py-4 rounded-2xl text-white placeholder-white/70 text-center italic text-sm focus:outline-none transition-all shadow-lg ${
                   errors.email ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-cyan-400'
                 }`}
                 style={{
-                  background: 'linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)'
+                  background: 'linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)',
                 }}
               />
               {errors.email && (
@@ -105,12 +104,13 @@ export default function LoginScreen({ onLoginSuccess }) {
                 onChange={(e) => {
                   setPassword(e.target.value);
                   setErrors({ ...errors, password: false });
+                  setApiError('');
                 }}
                 className={`w-full px-6 py-4 rounded-2xl text-white placeholder-white/70 text-center italic text-sm focus:outline-none transition-all shadow-lg ${
                   errors.password ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-cyan-400'
                 }`}
                 style={{
-                  background: 'linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)'
+                  background: 'linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)',
                 }}
               />
               {errors.password && (
@@ -120,28 +120,40 @@ export default function LoginScreen({ onLoginSuccess }) {
               )}
             </div>
 
+            {/* Errore API */}
+            {apiError && (
+              <p className="text-red-500 text-sm mt-2 text-center italic">
+                {apiError}
+              </p>
+            )}
+
             {/* Submit */}
             <div className="pt-8 flex justify-center">
               <button
                 onClick={handleSubmit}
-                className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl hover:scale-110 hover:shadow-2xl transition-all duration-300"
+                disabled={isLoading}
+                className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl hover:scale-110 hover:shadow-2xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  background: 'linear-gradient(135deg, #F472B6 0%, #FBBF24 100%)'
+                  background: 'linear-gradient(135deg, #F472B6 0%, #FBBF24 100%)',
                 }}
               >
-                <svg
-                  className="w-10 h-10 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                {isLoading ? (
+                  <span className="text-white text-xs font-semibold">...</span>
+                ) : (
+                  <svg
+                    className="w-10 h-10 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -158,7 +170,7 @@ export default function LoginScreen({ onLoginSuccess }) {
       <div
         className="w-1/2 flex items-center justify-center relative overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, #7DD3FC 0%, #A78BFA 100%)'
+          background: 'linear-gradient(180deg, #7DD3FC 0%, #A78BFA 100%)',
         }}
       >
         <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
