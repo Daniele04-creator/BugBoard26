@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
-export default function IssueList() {
+export default function IssueList({ onSelectIssue }) {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -11,6 +12,7 @@ export default function IssueList() {
 
   // ORDINAMENTO
   const [sortBy, setSortBy] = useState("Data");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // 1️⃣ CARICO LE ISSUE REALI DAL BACKEND
   useEffect(() => {
@@ -45,29 +47,43 @@ export default function IssueList() {
 
   // 3️⃣ ORDINAMENTO LOCALE
   const sorted = [...filtered].sort((a, b) => {
+    let result = 0;
     switch (sortBy) {
       case "Data": {
         const da = new Date(a.createdAt || 0);
         const db = new Date(b.createdAt || 0);
-        return db - da; // più recente prima
+        result = db - da; // più recente prima
+        break;
       }
       case "Titolo":
-        return a.title.localeCompare(b.title);
+        result = a.title.localeCompare(b.title);
+        break;
 
       case "Priorità": {
         const order = { Alta: 3, Media: 2, Bassa: 1 };
-        return (order[b.priority] || 0) - (order[a.priority] || 0);
+        result = (order[b.priority] || 0) - (order[a.priority] || 0);
+        break;
       }
 
       case "Stato": {
         const order = { TODO: 1, DOING: 2, DONE: 3 };
-        return (order[a.status] || 0) - (order[b.status] || 0);
+        result = (order[a.status] || 0) - (order[b.status] || 0);
+        break;
       }
 
       default:
-        return 0;
+        result = 0;
     }
+    return sortOrder === "asc" ? -result : result;
   });
+
+  const handleResetFilters = () => {
+    setFilterType("Tutti");
+    setFilterStatus("Tutti");
+    setFilterPriority("Tutti");
+    setSortBy("Data");
+    setSortOrder("desc");
+  };
 
   if (loading) return <div className="p-10 text-xl">Caricamento...</div>;
 
@@ -126,6 +142,14 @@ export default function IssueList() {
               <option>Alta</option>
             </select>
           </div>
+
+          <button
+            onClick={handleResetFilters}
+            className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
+            title="Reimposta tutti i filtri"
+          >
+            Reset Filtri
+          </button>
         </div>
 
         {/* ORDINAMENTO */}
@@ -141,6 +165,13 @@ export default function IssueList() {
             <option>Priorità</option>
             <option>Stato</option>
           </select>
+          <button
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            className="p-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-all"
+            title={sortOrder === "asc" ? "Ordine ascendente" : "Ordine discendente"}
+          >
+            {sortOrder === "asc" ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
         </div>
 
         {/* TABELLONE */}
@@ -166,7 +197,11 @@ export default function IssueList() {
               )}
 
               {sorted.map((issue) => (
-                <tr key={issue.id} className="text-gray-600 border-b border-gray-300">
+                <tr 
+                  key={issue.id} 
+                  onDoubleClick={() => onSelectIssue && onSelectIssue(issue)}
+                  className="text-gray-600 border-b border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors"
+                >
                   <td className="py-3">{issue.title}</td>
                   <td className="py-3">{issue.type}</td>
                   <td className="py-3">{issue.priority}</td>

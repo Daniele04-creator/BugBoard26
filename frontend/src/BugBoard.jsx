@@ -173,7 +173,11 @@ const handleCreate = async (issuePayload) => {
 )}
 
 
-      {currentView === 'list' && <IssueList />}
+      {currentView === 'list' && (
+        <IssueList 
+          onSelectIssue={setSelectedIssuePreview}
+        />
+      )}
 
 
 
