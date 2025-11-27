@@ -39,7 +39,8 @@ public class IssueService {
         existing.setTitle(updatedData.getTitle());
         existing.setPriority(updatedData.getPriority());
         existing.setStatus(updatedData.getStatus());
-        // se vuoi, permetti di cambiare anche type, description ecc.
+        existing.setImage(updatedData.getImage());
+
         return issueRepository.save(existing);
     }
 
