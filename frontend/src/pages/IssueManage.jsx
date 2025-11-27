@@ -16,7 +16,17 @@ export default function IssueManage({
 }) {
   const [imagePreview, setImagePreview] = useState(null);
 
-  const canEditIssue = (issue) => isAdmin || issue.assignee === currentUser?.email;
+  // Permessi: l'admin può tutto; un utente può modificare/eliminare solo le issue a lui assegnate.
+  // Per compatibilità con i dati di esempio (assegnatari come 'luca', 'sara', ecc.)
+  // confrontiamo sia l'email completa che la parte locale (prima della @).
+  const canEditIssue = (issue) => {
+    if (isAdmin) return true;
+    const assignee = (issue?.assignee || '').toLowerCase();
+    const userEmail = (currentUser?.email || '').toLowerCase();
+    if (!assignee || !userEmail) return false;
+    const userLocal = userEmail.split('@')[0];
+    return assignee === userEmail || assignee === userLocal;
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];

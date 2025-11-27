@@ -67,13 +67,12 @@ export default function Sidebar({ currentView, setCurrentView, onLogout, isAdmin
 
         <button
           onClick={() => setCurrentView('manage')}
-          disabled={!isAdmin}
           className={`w-full rounded-2xl py-4 px-6 flex items-center gap-3 font-semibold shadow-lg transition-all ${
             isAdmin
               ? 'bg-gradient-to-r from-red-400 to-orange-400 text-white hover:shadow-xl'
-              : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+              : 'bg-gradient-to-r from-teal-500 to-green-400 text-white hover:shadow-xl'
           }`}
-          title={isAdmin ? 'Gestisci Issue' : 'Solo gli admin possono gestire le issue'}
+          title={isAdmin ? 'Gestisci Issue' : 'Gestisci le tue issue'}
         >
           <Edit size={24} />
           Gestisci Issue

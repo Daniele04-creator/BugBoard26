@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, User } from 'lucide-react';
 
 export default function IssueList({
   filterType,
@@ -14,6 +14,7 @@ export default function IssueList({
   setSortOrder,
   issues,
   onLogout,
+  onImpersonate,
   onSelectIssue,
   getPriorityGradient,
 }) {
@@ -133,7 +134,23 @@ export default function IssueList({
                   <td className="py-3">{issue.type}</td>
                   <td className="py-3">{issue.priority}</td>
                   <td className="py-3">{issue.status}</td>
-                  <td className="py-3">{issue.assignee}</td>
+                  <td className="py-3 flex items-center gap-2">
+                    <span>{issue.assignee}</span>
+                    {onImpersonate && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Se l'assignee è vuoto non impersoniamo
+                          if (!issue.assignee) return;
+                          onImpersonate({ email: issue.assignee, role: 'USER' });
+                        }}
+                        title="Entra come assegnatario"
+                        className="p-1 bg-gray-200 rounded hover:bg-gray-300 transition-all"
+                      >
+                        <User size={14} />
+                      </button>
+                    )}
+                  </td>
                   <td className="py-3">{issue.date}</td>
                 </tr>
               ))}

@@ -14,10 +14,16 @@ export default function App() {
     setCurrentUser(null);
   };
 
+  const handleImpersonate = (userInfo) => {
+    // Simula il login come un altro utente (usato per testing)
+    // userInfo expected: { email, role }
+    setCurrentUser(userInfo);
+  };
+
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
   // Passiamo l'utente loggato al BugBoard (per permessi ecc.)
-  return <BugBoard currentUser={currentUser} onLogout={handleLogout} />;
+  return <BugBoard currentUser={currentUser} onLogout={handleLogout} onImpersonate={handleImpersonate} />;
 }

@@ -7,7 +7,7 @@ import IssueManage from './pages/IssueManage.jsx';
 import IssuePreview from './pages/IssuePreview.jsx';
 import UserAdmin from './pages/UserAdmin.jsx';
 
-export default function BugBoard({ onLogout, currentUser }) {
+export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const [currentView, setCurrentView] = useState('none');
   const [showUserAdminModal, setShowUserAdminModal] = useState(false);
   const [selectedIssuePreview, setSelectedIssuePreview] = useState(null);
@@ -185,6 +185,7 @@ export default function BugBoard({ onLogout, currentUser }) {
           setSortOrder={setSortOrder}
           issues={sortedIssues}
           onLogout={onLogout}
+          onImpersonate={onImpersonate}
           onSelectIssue={setSelectedIssuePreview}
           getPriorityGradient={getPriorityGradient}
         />
@@ -203,6 +204,7 @@ export default function BugBoard({ onLogout, currentUser }) {
           currentUser={currentUser}
           isAdmin={isAdmin}
           onLogout={onLogout}
+          onImpersonate={onImpersonate}
         />
       )}
 
