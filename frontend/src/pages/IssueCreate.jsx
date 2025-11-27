@@ -56,9 +56,16 @@ export default function IssueCreate({
     onCreate(issuePayload);
   }
 
+  // 🔥 RESET DEI CAMPI DOPO CREAZIONE
+  setTitle("");
+  setDescription("");
+  setSelectedType(null);
+  setSelectedPriority(null);
+  setErrors({});
   setImagePreview(null);
   setImageData(null);
 };
+
 
 
   return (
