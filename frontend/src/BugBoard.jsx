@@ -87,20 +87,20 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     return sortOrder === 'asc' ? result : -result;
   });
 
- const handleCreate = async (issuePayload) => {
+const handleCreate = async (issuePayload) => {
   try {
     const response = await fetch("http://localhost:8080/api/issues", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         title: issuePayload.title,
         description: issuePayload.description,
         type: issuePayload.type,
         priority: issuePayload.priority,
-        assignee: currentUser?.email  // l'utente loggato
-      })
+        assignee: currentUser?.email
+      }),
     });
 
     if (!response.ok) {
@@ -109,16 +109,12 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
 
     const savedIssue = await response.json();
-    console.log("Issue salvata:", savedIssue);
+    console.log("Issue salvata dal backend:", savedIssue);
 
-    // se hai uno stato locale delle issue:
-    setIssues((prev) => [savedIssue, ...prev]);
-
-    // dopo la creazione torna alla lista issue
+    // qui in futuro aggiorneremo la lista locale
     setCurrentView("list");
-
   } catch (err) {
-    console.error("Errore di rete:", err);
+    console.error("Errore di rete durante la creazione issue:", err);
     alert("Errore di connessione al server");
   }
 };
@@ -156,46 +152,31 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
       />
 
       {/* CONTENUTO PRINCIPALE */}
-      {currentView === 'new' && (
-        <IssueCreate
-          title={title}
-          description={description}
-          selectedType={selectedType}
-          selectedPriority={selectedPriority}
-          errors={errors}
-          setTitle={setTitle}
-          setDescription={setDescription}
-          setSelectedType={setSelectedType}
-          setSelectedPriority={setSelectedPriority}
-          setErrors={setErrors}
-          types={types}
-          priorities={priorities}
-          getPriorityGradient={getPriorityGradient}
-          onCreate={handleCreate}
-          onCancel={() => setCurrentView('none')}
-          onLogout={onLogout}
-        />
-      )}
+    {currentView === 'new' && (
+  <IssueCreate
+    title={title}
+    description={description}
+    selectedType={selectedType}
+    selectedPriority={selectedPriority}
+    errors={errors}
+    setTitle={setTitle}
+    setDescription={setDescription}
+    setSelectedType={setSelectedType}
+    setSelectedPriority={setSelectedPriority}
+    setErrors={setErrors}
+    types={types}
+    priorities={priorities}
+    getPriorityGradient={getPriorityGradient}
+    onCreate={handleCreate}
+    onCancel={() => setCurrentView('none')}
+  />
+)}
 
-      {currentView === 'list' && (
-        <IssueList
-          filterType={filterType}
-          setFilterType={setFilterType}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterPriority={filterPriority}
-          setFilterPriority={setFilterPriority}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          issues={sortedIssues}
-          onLogout={onLogout}
-          onImpersonate={onImpersonate}
-          onSelectIssue={setSelectedIssuePreview}
-          getPriorityGradient={getPriorityGradient}
-        />
-      )}
+
+      {currentView === 'list' && <IssueList />}
+
+
+
 
       {currentView === 'manage' && (
         <IssueManage

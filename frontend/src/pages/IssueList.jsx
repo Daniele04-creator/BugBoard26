@@ -1,39 +1,87 @@
-import React from 'react';
-import { ChevronUp, ChevronDown, User } from 'lucide-react';
+import React, { useEffect, useState } from "react";
 
-export default function IssueList({
-  filterType,
-  setFilterType,
-  filterStatus,
-  setFilterStatus,
-  filterPriority,
-  setFilterPriority,
-  sortBy,
-  setSortBy,
-  sortOrder,
-  setSortOrder,
-  issues,
-  onLogout,
-  onImpersonate,
-  onSelectIssue,
-  getPriorityGradient,
-}) {
-  const handleReset = () => {
-    setFilterType('Tutti');
-    setFilterStatus('Tutti');
-    setFilterPriority('Tutti');
-    setSortBy('Data');
-    setSortOrder('asc');
-  };
+export default function IssueList() {
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // FILTRI
+  const [filterType, setFilterType] = useState("Tutti");
+  const [filterStatus, setFilterStatus] = useState("Tutti");
+  const [filterPriority, setFilterPriority] = useState("Tutti");
+
+  // ORDINAMENTO
+  const [sortBy, setSortBy] = useState("Data");
+
+  // 1️⃣ CARICO LE ISSUE REALI DAL BACKEND
+  useEffect(() => {
+    const loadIssues = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/issues");
+        const data = await response.json();
+        setIssues(data);
+      } catch (error) {
+        console.error("Errore caricamento issue:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadIssues();
+  }, []);
+
+  // 2️⃣ FILTRI LOCALI
+  const filtered = issues.filter((issue) => {
+    const matchType =
+      filterType === "Tutti" || issue.type === filterType;
+
+    const matchStatus =
+      filterStatus === "Tutti" || issue.status === filterStatus;
+
+    const matchPriority =
+      filterPriority === "Tutti" || issue.priority === filterPriority;
+
+    return matchType && matchStatus && matchPriority;
+  });
+
+  // 3️⃣ ORDINAMENTO LOCALE
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case "Data": {
+        const da = new Date(a.createdAt || 0);
+        const db = new Date(b.createdAt || 0);
+        return db - da; // più recente prima
+      }
+      case "Titolo":
+        return a.title.localeCompare(b.title);
+
+      case "Priorità": {
+        const order = { Alta: 3, Media: 2, Bassa: 1 };
+        return (order[b.priority] || 0) - (order[a.priority] || 0);
+      }
+
+      case "Stato": {
+        const order = { TODO: 1, DOING: 2, DONE: 3 };
+        return (order[a.status] || 0) - (order[b.status] || 0);
+      }
+
+      default:
+        return 0;
+    }
+  });
+
+  if (loading) return <div className="p-10 text-xl">Caricamento...</div>;
 
   return (
-    <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
+    <div className="flex-1 p-8 flex items-start justify-center overflow-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8">
+
         <h2 className="text-3xl font-bold mb-8">Elenco Issue</h2>
-        {/* Filtri */}
+
+        {/* FILTRI */}
         <div className="mb-6 flex items-center gap-4 flex-wrap">
           <span className="text-lg font-semibold italic">Filtri:</span>
 
+          {/* Tipo */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Tipo:</span>
             <select
@@ -49,6 +97,7 @@ export default function IssueList({
             </select>
           </div>
 
+          {/* Stato */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Stato:</span>
             <select
@@ -63,6 +112,7 @@ export default function IssueList({
             </select>
           </div>
 
+          {/* Priorità */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Priorità:</span>
             <select
@@ -76,19 +126,9 @@ export default function IssueList({
               <option>Alta</option>
             </select>
           </div>
-
-          <div className="ml-auto">
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
-              title="Reset filtri"
-            >
-              Reset filtri
-            </button>
-          </div>
         </div>
 
-        {/* Ordinamento */}
+        {/* ORDINAMENTO */}
         <div className="mb-6 flex items-center gap-4">
           <span className="text-lg font-semibold italic">Ordina per:</span>
           <select
@@ -101,16 +141,9 @@ export default function IssueList({
             <option>Priorità</option>
             <option>Stato</option>
           </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-all"
-            title={sortOrder === 'asc' ? 'Ordine crescente (clicca per decrescente)' : 'Ordine decrescente (clicca per crescente)'}
-          >
-            {sortOrder === 'asc' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
         </div>
 
-        {/* Tabella */}
+        {/* TABELLONE */}
         <div className="bg-gray-100 rounded-2xl p-6 min-h-96">
           <table className="w-full text-left">
             <thead>
@@ -124,39 +157,32 @@ export default function IssueList({
               </tr>
             </thead>
             <tbody>
-              {issues.map((issue) => (
-                <tr
-                  key={issue.id}
-                  onDoubleClick={() => onSelectIssue(issue)}
-                  className="text-gray-600 border-b border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors"
-                >
+              {sorted.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="py-6 text-center text-gray-500">
+                    Nessuna issue trovata.
+                  </td>
+                </tr>
+              )}
+
+              {sorted.map((issue) => (
+                <tr key={issue.id} className="text-gray-600 border-b border-gray-300">
                   <td className="py-3">{issue.title}</td>
                   <td className="py-3">{issue.type}</td>
                   <td className="py-3">{issue.priority}</td>
                   <td className="py-3">{issue.status}</td>
-                  <td className="py-3 flex items-center gap-2">
-                    <span>{issue.assignee}</span>
-                    {onImpersonate && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Se l'assignee è vuoto non impersoniamo
-                          if (!issue.assignee) return;
-                          onImpersonate({ email: issue.assignee, role: 'USER' });
-                        }}
-                        title="Entra come assegnatario"
-                        className="p-1 bg-gray-200 rounded hover:bg-gray-300 transition-all"
-                      >
-                        <User size={14} />
-                      </button>
-                    )}
+                  <td className="py-3">{issue.assignee}</td>
+                  <td className="py-3">
+                    {issue.createdAt
+                      ? issue.createdAt.replace("T", " ").split(".")[0]
+                      : ""}
                   </td>
-                  <td className="py-3">{issue.date}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
   );
