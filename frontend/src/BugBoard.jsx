@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import Sidebar from './components/Sidebar.jsx';
 import IssueCreate from './pages/IssueCreate.jsx';
@@ -19,21 +19,15 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [errors, setErrors] = useState({ title: false, description: false });
 
-  // STATO FILTRI
+  // STATO FILTRI (usati solo per la vista "Gestisci Issue")
   const [filterType, setFilterType] = useState('Tutti');
   const [filterStatus, setFilterStatus] = useState('Tutti');
   const [filterPriority, setFilterPriority] = useState('Tutti');
   const [sortBy, setSortBy] = useState('Data');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  // DATI
-  const [issues, setIssues] = useState([
-    { id: 142, title: 'Errore validazione login', type: 'Bug', priority: 'Alta', status: 'TODO',  assignee: 'luca',  date: '17/05/2004' },
-    { id: 121, title: 'Pulsante "salva" invisibile', type: 'Bug', priority: 'Media', status: 'DOING', assignee: 'sara',  date: '18/05/2004' },
-    { id: 98,  title: 'Migliora tooltip icone',     type: 'Feature', priority: 'Bassa', status: 'DONE',  assignee: 'luca',  date: '19/05/2004' },
-    { id: 87,  title: 'Documentazione API mancante', type: 'Documentation', priority: 'Media', status: 'TODO', assignee: 'marco', date: '20/05/2004' },
-    { id: 65,  title: 'Come configurare il database?', type: 'Question', priority: 'Bassa', status: 'DONE', assignee: 'anna',  date: '21/05/2004' },
-  ]);
+  // DATI REALI DAL BACKEND
+  const [issues, setIssues] = useState([]);
 
   // UTENTE CORRENTE - viene dal login
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -52,7 +46,21 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  // FILTRI + ORDINAMENTO
+  // 🔄 CARICA ISSUE DAL BACKEND ALL'AVVIO
+  useEffect(() => {
+    const loadIssues = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/issues');
+        const data = await response.json();
+        setIssues(data);
+      } catch (err) {
+        console.error('Errore caricamento issue:', err);
+      }
+    };
+    loadIssues();
+  }, []);
+
+  // FILTRI + ORDINAMENTO (per la vista Gestisci Issue)
   const filteredIssues = issues.filter(issue => {
     const matchType = filterType === 'Tutti' || issue.type === filterType;
     const matchStatus = filterStatus === 'Tutti' || issue.status === filterStatus;
@@ -63,22 +71,23 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const sortedIssues = [...filteredIssues].sort((a, b) => {
     let result = 0;
     switch (sortBy) {
-      case 'Data':
-        result =
-          new Date(b.date.split('/').reverse().join('-')) -
-          new Date(a.date.split('/').reverse().join('-'));
+      case 'Data': {
+        const da = new Date(a.createdAt || 0);
+        const db = new Date(b.createdAt || 0);
+        result = db - da;
         break;
+      }
       case 'Titolo':
         result = a.title.localeCompare(b.title);
         break;
       case 'Priorità': {
         const priorityOrder = { Alta: 3, Media: 2, Bassa: 1 };
-        result = priorityOrder[b.priority] - priorityOrder[a.priority];
+        result = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
         break;
       }
       case 'Stato': {
         const statusOrder = { TODO: 1, DOING: 2, DONE: 3 };
-        result = statusOrder[a.status] - statusOrder[b.status];
+        result = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
         break;
       }
       default:
@@ -87,49 +96,115 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     return sortOrder === 'asc' ? result : -result;
   });
 
-const handleCreate = async (issuePayload) => {
-  try {
-    const response = await fetch("http://localhost:8080/api/issues", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: issuePayload.title,
-        description: issuePayload.description,
-        type: issuePayload.type,
-        priority: issuePayload.priority,
-        assignee: currentUser?.email,
-        image: issuePayload.image || null,
-      }),
-    });
+  // 🔹 CREA ISSUE (Funzione 2)
+  const handleCreate = async (issuePayload) => {
+    try {
+      const response = await fetch("http://localhost:8080/api/issues", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: issuePayload.title,
+          description: issuePayload.description,
+          type: issuePayload.type,
+          priority: issuePayload.priority,
+          assignee: currentUser?.email || "admin@bugboard.com",
+          image: issuePayload.image || null,
+        }),
+      });
 
-    if (!response.ok) {
-      alert("Errore durante la creazione dell'issue");
-      return;
-    }
+      if (!response.ok) {
+        alert("Errore durante la creazione dell'issue");
+        return;
+      }
 
-    const savedIssue = await response.json();
-    console.log("Issue salvata dal backend:", savedIssue);
+      const savedIssue = await response.json();
+      console.log("Issue salvata dal backend:", savedIssue);
 
-    // qui in futuro aggiorneremo la lista locale
-    setCurrentView("list");
-  } catch (err) {
-    console.error("Errore di rete durante la creazione issue:", err);
-    alert("Errore di connessione al server");
-  }
-};
+      // aggiorna lista locale
+      setIssues(prev => [savedIssue, ...prev]);
 
-
-  const handleDelete = (id) => {
-    if (window.confirm('Sei sicuro di voler eliminare questa issue?')) {
-      setIssues(issues.filter((i) => i.id !== id));
+      setCurrentView("list");
+    } catch (err) {
+      console.error("Errore di rete durante la creazione issue:", err);
+      alert("Errore di connessione al server");
     }
   };
 
-  const handleUpdate = () => {
-    setIssues(issues.map((i) => (i.id === editingItem.id ? editingItem : i)));
-    setEditingItem(null);
+  // 🔹 DELETE ISSUE (Funzione 9)
+  const handleDelete = async (issueId) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questa issue?")) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/issues/${issueId}`, {
+        method: "DELETE",
+        headers: {
+          "X-User-Email": currentUser.email,
+          "X-User-Role": currentUser.role,
+        },
+      });
+
+      if (response.status === 403) {
+        alert("Non hai i permessi per eliminare questa issue");
+        return;
+      }
+
+      if (!response.ok && response.status !== 204) {
+        alert("Errore durante l'eliminazione");
+        return;
+      }
+
+      console.log("Issue eliminata:", issueId);
+      setIssues(prev => prev.filter(i => i.id !== issueId));
+    } catch (err) {
+      console.error("Errore di rete:", err);
+      alert("Errore di connessione al server");
+    }
+  };
+
+  // 🔹 UPDATE ISSUE (Funzione 9)
+  const handleUpdate = async () => {
+    if (!editingItem) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/issues/${editingItem.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Email": currentUser.email,
+          "X-User-Role": currentUser.role,
+        },
+        body: JSON.stringify({
+          title: editingItem.title,
+          status: editingItem.status,
+          priority: editingItem.priority,
+          image: editingItem.image || null,
+          // se vuoi, anche type/description ecc.
+        }),
+      });
+
+      if (response.status === 403) {
+        alert("Non hai i permessi per modificare questa issue");
+        return;
+      }
+
+      if (!response.ok) {
+        alert("Errore durante l'aggiornamento");
+        return;
+      }
+
+      const updated = await response.json();
+      console.log("Issue aggiornata:", updated);
+
+      setEditingItem(null);
+      setIssues(prev =>
+        prev.map(i => (i.id === updated.id ? updated : i))
+      );
+    } catch (err) {
+      console.error("Errore di rete:", err);
+      alert("Errore di connessione al server");
+    }
   };
 
   const handleCreateUser = (userData) => {
@@ -153,35 +228,32 @@ const handleCreate = async (issuePayload) => {
       />
 
       {/* CONTENUTO PRINCIPALE */}
-    {currentView === 'new' && (
-  <IssueCreate
-    title={title}
-    description={description}
-    selectedType={selectedType}
-    selectedPriority={selectedPriority}
-    errors={errors}
-    setTitle={setTitle}
-    setDescription={setDescription}
-    setSelectedType={setSelectedType}
-    setSelectedPriority={setSelectedPriority}
-    setErrors={setErrors}
-    types={types}
-    priorities={priorities}
-    getPriorityGradient={getPriorityGradient}
-    onCreate={handleCreate}
-    onCancel={() => setCurrentView('none')}
-  />
-)}
 
+      {currentView === 'new' && (
+        <IssueCreate
+          title={title}
+          description={description}
+          selectedType={selectedType}
+          selectedPriority={selectedPriority}
+          errors={errors}
+          setTitle={setTitle}
+          setDescription={setDescription}
+          setSelectedType={setSelectedType}
+          setSelectedPriority={setSelectedPriority}
+          setErrors={setErrors}
+          types={types}
+          priorities={priorities}
+          getPriorityGradient={getPriorityGradient}
+          onCreate={handleCreate}
+          onCancel={() => setCurrentView('none')}
+        />
+      )}
 
       {currentView === 'list' && (
         <IssueList 
           onSelectIssue={setSelectedIssuePreview}
         />
       )}
-
-
-
 
       {currentView === 'manage' && (
         <IssueManage
