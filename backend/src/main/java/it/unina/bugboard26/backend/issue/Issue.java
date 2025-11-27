@@ -37,4 +37,9 @@ public class Issue {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    // 👇 NUOVO CAMPO PER SALVARE L’IMMAGINE IN BASE64
+    @Lob
+    @Column(columnDefinition = "CLOB")
+    private String image;
 }
