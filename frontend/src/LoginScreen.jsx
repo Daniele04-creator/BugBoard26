@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -6,6 +6,9 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [errors, setErrors] = useState({ email: false, password: false });
   const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const videoRef = useRef(null);
+  const [videoFinished, setVideoFinished] = useState(false);
+  const [videoPoster, setVideoPoster] = useState(null);
 
   const handleSubmit = async () => {
     // reset errore API
@@ -166,7 +169,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         </div>
       </div>
 
-      {/* Right Section */}
+      {/* Right Section - animation (Bugboard.webm) */}
       <div
         className="w-1/2 flex items-center justify-center relative overflow-hidden"
         style={{
@@ -176,10 +179,44 @@ export default function LoginScreen({ onLoginSuccess }) {
         <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
         <div className="absolute bottom-32 right-32 w-80 h-80 rounded-full bg-white/10 blur-3xl"></div>
 
-        <div className="text-center z-10">
-          <div className="text-white/20 text-4xl font-bold tracking-widest">
-            LOGIN
-          </div>
+        <div className="z-10 w-full h-full flex items-center justify-center">
+          {!videoFinished ? (
+            <video
+              ref={videoRef}
+              src="/Bugboard.webm"
+              autoPlay
+              muted
+              playsInline
+              onEnded={() => {
+                const video = videoRef.current;
+                if (!video) {
+                  setVideoFinished(true);
+                  return;
+                }
+                try {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = video.videoWidth || 640;
+                  canvas.height = video.videoHeight || 360;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const dataUrl = canvas.toDataURL('image/png');
+                  setVideoPoster(dataUrl);
+                } catch (e) {
+                  // fallback: no poster
+                }
+                setVideoFinished(true);
+              }}
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : (
+            <div className="max-w-full max-h-full flex items-center justify-center">
+              {videoPoster ? (
+                <img src={videoPoster} alt="logo poster" className="object-contain max-w-full max-h-full" />
+              ) : (
+                <div className="text-white/20 text-4xl font-bold tracking-widest">LOGIN</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
