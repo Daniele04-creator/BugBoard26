@@ -87,36 +87,42 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     return sortOrder === 'asc' ? result : -result;
   });
 
-  // AZIONI
-  const handleCreate = (imageData) => {
-    const newErrors = {
-      title: !title.trim(),
-      description: !description.trim(),
-    };
-    setErrors(newErrors);
+ const handleCreate = async (issuePayload) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/issues", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        title: issuePayload.title,
+        description: issuePayload.description,
+        type: issuePayload.type,
+        priority: issuePayload.priority,
+        assignee: currentUser?.email  // l'utente loggato
+      })
+    });
 
-    if (!newErrors.title && !newErrors.description) {
-      const newIssue = {
-        id: Math.floor(Math.random() * 10000),
-        title,
-        description,
-        type: selectedType || 'Bug',
-        priority: selectedPriority || 'Bassa',
-        status: 'TODO',
-        assignee: currentUser?.email || 'unknown',
-        date: new Date().toLocaleDateString('it-IT'),
-        image: imageData || null,
-      };
-
-      setIssues([newIssue, ...issues]);
-      setTitle('');
-      setDescription('');
-      setSelectedType(null);
-      setSelectedPriority(null);
-      alert('Issue creata con successo!');
-      setCurrentView('list');
+    if (!response.ok) {
+      alert("Errore durante la creazione dell'issue");
+      return;
     }
-  };
+
+    const savedIssue = await response.json();
+    console.log("Issue salvata:", savedIssue);
+
+    // se hai uno stato locale delle issue:
+    setIssues((prev) => [savedIssue, ...prev]);
+
+    // dopo la creazione torna alla lista issue
+    setCurrentView("list");
+
+  } catch (err) {
+    console.error("Errore di rete:", err);
+    alert("Errore di connessione al server");
+  }
+};
+
 
   const handleDelete = (id) => {
     if (window.confirm('Sei sicuro di voler eliminare questa issue?')) {

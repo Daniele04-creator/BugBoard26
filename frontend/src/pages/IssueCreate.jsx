@@ -17,29 +17,54 @@ export default function IssueCreate({
   getPriorityGradient,
   onCreate,
   onCancel,
-  onLogout,
+  onLogout, // se non lo usi puoi anche toglierlo
 }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageData, setImageData] = useState(null);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target.result;
-        setImageData(base64);
-        setImagePreview(base64);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result;
+      setImageData(base64);
+      setImagePreview(base64);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleCreateWithImage = () => {
-    onCreate(imageData);
+    // validazione base: titolo e descrizione obbligatori
+    const newErrors = {
+      title: !title.trim(),
+      description: !description.trim(),
+    };
+    setErrors(newErrors);
+
+    if (newErrors.title || newErrors.description) {
+      return;
+    }
+
+    // payload completo che passeremo a BugBoard
+    const issuePayload = {
+      title,
+      description,
+      type: selectedType || 'Bug',
+      priority: selectedPriority || 'Bassa',
+      image: imageData || null,
+    };
+
+    if (onCreate) {
+      onCreate(issuePayload);
+    }
+
+    // reset dell’immagine (gli altri campi li può resettare il padre)
     setImagePreview(null);
     setImageData(null);
   };
+
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8">
@@ -138,7 +163,9 @@ export default function IssueCreate({
 
         {/* Immagine */}
         <div className="mb-8">
-          <label className="block text-lg font-semibold mb-3">Immagine (opzionale):</label>
+          <label className="block text-lg font-semibold mb-3">
+            Immagine (opzionale):
+          </label>
           <div className="flex gap-4 items-start">
             <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">
               <ImageIcon className="inline mr-2" size={20} />
