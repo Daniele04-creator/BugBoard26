@@ -207,12 +207,47 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  const handleCreateUser = (userData) => {
-    // Mock: in futuro sarà una chiamata API al backend
-    console.log('Nuovo utente creato:', userData);
+ const handleCreateUser = async (userData) => {
+  try {
+    const response = await fetch("http://localhost:8080/api/admin/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Email": currentUser.email,
+        "X-User-Role": currentUser.role,
+      },
+      body: JSON.stringify({
+        email: userData.email,
+        password: userData.password,
+        role: userData.role || "USER",   // 👈 default USER se non c’è
+      }),
+    });
+
+    if (response.status === 403) {
+      alert("Solo un ADMIN può creare nuovi utenti");
+      return;
+    }
+
+    if (response.status === 409) {
+      alert("Esiste già un utente con questa email");
+      return;
+    }
+
+    if (!response.ok) {
+      alert("Errore nella creazione utente");
+      return;
+    }
+
     alert(`Utente ${userData.email} creato con successo!`);
     setShowUserAdminModal(false);
-  };
+
+  } catch (err) {
+    console.error("Errore creazione utente:", err);
+    alert("Errore di connessione al server");
+  }
+};
+
+
 
   return (
     <div
