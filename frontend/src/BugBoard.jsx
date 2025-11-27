@@ -99,7 +99,8 @@ const handleCreate = async (issuePayload) => {
         description: issuePayload.description,
         type: issuePayload.type,
         priority: issuePayload.priority,
-        assignee: currentUser?.email
+        assignee: currentUser?.email,
+        image: issuePayload.image || null,
       }),
     });
 

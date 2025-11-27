@@ -73,16 +73,6 @@ export default function IssuePreview({ issue, onClose, getPriorityGradient }) {
               />
             </div>
           )}
-
-          {/* Chiudi */}
-          <div className="pt-4">
-            <button
-              onClick={onClose}
-              className="w-full px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              Chiudi
-            </button>
-          </div>
         </div>
       </div>
     </div>
