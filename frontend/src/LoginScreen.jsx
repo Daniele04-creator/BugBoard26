@@ -6,24 +6,21 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [errors, setErrors] = useState({ email: false, password: false });
   const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   const videoRef = useRef(null);
   const [videoFinished, setVideoFinished] = useState(false);
   const [videoPoster, setVideoPoster] = useState(null);
 
   const handleSubmit = async () => {
-    // reset errore API
     setApiError('');
 
     const newErrors = {
       email: !email.trim(),
       password: !password.trim(),
     };
-
     setErrors(newErrors);
 
-    if (newErrors.email || newErrors.password) {
-      return;
-    }
+    if (newErrors.email || newErrors.password) return;
 
     try {
       setIsLoading(true);
@@ -35,33 +32,58 @@ export default function LoginScreen({ onLoginSuccess }) {
       });
 
       if (!response.ok) {
-        // 401, 500 ecc.
         setApiError('Email o password non valide');
         return;
       }
 
-      const data = await response.json();
-      // data = { id, email, role }
+      const data = await response.json(); // {id, email, role}
 
       if (onLoginSuccess) {
-        onLoginSuccess(data); // lo passiamo ad App.jsx
+        onLoginSuccess(data);
       }
+
     } catch (err) {
-      console.error('Errore chiamata login', err);
+      console.error('Errore chiamata login:', err);
       setApiError('Errore di connessione al server');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleVideoEnd = () => {
+    const video = videoRef.current;
+    if (!video) {
+      setVideoFinished(true);
+      return;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 360;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const poster = canvas.toDataURL('image/png');
+      setVideoPoster(poster);
+    } catch (err) {
+      // fallback: niente poster
+    }
+
+    setVideoFinished(true);
+  };
+
   return (
     <div className="min-h-screen flex">
-      {/* Left Section - Login Form */}
+
+      {/* LEFT SECTION – LOGIN FORM */}
       <div className="w-1/2 bg-white flex items-center justify-center relative overflow-hidden">
+
+        {/* palline decorative */}
         <div
           className="absolute top-10 left-10 w-32 h-32 rounded-full opacity-5"
           style={{ background: 'linear-gradient(135deg, #7DD3FC 0%, #A78BFA 100%)' }}
         ></div>
+
         <div
           className="absolute bottom-20 right-20 w-40 h-40 rounded-full opacity-5"
           style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #F472B6 100%)' }}
@@ -73,6 +95,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </h1>
 
           <div className="space-y-6">
+
             {/* Email */}
             <div className="transform transition-all hover:scale-105">
               <input
@@ -165,17 +188,19 @@ export default function LoginScreen({ onLoginSuccess }) {
                 Password dimenticata?
               </button>
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* Right Section - animation (Bugboard.webm) */}
+      {/* RIGHT SECTION – VIDEO ANIMATION */}
       <div
         className="w-1/2 flex items-center justify-center relative overflow-hidden"
         style={{
           background: 'linear-gradient(180deg, #7DD3FC 0%, #A78BFA 100%)',
         }}
       >
+        {/* Decorative blobs */}
         <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
         <div className="absolute bottom-32 right-32 w-80 h-80 rounded-full bg-white/10 blur-3xl"></div>
 
@@ -187,33 +212,21 @@ export default function LoginScreen({ onLoginSuccess }) {
               autoPlay
               muted
               playsInline
-              onEnded={() => {
-                const video = videoRef.current;
-                if (!video) {
-                  setVideoFinished(true);
-                  return;
-                }
-                try {
-                  const canvas = document.createElement('canvas');
-                  canvas.width = video.videoWidth || 640;
-                  canvas.height = video.videoHeight || 360;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                  const dataUrl = canvas.toDataURL('image/png');
-                  setVideoPoster(dataUrl);
-                } catch (e) {
-                  // fallback: no poster
-                }
-                setVideoFinished(true);
-              }}
+              onEnded={handleVideoEnd}
               className="max-w-full max-h-full object-contain"
             />
           ) : (
             <div className="max-w-full max-h-full flex items-center justify-center">
               {videoPoster ? (
-                <img src={videoPoster} alt="logo poster" className="object-contain max-w-full max-h-full" />
+                <img
+                  src={videoPoster}
+                  alt="poster"
+                  className="object-contain max-w-full max-h-full"
+                />
               ) : (
-                <div className="text-white/20 text-4xl font-bold tracking-widest">LOGIN</div>
+                <div className="text-white/20 text-4xl font-bold tracking-widest">
+                  LOGIN
+                </div>
               )}
             </div>
           )}
