@@ -24,7 +24,6 @@ public class UserAdminController {
             @RequestHeader("X-User-Email") String currentEmail,
             @RequestHeader("X-User-Role") String currentRole
     ) {
-        // Solo ADMIN può creare utenti
         if (!"ADMIN".equalsIgnoreCase(currentRole)) {
             return ResponseEntity.status(403)
                     .body("Solo un ADMIN può creare nuovi utenti");
@@ -35,20 +34,17 @@ public class UserAdminController {
                     .body("Email già registrata");
         }
 
-        // 👇 Evitiamo il NullPointer se role è null o non inviato
         String role = (request.role() == null || request.role().isBlank())
                 ? "USER"
                 : request.role().toUpperCase();
 
-        User newUser = User.builder()
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role(role)
-                .build();
+        User newUser = new User();
+        newUser.setEmail(request.email());
+        newUser.setPassword(passwordEncoder.encode(request.password()));
+        newUser.setRole(role);
 
         userRepository.save(newUser);
 
         return ResponseEntity.ok("Utente creato con successo");
     }
-
 }

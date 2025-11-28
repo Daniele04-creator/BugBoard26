@@ -1,0 +1,11 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: bugboard-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: bugboard
+      POSTGRES_PASSWORD: bugboard
+      POSTGRES_DB: bugboard26
+    ports:
+      - "5432:5432"

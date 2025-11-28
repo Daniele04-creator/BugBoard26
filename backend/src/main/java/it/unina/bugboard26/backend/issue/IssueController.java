@@ -1,7 +1,7 @@
 package it.unina.bugboard26.backend.issue;
 
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,20 +18,17 @@ public class IssueController {
         this.issueRepository = issueRepository;
     }
 
-    // CREATE
     @PostMapping
     public ResponseEntity<Issue> create(@RequestBody Issue issue) {
         Issue saved = issueService.createIssue(issue);
         return ResponseEntity.ok(saved);
     }
 
-    // LIST
     @GetMapping
     public ResponseEntity<List<Issue>> list() {
         return ResponseEntity.ok(issueService.getAllIssues());
     }
 
-    // 👇 UPDATE (Punto 9)
     @PutMapping("/{id}")
     public ResponseEntity<?> updateIssue(
             @PathVariable Long id,
@@ -41,13 +38,11 @@ public class IssueController {
     ) {
         return issueRepository.findById(id)
                 .map(existing -> {
-
                     boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
                     boolean isAssignee = existing.getAssignee() != null &&
                             existing.getAssignee().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        // Punto 9: non puoi modificare issue non tua
                         return ResponseEntity.status(403).body("Non hai i permessi per modificare questa issue");
                     }
 
@@ -57,7 +52,6 @@ public class IssueController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 👇 DELETE (facoltativo ma coerente col Punto 9)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteIssue(
             @PathVariable Long id,

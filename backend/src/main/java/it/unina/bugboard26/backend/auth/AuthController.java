@@ -24,8 +24,12 @@ public class AuthController {
             return ResponseEntity.status(401).body("Credenziali invalide");
         }
 
-        return ResponseEntity.ok(
-                new LoginResponse(user.getId(), user.getEmail(), user.getRole())
+        LoginResponse response = new LoginResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getRole()
         );
+
+        return ResponseEntity.ok(response);
     }
 }

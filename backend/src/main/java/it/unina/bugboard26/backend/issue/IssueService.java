@@ -15,7 +15,8 @@ public class IssueService {
     }
 
     public Issue createIssue(Issue issue) {
-        issue.setId(null);
+
+        issue.setId(null); // ignora eventuale id dal client
 
         if (issue.getStatus() == null || issue.getStatus().isBlank()) {
             issue.setStatus("TODO");
@@ -34,13 +35,11 @@ public class IssueService {
         return issueRepository.findAll();
     }
 
-    // 👇 Punto 9: update con controllo permessi fatto nel controller
     public Issue updateIssue(Issue existing, Issue updatedData) {
         existing.setTitle(updatedData.getTitle());
         existing.setPriority(updatedData.getPriority());
         existing.setStatus(updatedData.getStatus());
         existing.setImage(updatedData.getImage());
-
         return issueRepository.save(existing);
     }
 

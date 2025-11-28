@@ -13,7 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class BackendApplication {
 
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
 	}
 
@@ -22,16 +22,16 @@ public class BackendApplication {
         return args -> {
             if (userRepository.findByEmail("admin@bugboard.com").isEmpty()) {
 
-                User admin = User.builder()
-                        .email("admin@bugboard.com")
-                        .password(encoder.encode("admin123"))
-                        .role("ADMIN")
-                        .build();
+                User admin = new User();
+                admin.setEmail("admin@bugboard.com");
+                admin.setPassword(encoder.encode("admin123"));
+                admin.setRole("ADMIN");
 
                 userRepository.save(admin);
                 System.out.println("Admin creato: admin@bugboard.com / admin123");
             }
         };
     }
+
 
 }
