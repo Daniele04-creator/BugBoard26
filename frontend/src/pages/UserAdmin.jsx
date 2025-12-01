@@ -31,7 +31,7 @@ export default function UserAdmin({ onClose, onCreateUser }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 animate-fadeIn">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
             Crea Utente

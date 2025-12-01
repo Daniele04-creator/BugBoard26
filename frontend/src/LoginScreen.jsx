@@ -76,7 +76,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     <div className="min-h-screen flex">
 
       {/* LEFT SECTION – LOGIN FORM */}
-      <div className="w-1/2 bg-white flex items-center justify-center relative overflow-hidden">
+      <div className="w-1/2 bg-white flex items-center justify-center relative overflow-hidden animate-fadeIn">
 
         {/* palline decorative */}
         <div
@@ -204,7 +204,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
         <div className="absolute bottom-32 right-32 w-80 h-80 rounded-full bg-white/10 blur-3xl"></div>
 
-        <div className="z-10 w-full h-full flex items-center justify-center">
+        <div className="z-10 w-full h-full flex items-center justify-center animate-fadeIn">
           {!videoFinished ? (
             <video
               ref={videoRef}
@@ -213,7 +213,7 @@ export default function LoginScreen({ onLoginSuccess }) {
               muted
               playsInline
               onEnded={handleVideoEnd}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain "
             />
           ) : (
             <div className="max-w-full max-h-full flex items-center justify-center">

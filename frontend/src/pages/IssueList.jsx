@@ -89,7 +89,7 @@ export default function IssueList({ onSelectIssue }) {
 
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8 animate-fadeIn">
 
         <h2 className="text-3xl font-bold mb-8">Elenco Issue</h2>
 

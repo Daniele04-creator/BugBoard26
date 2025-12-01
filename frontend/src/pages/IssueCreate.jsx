@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image as ImageIcon, X } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 
 export default function IssueCreate({
   title,
@@ -17,7 +17,7 @@ export default function IssueCreate({
   getPriorityGradient,
   onCreate,
   onCancel,
-  onLogout, // se non lo usi puoi anche toglierlo
+  onLogout, 
 }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageData, setImageData] = useState(null);
@@ -56,7 +56,7 @@ export default function IssueCreate({
     onCreate(issuePayload);
   }
 
-  // 🔥 RESET DEI CAMPI DOPO CREAZIONE
+  
   setTitle("");
   setDescription("");
   setSelectedType(null);
@@ -70,20 +70,15 @@ export default function IssueCreate({
 
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8 animate-fadeIn">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold">Nuova Issue</h2>
-          <button
-            onClick={onCancel}
-            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-all"
-          >
-            <X size={24} />
-          </button>
+          
         </div>
 
         {/* Titolo */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">Titolo:</label>
+          <label className="block text-lg font-semibold mb-3">* Titolo:</label>
           <input
             type="text"
             value={title}
@@ -100,7 +95,7 @@ export default function IssueCreate({
 
         {/* Descrizione */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">Descrizione:</label>
+          <label className="block text-lg font-semibold mb-3">* Descrizione:</label>
           <textarea
             value={description}
             onChange={(e) => {
@@ -167,7 +162,7 @@ export default function IssueCreate({
         {/* Immagine */}
         <div className="mb-8">
           <label className="block text-lg font-semibold mb-3">
-            Immagine (opzionale):
+            Immagine:
           </label>
           <div className="flex gap-4 items-start">
             <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">

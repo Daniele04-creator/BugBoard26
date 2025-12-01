@@ -10,7 +10,7 @@ export default function Sidebar({ currentView, setCurrentView, onLogout, isAdmin
   };
 
   return (
-    <div className="w-80 p-6 flex flex-col">
+    <div className="w-80 p-6 flex flex-col animate-fadeIn">
       <div className="flex gap-3 mb-6">
         <button
           onClick={onLogout}
