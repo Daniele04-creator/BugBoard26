@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
+// 👇 Base URL del backend (Azure o localhost)
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8080";
+
 export default function IssueList({ onSelectIssue }) {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,16 +16,21 @@ export default function IssueList({ onSelectIssue }) {
   const [filterPriority, setFilterPriority] = useState("Tutti");
   const [searchTitle, setSearchTitle] = useState("");
 
-
   // ORDINAMENTO
   const [sortBy, setSortBy] = useState("Data");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // 1️⃣ CARICO LE ISSUE REALI DAL BACKEND
+  // 1️⃣ CARICO LE ISSUE DAL BACKEND
   useEffect(() => {
     const loadIssues = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/issues");
+        const response = await fetch(`${API_BASE_URL}/api/issues`);
+
+        if (!response.ok) {
+          console.error("Errore HTTP caricamento issue:", response.status);
+          return;
+        }
+
         const data = await response.json();
         setIssues(data);
       } catch (error) {
@@ -35,25 +45,28 @@ export default function IssueList({ onSelectIssue }) {
 
   // 2️⃣ FILTRI LOCALI
   const filtered = issues.filter((issue) => {
-  const matchType = filterType === "Tutti" || issue.type === filterType;
-  const matchStatus = filterStatus === "Tutti" || issue.status === filterStatus;
-  const matchPriority = filterPriority === "Tutti" || issue.priority === filterPriority;
-  const matchTitle = issue.title.toLowerCase().includes(searchTitle.toLowerCase());
+    const matchType = filterType === "Tutti" || issue.type === filterType;
+    const matchStatus = filterStatus === "Tutti" || issue.status === filterStatus;
+    const matchPriority = filterPriority === "Tutti" || issue.priority === filterPriority;
+    const matchTitle = issue.title
+      ?.toLowerCase()
+      .includes(searchTitle.toLowerCase());
 
-  return matchType && matchStatus && matchPriority && matchTitle;
-});
+    return matchType && matchStatus && matchPriority && matchTitle;
+  });
 
-
-  // 3️⃣ ORDINAMENTO LOCALE
+  // 3️⃣ ORDINAMENTO LOCATE
   const sorted = [...filtered].sort((a, b) => {
     let result = 0;
+
     switch (sortBy) {
       case "Data": {
         const da = new Date(a.createdAt || 0);
         const db = new Date(b.createdAt || 0);
-        result = db - da; // più recente prima
+        result = db - da;
         break;
       }
+
       case "Titolo":
         result = a.title.localeCompare(b.title);
         break;
@@ -73,6 +86,7 @@ export default function IssueList({ onSelectIssue }) {
       default:
         result = 0;
     }
+
     return sortOrder === "asc" ? -result : result;
   });
 
@@ -80,6 +94,7 @@ export default function IssueList({ onSelectIssue }) {
     setFilterType("Tutti");
     setFilterStatus("Tutti");
     setFilterPriority("Tutti");
+    setSearchTitle("");
     setSortBy("Data");
     setSortOrder("desc");
   };
@@ -142,17 +157,17 @@ export default function IssueList({ onSelectIssue }) {
             </select>
           </div>
 
+          {/* Titolo */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Titolo:</span>
-              <input
-                type="text"
-                value={searchTitle}
-                onChange={(e) => setSearchTitle(e.target.value)}
-                placeholder="Scrivi qui..."
-                className="bg-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none"
-                />
+            <input
+              type="text"
+              value={searchTitle}
+              onChange={(e) => setSearchTitle(e.target.value)}
+              placeholder="Scrivi qui..."
+              className="bg-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none"
+            />
           </div>
-
 
           <button
             onClick={handleResetFilters}

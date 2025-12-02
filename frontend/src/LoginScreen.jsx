@@ -1,5 +1,10 @@
 import React, { useState, useRef } from 'react';
 
+// Base URL del backend (Azure o localhost in fallback)
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8080";
+
 export default function LoginScreen({ onLoginSuccess }) {
   const [email, setEmail] = useState('admin@bugboard.com');
   const [password, setPassword] = useState('admin123');
@@ -25,14 +30,18 @@ export default function LoginScreen({ onLoginSuccess }) {
     try {
       setIsLoading(true);
 
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
-        setApiError('Email o password non valide');
+        if (response.status === 401) {
+          setApiError('Email o password non valide');
+        } else {
+          setApiError('Errore dal server');
+        }
         return;
       }
 

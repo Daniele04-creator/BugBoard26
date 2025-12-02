@@ -7,6 +7,11 @@ import IssueManage from './pages/IssueManage.jsx';
 import IssuePreview from './pages/IssuePreview.jsx';
 import UserAdmin from './pages/UserAdmin.jsx';
 
+// 👇 Base URL delle API: prima prova a leggere VITE_API_BASE_URL, se non c'è usa localhost
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8080";
+
 export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const [currentView, setCurrentView] = useState('none');
   const [showUserAdminModal, setShowUserAdminModal] = useState(false);
@@ -47,7 +52,11 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   useEffect(() => {
     const loadIssues = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/issues');
+        const response = await fetch(`${API_BASE_URL}/api/issues`);
+        if (!response.ok) {
+          console.error("Errore HTTP caricamento issue:", response.status);
+          return;
+        }
         const data = await response.json();
         setIssues(data);
       } catch (err) {
@@ -94,7 +103,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
 
   const handleCreate = async (issuePayload) => {
     try {
-      const response = await fetch("http://localhost:8080/api/issues", {
+      const response = await fetch(`${API_BASE_URL}/api/issues`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -125,7 +134,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     if (!window.confirm("Sei sicuro di voler eliminare questa issue?")) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/issues/${issueId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/issues/${issueId}`, {
         method: "DELETE",
         headers: {
           "X-User-Email": currentUser.email,
@@ -154,7 +163,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     if (!editingItem) return;
 
     try {
-      const response = await fetch(`http://localhost:8080/api/issues/${editingItem.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/issues/${editingItem.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +199,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
 
   const handleCreateUser = async (userData) => {
     try {
-      const response = await fetch("http://localhost:8080/api/admin/users", {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
