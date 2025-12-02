@@ -36,12 +36,6 @@ export default function UserAdmin({ onClose, onCreateUser }) {
           <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
             Crea Utente
           </h2>
-          <button
-            onClick={onClose}
-            className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-all"
-          >
-            <X size={24} />
-          </button>
         </div>
 
         {/* Email */}

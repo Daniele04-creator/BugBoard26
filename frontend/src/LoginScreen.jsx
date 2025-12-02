@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 
 export default function LoginScreen({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@bugboard.com');
+  const [password, setPassword] = useState('admin123');
   const [errors, setErrors] = useState({ email: false, password: false });
   const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -182,13 +182,6 @@ export default function LoginScreen({ onLoginSuccess }) {
                 )}
               </button>
             </div>
-
-            <div className="pt-6 text-center">
-              <button className="text-sm text-gray-400 hover:text-purple-500 transition-colors duration-200">
-                Password dimenticata?
-              </button>
-            </div>
-
           </div>
         </div>
       </div>

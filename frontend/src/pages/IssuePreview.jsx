@@ -4,14 +4,21 @@ import { X } from 'lucide-react';
 export default function IssuePreview({ issue, onClose, getPriorityGradient }) {
   if (!issue) return null;
 
-  // Mapping dei campi per compatibilità con diverse fonti dati (backend vs dati locali)
   const title = issue.title || '';
   const description = issue.description || '';
   const type = issue.type || '';
   const status = issue.status || '';
   const priority = issue.priority || '';
   const assignee = issue.assignee || '';
-  const date = issue.date || issue.createdAt || '';
+  const dateString = issue.date || issue.createdAt || '';
+const date = dateString
+  ? (() => {
+      const d = new Date(dateString);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    })()
+  : '';
+
   const image = issue.image || null;
 
   return (

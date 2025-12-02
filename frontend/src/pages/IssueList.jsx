@@ -9,6 +9,8 @@ export default function IssueList({ onSelectIssue }) {
   const [filterType, setFilterType] = useState("Tutti");
   const [filterStatus, setFilterStatus] = useState("Tutti");
   const [filterPriority, setFilterPriority] = useState("Tutti");
+  const [searchTitle, setSearchTitle] = useState("");
+
 
   // ORDINAMENTO
   const [sortBy, setSortBy] = useState("Data");
@@ -33,17 +35,14 @@ export default function IssueList({ onSelectIssue }) {
 
   // 2️⃣ FILTRI LOCALI
   const filtered = issues.filter((issue) => {
-    const matchType =
-      filterType === "Tutti" || issue.type === filterType;
+  const matchType = filterType === "Tutti" || issue.type === filterType;
+  const matchStatus = filterStatus === "Tutti" || issue.status === filterStatus;
+  const matchPriority = filterPriority === "Tutti" || issue.priority === filterPriority;
+  const matchTitle = issue.title.toLowerCase().includes(searchTitle.toLowerCase());
 
-    const matchStatus =
-      filterStatus === "Tutti" || issue.status === filterStatus;
+  return matchType && matchStatus && matchPriority && matchTitle;
+});
 
-    const matchPriority =
-      filterPriority === "Tutti" || issue.priority === filterPriority;
-
-    return matchType && matchStatus && matchPriority;
-  });
 
   // 3️⃣ ORDINAMENTO LOCALE
   const sorted = [...filtered].sort((a, b) => {
@@ -98,8 +97,8 @@ export default function IssueList({ onSelectIssue }) {
           <span className="text-lg font-semibold italic">Filtri:</span>
 
           {/* Tipo */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Tipo:</span>
+          <div className="flex items-center gap-2 ml-[50px]">
+            <span className="text-sm font-medium ">Tipo:</span>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
@@ -143,6 +142,18 @@ export default function IssueList({ onSelectIssue }) {
             </select>
           </div>
 
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Titolo:</span>
+              <input
+                type="text"
+                value={searchTitle}
+                onChange={(e) => setSearchTitle(e.target.value)}
+                placeholder="Scrivi qui..."
+                className="bg-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none"
+                />
+          </div>
+
+
           <button
             onClick={handleResetFilters}
             className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
@@ -158,7 +169,7 @@ export default function IssueList({ onSelectIssue }) {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="bg-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none"
+            className="bg-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none ml-10"
           >
             <option>Data</option>
             <option>Titolo</option>

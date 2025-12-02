@@ -19,17 +19,15 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [errors, setErrors] = useState({ title: false, description: false });
 
-  // STATO FILTRI (usati solo per la vista "Gestisci Issue")
+  // STATO FILTRI
   const [filterType, setFilterType] = useState('Tutti');
   const [filterStatus, setFilterStatus] = useState('Tutti');
   const [filterPriority, setFilterPriority] = useState('Tutti');
   const [sortBy, setSortBy] = useState('Data');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  // DATI REALI DAL BACKEND
   const [issues, setIssues] = useState([]);
 
-  // UTENTE CORRENTE - viene dal login
   const isAdmin = currentUser?.role === 'ADMIN';
   const [editingItem, setEditingItem] = useState(null);
 
@@ -46,7 +44,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  // 🔄 CARICA ISSUE DAL BACKEND ALL'AVVIO
   useEffect(() => {
     const loadIssues = async () => {
       try {
@@ -60,7 +57,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     loadIssues();
   }, []);
 
-  // FILTRI + ORDINAMENTO (per la vista Gestisci Issue)
   const filteredIssues = issues.filter(issue => {
     const matchType = filterType === 'Tutti' || issue.type === filterType;
     const matchStatus = filterStatus === 'Tutti' || issue.status === filterStatus;
@@ -96,14 +92,11 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     return sortOrder === 'asc' ? result : -result;
   });
 
-  // 🔹 CREA ISSUE (Funzione 2)
   const handleCreate = async (issuePayload) => {
     try {
       const response = await fetch("http://localhost:8080/api/issues", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: issuePayload.title,
           description: issuePayload.description,
@@ -120,11 +113,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
       }
 
       const savedIssue = await response.json();
-      console.log("Issue salvata dal backend:", savedIssue);
-
-      // aggiorna lista locale
       setIssues(prev => [savedIssue, ...prev]);
-
       setCurrentView("list");
     } catch (err) {
       console.error("Errore di rete durante la creazione issue:", err);
@@ -132,7 +121,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  // 🔹 DELETE ISSUE (Funzione 9)
   const handleDelete = async (issueId) => {
     if (!window.confirm("Sei sicuro di voler eliminare questa issue?")) return;
 
@@ -155,7 +143,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         return;
       }
 
-      console.log("Issue eliminata:", issueId);
       setIssues(prev => prev.filter(i => i.id !== issueId));
     } catch (err) {
       console.error("Errore di rete:", err);
@@ -163,7 +150,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  // 🔹 UPDATE ISSUE (Funzione 9)
   const handleUpdate = async () => {
     if (!editingItem) return;
 
@@ -180,7 +166,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
           status: editingItem.status,
           priority: editingItem.priority,
           image: editingItem.image || null,
-          // se vuoi, anche type/description ecc.
         }),
       });
 
@@ -195,59 +180,53 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
       }
 
       const updated = await response.json();
-      console.log("Issue aggiornata:", updated);
-
       setEditingItem(null);
-      setIssues(prev =>
-        prev.map(i => (i.id === updated.id ? updated : i))
-      );
+      setIssues(prev => prev.map(i => (i.id === updated.id ? updated : i)));
     } catch (err) {
       console.error("Errore di rete:", err);
       alert("Errore di connessione al server");
     }
   };
 
- const handleCreateUser = async (userData) => {
-  try {
-    const response = await fetch("http://localhost:8080/api/admin/users", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Email": currentUser.email,
-        "X-User-Role": currentUser.role,
-      },
-      body: JSON.stringify({
-        email: userData.email,
-        password: userData.password,
-        role: userData.role || "USER",   // 👈 default USER se non c’è
-      }),
-    });
+  const handleCreateUser = async (userData) => {
+    try {
+      const response = await fetch("http://localhost:8080/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-User-Email": currentUser.email,
+          "X-User-Role": currentUser.role,
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          role: userData.role || "USER",
+        }),
+      });
 
-    if (response.status === 403) {
-      alert("Solo un ADMIN può creare nuovi utenti");
-      return;
+      if (response.status === 403) {
+        alert("Solo un ADMIN può creare nuovi utenti");
+        return;
+      }
+
+      if (response.status === 409) {
+        alert("Esiste già un utente con questa email");
+        return;
+      }
+
+      if (!response.ok) {
+        alert("Errore nella creazione utente");
+        return;
+      }
+
+      alert(`Utente ${userData.email} creato con successo!`);
+      setShowUserAdminModal(false);
+
+    } catch (err) {
+      console.error("Errore creazione utente:", err);
+      alert("Errore di connessione al server");
     }
-
-    if (response.status === 409) {
-      alert("Esiste già un utente con questa email");
-      return;
-    }
-
-    if (!response.ok) {
-      alert("Errore nella creazione utente");
-      return;
-    }
-
-    alert(`Utente ${userData.email} creato con successo!`);
-    setShowUserAdminModal(false);
-
-  } catch (err) {
-    console.error("Errore creazione utente:", err);
-    alert("Errore di connessione al server");
-  }
-};
-
-
+  };
 
   return (
     <div
@@ -263,6 +242,24 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
       />
 
       {/* CONTENUTO PRINCIPALE */}
+
+      {currentView === 'none' && (
+        <div className="flex flex-col items-center justify-center w-full text-center px-10">
+          <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mb-4">
+            BugBoard26
+          </h1>
+
+          <p className="text-xl italic text-white/90 max-w-3xl leading-relaxed mb-4">
+            BugBoard26 è una piattaforma professionale dedicata alla gestione completa delle issue.
+            Permette a team e aziende di creare, organizzare, monitorare e risolvere problemi in modo
+            semplice ed efficiente.
+          </p>
+
+          <p className="text-2xl italic text-white font-semibold mt-4">
+            "Il tuo lavoro, semplificato."
+          </p>
+        </div>
+      )}
 
       {currentView === 'new' && (
         <IssueCreate
@@ -285,9 +282,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
       )}
 
       {currentView === 'list' && (
-        <IssueList 
-          onSelectIssue={setSelectedIssuePreview}
-        />
+        <IssueList onSelectIssue={setSelectedIssuePreview} />
       )}
 
       {currentView === 'manage' && (
