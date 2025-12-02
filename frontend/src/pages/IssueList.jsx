@@ -99,7 +99,7 @@ export default function IssueList({ onSelectIssue }) {
     setSortOrder("desc");
   };
 
-  if (loading) return <div className="p-10 text-xl">Caricamento...</div>;
+  //if (loading) return <div className="p-10 text-xl">Caricamento...</div>;
 
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
