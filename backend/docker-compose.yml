@@ -1,11 +1,11 @@
 services:
-  postgres:
-    image: postgres:15
-    container_name: bugboard-postgres
+  backend:
+    image: daniele04/bugboard-backend:latest
+    container_name: bugboard-backend
     restart: always
-    environment:
-      POSTGRES_USER: bugboard
-      POSTGRES_PASSWORD: bugboard
-      POSTGRES_DB: bugboard26
     ports:
-      - "5432:5432"
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://bugboard-db.postgres.database.azure.com:5432/bugboard?sslmode=require
+      DB_USERNAME: dbadmin
+      DB_PASSWORD: "Passwordforte!"
