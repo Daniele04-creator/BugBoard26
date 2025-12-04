@@ -12,13 +12,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      
-      - name: Set up Node
+      # FRONTEND BUILD
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
-      - name: Install frontend dependencies
+      - name: Install frontend deps
         working-directory: ./frontend
         run: npm install
 
@@ -26,33 +26,44 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-      
-      - name: Copy frontend build into backend static folder
+      - name: Copy frontend into backend static
         run: |
           rm -rf backend/src/main/resources/static/*
           cp -r frontend/dist/* backend/src/main/resources/static/
 
-     
-      - name: Set up JDK 21
+      # BACKEND BUILD
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
 
-      - name: Build backend jar
+      - name: Build backend
         working-directory: ./backend
         run: mvn -B clean package -DskipTests
 
+      # DOCKER PUSH
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      
-      - name: Build and push Docker image
+      - name: Build & Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: daniele04/bugboard-backend:latest
+
+      # AZURE RESTART (deploy automatico)
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Restart Azure Web App
+        run: |
+          az webapp restart \
+          --resource-group bugboard-rg \
+          --name bugboard-backend-app
