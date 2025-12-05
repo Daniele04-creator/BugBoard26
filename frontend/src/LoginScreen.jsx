@@ -232,9 +232,6 @@ export default function LoginScreen({ onLoginSuccess }) {
             
           </div>
         </div>
-        <button>
-                ciao ciao
-            </button>
       </div>
 
       {/* RIGHT SECTION – VIDEO ANIMATION */}

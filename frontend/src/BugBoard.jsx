@@ -311,12 +311,15 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         />
       )}
 
-      {showUserAdminModal && (
-        <UserAdmin
-          onClose={() => setShowUserAdminModal(false)}
-          onCreateUser={handleCreateUser}
-        />
-      )}
+     {showUserAdminModal && (
+  <UserAdmin
+    onClose={() => setShowUserAdminModal(false)}
+    onCreateUser={handleCreateUser}
+    currentUser={currentUser}   // 👈 così il modal sa chi sei
+    onLogout={onLogout}         // 👈 per buttarti fuori se ti cancelli
+  />
+)}
+
 
       {selectedIssuePreview && (
         <IssuePreview
