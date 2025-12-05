@@ -1,159 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Plus, X, Trash2 } from "lucide-react";
+import { useUserAdmin } from "../hooks/useUserAdmin";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+export default function UserAdminScreen({
+  onClose,
+  onCreateUser,
+  currentUser,
+  onLogout,
+}) {
+  const {
+    isAdmin,
+    users,
+    loadingUsers,
+    usersError,
 
-export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout }) {
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [usersError, setUsersError] = useState("");
+    showCreateDialog,
+    setShowCreateDialog,
 
-  // stato dialog creazione utente
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("USER");
-  const [createError, setCreateError] = useState("");
-  const [errors, setErrors] = useState({});
+    newEmail,
+    setNewEmail,
+    newPassword,
+    setNewPassword,
+    newRole,
+    setNewRole,
+    createError,
+    errors,
 
-  const isAdmin = currentUser?.role === "ADMIN";
+    handleCreateUserSubmit,
+    handleCancelCreate,
+    handleDeleteUser,
+  } = useUserAdmin({ currentUser, onCreateUser, onClose, onLogout });
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        setUsersError("");
-
-        const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
-          headers: {
-            "X-User-Email": currentUser.email,
-            "X-User-Role": currentUser.role,
-          },
-        });
-
-        if (resp.status === 403) {
-          setUsersError("Non hai i permessi per vedere la lista utenti");
-          return;
-        }
-
-        if (!resp.ok) {
-          setUsersError("Errore nel caricamento degli utenti");
-          return;
-        }
-
-        const data = await resp.json();
-        setUsers(data);
-      } catch (err) {
-        console.error("Errore caricamento utenti:", err);
-        setUsersError("Errore di connessione al server");
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-
-    if (isAdmin) {
-      loadUsers();
-    } else {
-      setUsersError("Solo gli ADMIN possono gestire gli utenti");
-      setLoadingUsers(false);
-    }
-  }, [currentUser, isAdmin]);
-
-  const handleCreateUserSubmit = async () => {
-    const newErrors = {
-      email: !newEmail.trim(),
-      password: !newPassword.trim(),
-    };
-    setErrors(newErrors);
-    setCreateError("");
-
-    if (newErrors.email || newErrors.password) {
-      setCreateError("Email e password sono obbligatorie");
-      return;
-    }
-
-    try {
-      await onCreateUser({
-        email: newEmail.trim(),
-        password: newPassword.trim(),
-        role: newRole,
-      });
-
-      setNewEmail("");
-      setNewPassword("");
-      setNewRole("USER");
-      setErrors({});
-      setShowCreateDialog(false);
-
-      const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
-        headers: {
-          "X-User-Email": currentUser.email,
-          "X-User-Role": currentUser.role,
-        },
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        setUsers(data);
-      }
-    } catch (err) {
-      console.error("Errore creazione utente:", err);
-      setCreateError("Errore nella creazione dell'utente");
-    }
-  };
-
-  const handleDeleteUser = async (userId, userEmail) => {
-    if (!window.confirm(`Sei sicuro di voler eliminare l'utente ${userEmail}?`)) {
-      return;
-    }
-
-    try {
-      const resp = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          "X-User-Email": currentUser.email,
-          "X-User-Role": currentUser.role,
-        },
-      });
-
-      if (resp.status === 403) {
-        alert("Non hai i permessi per eliminare utenti");
-        return;
-      }
-
-      if (resp.status === 400) {
-        const msg = await resp.text();
-        alert(msg || "Impossibile eliminare questo utente");
-        return;
-      }
-
-      if (!resp.ok) {
-        alert("Errore durante l'eliminazione dell'utente");
-        return;
-      }
-
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-
-      if (currentUser.id === userId) {
-        alert("Hai eliminato il tuo account. Verrai disconnesso.");
-        onClose();
-        onLogout();
-      }
-    } catch (err) {
-      console.error("Errore eliminazione utente:", err);
-      alert("Errore di connessione al server");
-    }
-  };
-
-  const handleCancelCreate = () => {
-    setShowCreateDialog(false);
-    setNewEmail("");
-    setNewPassword("");
-    setNewRole("USER");
-    setErrors({});
-    setCreateError("");
-  };
-
+  // se non è admin → messaggio di blocco
   if (!isAdmin) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -205,13 +83,19 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
           {/* TABELLA UTENTI */}
           <div className="bg-gray-100 rounded-2xl p-6 min-h-96">
             <h3 className="text-xl font-bold mb-4">Utenti Esistenti</h3>
-            
+
             {usersError && (
               <p className="text-center py-6 text-red-600">{usersError}</p>
             )}
 
+            {loadingUsers && !usersError && (
+              <p className="text-center py-6 text-gray-500">Caricamento utenti...</p>
+            )}
+
             {!loadingUsers && !usersError && users.length === 0 && (
-              <p className="text-center py-6 text-gray-500 italic">Nessun utente trovato.</p>
+              <p className="text-center py-6 text-gray-500 italic">
+                Nessun utente trovato.
+              </p>
             )}
 
             {!loadingUsers && !usersError && users.length > 0 && (
@@ -229,16 +113,18 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
                       key={u.id}
                       className="border-b border-gray-300 transition-colors hover:bg-white"
                     >
-                      <td className="py-3 font-medium text-gray-700">{u.email}</td>
+                      <td className="py-3 font-medium text-gray-700">
+                        {u.email}
+                      </td>
                       <td className="py-3">
                         <span
-                            className={`px-2 py-1 rounded text-xs font-bold ${
-                              u.role === "ADMIN"
-                                ? "bg-red-100 text-red-600" // Modificato in rosso
-                                : "bg-blue-100 text-blue-600"
-                            }`}
-                          >
-                            {u.role}
+                          className={`px-2 py-1 rounded text-xs font-bold ${
+                            u.role === "ADMIN"
+                              ? "bg-red-100 text-red-600"
+                              : "bg-blue-100 text-blue-600"
+                          }`}
+                        >
+                          {u.role}
                         </span>
                       </td>
                       <td className="py-3 text-right">
@@ -277,7 +163,9 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
 
             {/* Email */}
             <div className="mb-6">
-              <label className="block text-lg font-semibold mb-3">* Email:</label>
+              <label className="block text-lg font-semibold mb-3">
+                * Email:
+              </label>
               <input
                 type="email"
                 value={newEmail}
@@ -286,7 +174,9 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
                   setErrors({ ...errors, email: false });
                 }}
                 className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
-                  errors.email ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-purple-400'
+                  errors.email
+                    ? "ring-2 ring-red-500"
+                    : "focus:ring-2 focus:ring-purple-400"
                 }`}
                 placeholder="email@example.com"
               />
@@ -294,7 +184,9 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
 
             {/* Password */}
             <div className="mb-6">
-              <label className="block text-lg font-semibold mb-3">* Password:</label>
+              <label className="block text-lg font-semibold mb-3">
+                * Password:
+              </label>
               <input
                 type="password"
                 value={newPassword}
@@ -303,7 +195,9 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
                   setErrors({ ...errors, password: false });
                 }}
                 className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
-                  errors.password ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-purple-400'
+                  errors.password
+                    ? "ring-2 ring-red-500"
+                    : "focus:ring-2 focus:ring-purple-400"
                 }`}
                 placeholder="Password sicura"
               />
@@ -311,14 +205,16 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
 
             {/* Ruolo */}
             <div className="mb-8">
-              <label className="block text-lg font-semibold mb-3">Ruolo:</label>
+              <label className="block text-lg font-semibold mb-3">
+                Ruolo:
+              </label>
               <div className="flex gap-3">
                 <button
                   onClick={() => setNewRole("USER")}
                   className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                     newRole === "USER"
-                      ? 'bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? "bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                 >
                   User
@@ -327,8 +223,8 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
                   onClick={() => setNewRole("ADMIN")}
                   className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                     newRole === "ADMIN"
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg' // Modificato con gradiente Alta (rosa/rosso)
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                 >
                   Admin

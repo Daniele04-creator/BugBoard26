@@ -6,8 +6,7 @@ import IssueCreate from './IssueCreate.jsx';
 import IssueList from './IssueList.jsx';
 import IssueManage from './IssueManage.jsx';
 import IssuePreview from './IssuePreview.jsx';
-import UserAdmin from '../user/UserAdmin.jsx';
-
+import UserAdminScreen from "../features/users/screens/UserAdminScreen.jsx";
 
 // 👇 Base URL delle API: prima prova a leggere VITE_API_BASE_URL, se non c'è usa localhost
 const API_BASE_URL =
@@ -313,14 +312,15 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         />
       )}
 
-     {showUserAdminModal && (
-  <UserAdmin
+   {showUserAdminModal && (
+  <UserAdminScreen
     onClose={() => setShowUserAdminModal(false)}
     onCreateUser={handleCreateUser}
-    currentUser={currentUser}   // 👈 così il modal sa chi sei
-    onLogout={onLogout}         // 👈 per buttarti fuori se ti cancelli
+    currentUser={currentUser}
+    onLogout={onLogout}
   />
 )}
+
 
 
       {selectedIssuePreview && (
