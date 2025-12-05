@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import LoginScreen from './auth/LoginScreen.jsx';
+import LoginScreen from './features/auth/screens/LoginScreen.jsx';
 import BugBoard from './issues/BugBoard.jsx';
 
 export default function App() {

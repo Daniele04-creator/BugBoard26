@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 
-import Sidebar from '../components/Sidebar.jsx';
+import Sidebar from '../layout/Sidebar.jsx';
 import IssueCreate from './IssueCreate.jsx';
 import IssueList from './IssueList.jsx';
 import IssueManage from './IssueManage.jsx';
