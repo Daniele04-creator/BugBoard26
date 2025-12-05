@@ -53,6 +53,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./backend
+          file: ./backend/docker/Dockerfile
           push: true
           tags: daniele04/bugboard-backend:latest
 
