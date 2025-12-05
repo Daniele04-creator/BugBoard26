@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-// Usa la stessa logica di BugBoard per la base URL
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
@@ -17,7 +16,6 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
 
   const isAdmin = currentUser?.role === "ADMIN";
 
-  // Carica lista utenti all'apertura del modal
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -41,7 +39,7 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
           return;
         }
 
-        const data = await resp.json(); // atteso: array di {id, email, role}
+        const data = await resp.json();
         setUsers(data);
       } catch (err) {
         console.error("Errore caricamento utenti:", err);
@@ -57,9 +55,8 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
       setUsersError("Solo gli ADMIN possono gestire gli utenti");
       setLoadingUsers(false);
     }
-  }, [API_BASE_URL, currentUser, isAdmin]);
+  }, [currentUser, isAdmin]);
 
-  // Gestione creazione utente (usa la tua funzione già esistente)
   const handleCreateUserSubmit = async (e) => {
     e.preventDefault();
     setCreateError("");
@@ -76,12 +73,10 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
         role: newRole,
       });
 
-      // dopo creazione, reset del form e ricarica lista utenti
       setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
 
-      // ricarica utenti
       const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
         headers: {
           "X-User-Email": currentUser.email,
@@ -128,10 +123,8 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
         return;
       }
 
-      // aggiorna lista utenti
       setUsers((prev) => prev.filter((u) => u.id !== userId));
 
-      // se ho eliminato me stesso → logout e chiudi modal
       if (currentUser.id === userId) {
         alert("Hai eliminato il tuo account. Verrai disconnesso.");
         onClose();
@@ -143,12 +136,11 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
     }
   };
 
-  // se qualcuno ci arriva qui senza essere admin
   if (!isAdmin) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-        <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-          <h2 className="text-xl font-semibold mb-4">Gestione Utenti</h2>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl">
+          <h2 className="text-2xl font-semibold mb-4">Gestione Utenti</h2>
           <p className="text-red-600 mb-4">
             Non hai i permessi per accedere a questa sezione.
           </p>
@@ -166,61 +158,149 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">Gestione Utenti</h2>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl p-8">
+        {/* Header stile seconda immagine */}
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h2
+              className="text-3xl font-bold mb-2"
+              style={{
+                background: "linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)",
+                WebkitBackgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              Gestione Utenti
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Crea nuovi utenti e gestisci quelli esistenti.
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800"
+            className="text-gray-400 hover:text-gray-700 text-xl"
           >
             ✕
           </button>
         </div>
 
-        {/* FORM CREAZIONE UTENTE */}
-        <div className="mb-6 border-b pb-4">
-          <h3 className="text-lg font-semibold mb-3">Crea nuovo utente</h3>
-          <form onSubmit={handleCreateUserSubmit} className="space-y-3">
-            <div className="flex gap-3">
+        {/* FORM CREAZIONE – stile "Crea Utente" */}
+        <div className="mb-8">
+          <h3
+            className="text-2xl font-semibold mb-4"
+            style={{
+              background: "linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)",
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            Crea Utente
+          </h3>
+
+          <form onSubmit={handleCreateUserSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Email:
+              </label>
               <input
                 type="email"
-                placeholder="Email"
+                placeholder="email@example.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Password:
+              </label>
               <input
                 type="password"
                 placeholder="Password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
               />
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="border rounded-lg px-3 py-2"
-              >
-                <option value="USER">USER</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Ruolo:
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setNewRole("USER")}
+                  className={`px-5 py-2 rounded-2xl text-sm font-semibold transition-all ${
+                    newRole === "USER"
+                      ? "text-white shadow-lg"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                  style={
+                    newRole === "USER"
+                      ? {
+                          background:
+                            "linear-gradient(135deg, #7DD3FC 0%, #A78BFA 50%, #F472B6 100%)",
+                        }
+                      : {}
+                  }
+                >
+                  User
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewRole("ADMIN")}
+                  className={`px-5 py-2 rounded-2xl text-sm font-semibold transition-all ${
+                    newRole === "ADMIN"
+                      ? "text-white shadow-lg"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                  style={
+                    newRole === "ADMIN"
+                      ? {
+                          background:
+                            "linear-gradient(135deg, #FBBF24 0%, #F97316 50%, #F97373 100%)",
+                        }
+                      : {}
+                  }
+                >
+                  Admin
+                </button>
+              </div>
+            </div>
+
             {createError && (
               <p className="text-red-600 text-sm">{createError}</p>
             )}
-            <div className="flex justify-end">
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 rounded-2xl bg-orange-100 text-orange-600 font-semibold hover:bg-orange-200"
+              >
+                Annulla
+              </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                className="px-6 py-2 rounded-2xl text-white font-semibold shadow-lg hover:shadow-xl"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%)",
+                }}
               >
-                Crea utente
+                Crea Utente
               </button>
             </div>
           </form>
         </div>
 
-        {/* LISTA UTENTI */}
+        {/* SEPARATORE */}
+        <hr className="my-4" />
+
+        {/* LISTA UTENTI – SENZA COLONNA ID */}
         <div>
           <h3 className="text-lg font-semibold mb-3">Utenti esistenti</h3>
 
@@ -232,36 +312,37 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
           )}
 
           {!loadingUsers && !usersError && users.length > 0 && (
-            <table className="w-full border text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border px-2 py-1">ID</th>
-                  <th className="border px-2 py-1">Email</th>
-                  <th className="border px-2 py-1">Ruolo</th>
-                  <th className="border px-2 py-1">Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td className="border px-2 py-1">{u.id}</td>
-                    <td className="border px-2 py-1">{u.email}</td>
-                    <td className="border px-2 py-1">{u.role}</td>
-                    <td className="border px-2 py-1 text-center">
-                      <button
-                        onClick={() => handleDeleteUser(u.id, u.email)}
-                        className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs"
-                      >
-                        Elimina
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead className="bg-gray-100">
+                  <tr>
+                    {/* ID RIMOSSO */}
+                    <th className="px-3 py-2 text-left border-b">Email</th>
+                    <th className="px-3 py-2 text-left border-b">Ruolo</th>
+                    <th className="px-3 py-2 text-center border-b">Azioni</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} className="hover:bg-gray-50">
+                      {/* niente ID, solo Email e Ruolo */}
+                      <td className="px-3 py-2 border-b">{u.email}</td>
+                      <td className="px-3 py-2 border-b">{u.role}</td>
+                      <td className="px-3 py-2 border-b text-center">
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.email)}
+                          className="px-3 py-1 rounded-xl bg-red-600 text-white hover:bg-red-700 text-xs font-semibold"
+                        >
+                          Elimina
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-
       </div>
     </div>
   );
