@@ -47,8 +47,8 @@ export default function IssueCreate({
   const issuePayload = {
     title,
     description,
-    type: selectedType || "Bug",
-    priority: selectedPriority || "Bassa",
+    type: selectedType || "-",
+    priority: selectedPriority || "-",
     image: imageData || null,
   };
 

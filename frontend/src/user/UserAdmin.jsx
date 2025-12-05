@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Plus, X, Trash2 } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -8,11 +9,13 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState("");
 
-  // stato form creazione utente
+  // stato dialog creazione utente
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("USER");
   const [createError, setCreateError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const isAdmin = currentUser?.role === "ADMIN";
 
@@ -57,11 +60,15 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
     }
   }, [currentUser, isAdmin]);
 
-  const handleCreateUserSubmit = async (e) => {
-    e.preventDefault();
+  const handleCreateUserSubmit = async () => {
+    const newErrors = {
+      email: !newEmail.trim(),
+      password: !newPassword.trim(),
+    };
+    setErrors(newErrors);
     setCreateError("");
 
-    if (!newEmail.trim() || !newPassword.trim()) {
+    if (newErrors.email || newErrors.password) {
       setCreateError("Email e password sono obbligatorie");
       return;
     }
@@ -76,6 +83,8 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
       setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
+      setErrors({});
+      setShowCreateDialog(false);
 
       const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
         headers: {
@@ -136,18 +145,27 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
     }
   };
 
+  const handleCancelCreate = () => {
+    setShowCreateDialog(false);
+    setNewEmail("");
+    setNewPassword("");
+    setNewRole("USER");
+    setErrors({});
+    setCreateError("");
+  };
+
   if (!isAdmin) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl">
-          <h2 className="text-2xl font-semibold mb-4">Gestione Utenti</h2>
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg">
+          <h2 className="text-2xl font-bold mb-4">Gestione Utenti</h2>
           <p className="text-red-600 mb-4">
             Non hai i permessi per accedere a questa sezione.
           </p>
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all"
             >
               Chiudi
             </button>
@@ -158,192 +176,189 @@ export default function UserAdmin({ onClose, onCreateUser, currentUser, onLogout
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl p-8">
-        {/* Header stile seconda immagine */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2
-              className="text-3xl font-bold mb-2"
-              style={{
-                background: "linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)",
-                WebkitBackgroundClip: "text",
-                color: "transparent",
-              }}
+    <>
+      {/* SCHERMATA PRINCIPALE LISTA UTENTI */}
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-8">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl p-8 max-h-[90vh] overflow-y-auto animate-fadeIn">
+          {/* HEADER */}
+          <div className="flex justify-between items-start mb-8">
+            <h2 className="text-3xl font-bold">Gestione Utenti</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-700 text-2xl transition-colors"
             >
-              Gestione Utenti
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Crea nuovi utenti e gestisci quelli esistenti.
-            </p>
+              <X size={28} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 text-xl"
-          >
-            ✕
-          </button>
+
+          {/* PULSANTE CREA UTENTE */}
+          <div className="mb-6">
+            <button
+              onClick={() => setShowCreateDialog(true)}
+              className="px-8 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            >
+              <Plus size={20} />
+              Crea Nuovo Utente
+            </button>
+          </div>
+
+          {/* TABELLA UTENTI */}
+          <div className="bg-gray-100 rounded-2xl p-6 min-h-96">
+            <h3 className="text-xl font-bold mb-4">Utenti Esistenti</h3>
+            
+            {usersError && (
+              <p className="text-center py-6 text-red-600">{usersError}</p>
+            )}
+
+            {!loadingUsers && !usersError && users.length === 0 && (
+              <p className="text-center py-6 text-gray-500 italic">Nessun utente trovato.</p>
+            )}
+
+            {!loadingUsers && !usersError && users.length > 0 && (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-gray-500 italic border-b border-gray-300">
+                    <th className="pb-3 font-medium">Email</th>
+                    <th className="pb-3 font-medium">Ruolo</th>
+                    <th className="pb-3 font-medium text-right">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-b border-gray-300 transition-colors hover:bg-white"
+                    >
+                      <td className="py-3 font-medium text-gray-700">{u.email}</td>
+                      <td className="py-3">
+                        <span
+                            className={`px-2 py-1 rounded text-xs font-bold ${
+                              u.role === "ADMIN"
+                                ? "bg-red-100 text-red-600" // Modificato in rosso
+                                : "bg-blue-100 text-blue-600"
+                            }`}
+                          >
+                            {u.role}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleDeleteUser(u.id, u.email)}
+                            className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-all"
+                            title="Elimina"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* FORM CREAZIONE – stile "Crea Utente" */}
-        <div className="mb-8">
-          <h3
-            className="text-2xl font-semibold mb-4"
-            style={{
-              background: "linear-gradient(90deg, #7DD3FC 0%, #A78BFA 100%)",
-              WebkitBackgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            Crea Utente
-          </h3>
+      {/* DIALOG CREAZIONE UTENTE */}
+      {showCreateDialog && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-8">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 animate-fadeIn">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold">Nuovo Utente</h2>
+              <button
+                onClick={handleCancelCreate}
+                className="text-gray-400 hover:text-gray-700 text-2xl transition-colors"
+              >
+                <X size={28} />
+              </button>
+            </div>
 
-          <form onSubmit={handleCreateUserSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Email:
-              </label>
+            {/* Email */}
+            <div className="mb-6">
+              <label className="block text-lg font-semibold mb-3">* Email:</label>
               <input
                 type="email"
-                placeholder="email@example.com"
                 value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                onChange={(e) => {
+                  setNewEmail(e.target.value);
+                  setErrors({ ...errors, email: false });
+                }}
+                className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
+                  errors.email ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-purple-400'
+                }`}
+                placeholder="email@example.com"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Password:
-              </label>
+            {/* Password */}
+            <div className="mb-6">
+              <label className="block text-lg font-semibold mb-3">* Password:</label>
               <input
                 type="password"
-                placeholder="Password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setErrors({ ...errors, password: false });
+                }}
+                className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
+                  errors.password ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-purple-400'
+                }`}
+                placeholder="Password sicura"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Ruolo:
-              </label>
+            {/* Ruolo */}
+            <div className="mb-8">
+              <label className="block text-lg font-semibold mb-3">Ruolo:</label>
               <div className="flex gap-3">
                 <button
-                  type="button"
                   onClick={() => setNewRole("USER")}
-                  className={`px-5 py-2 rounded-2xl text-sm font-semibold transition-all ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                     newRole === "USER"
-                      ? "text-white shadow-lg"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? 'bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
-                  style={
-                    newRole === "USER"
-                      ? {
-                          background:
-                            "linear-gradient(135deg, #7DD3FC 0%, #A78BFA 50%, #F472B6 100%)",
-                        }
-                      : {}
-                  }
                 >
                   User
                 </button>
                 <button
-                  type="button"
                   onClick={() => setNewRole("ADMIN")}
-                  className={`px-5 py-2 rounded-2xl text-sm font-semibold transition-all ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                     newRole === "ADMIN"
-                      ? "text-white shadow-lg"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg' // Modificato con gradiente Alta (rosa/rosso)
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
-                  style={
-                    newRole === "ADMIN"
-                      ? {
-                          background:
-                            "linear-gradient(135deg, #FBBF24 0%, #F97316 50%, #F97373 100%)",
-                        }
-                      : {}
-                  }
                 >
                   Admin
                 </button>
               </div>
             </div>
 
+            {/* Errori */}
             {createError && (
-              <p className="text-red-600 text-sm">{createError}</p>
+              <p className="text-red-600 mb-4 text-sm">{createError}</p>
             )}
 
-            <div className="flex justify-end gap-3 pt-4">
+            {/* Bottoni azione */}
+            <div className="flex gap-4 justify-end">
               <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2 rounded-2xl bg-orange-100 text-orange-600 font-semibold hover:bg-orange-200"
+                onClick={handleCancelCreate}
+                className="px-8 py-3 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
               >
                 Annulla
               </button>
               <button
-                type="submit"
-                className="px-6 py-2 rounded-2xl text-white font-semibold shadow-lg hover:shadow-xl"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%)",
-                }}
+                onClick={handleCreateUserSubmit}
+                className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
               >
-                Crea Utente
+                Crea
               </button>
             </div>
-          </form>
+          </div>
         </div>
-
-        {/* SEPARATORE */}
-        <hr className="my-4" />
-
-        {/* LISTA UTENTI – SENZA COLONNA ID */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Utenti esistenti</h3>
-
-          {loadingUsers && <p>Caricamento utenti...</p>}
-          {usersError && <p className="text-red-600">{usersError}</p>}
-
-          {!loadingUsers && !usersError && users.length === 0 && (
-            <p>Nessun utente trovato.</p>
-          )}
-
-          {!loadingUsers && !usersError && users.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead className="bg-gray-100">
-                  <tr>
-                    {/* ID RIMOSSO */}
-                    <th className="px-3 py-2 text-left border-b">Email</th>
-                    <th className="px-3 py-2 text-left border-b">Ruolo</th>
-                    <th className="px-3 py-2 text-center border-b">Azioni</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50">
-                      {/* niente ID, solo Email e Ruolo */}
-                      <td className="px-3 py-2 border-b">{u.email}</td>
-                      <td className="px-3 py-2 border-b">{u.role}</td>
-                      <td className="px-3 py-2 border-b text-center">
-                        <button
-                          onClick={() => handleDeleteUser(u.id, u.email)}
-                          className="px-3 py-1 rounded-xl bg-red-600 text-white hover:bg-red-700 text-xs font-semibold"
-                        >
-                          Elimina
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
