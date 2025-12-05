@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
-import Sidebar from './components/Sidebar.jsx';
-import IssueCreate from './pages/IssueCreate.jsx';
-import IssueList from './pages/IssueList.jsx';
-import IssueManage from './pages/IssueManage.jsx';
-import IssuePreview from './pages/IssuePreview.jsx';
-import UserAdmin from './pages/UserAdmin.jsx';
+
+import Sidebar from '../components/Sidebar.jsx';
+import IssueCreate from './IssueCreate.jsx';
+import IssueList from './IssueList.jsx';
+import IssueManage from './IssueManage.jsx';
+import IssuePreview from './IssuePreview.jsx';
+import UserAdmin from '../user/UserAdmin.jsx';
+
 
 // 👇 Base URL delle API: prima prova a leggere VITE_API_BASE_URL, se non c'è usa localhost
 const API_BASE_URL =
