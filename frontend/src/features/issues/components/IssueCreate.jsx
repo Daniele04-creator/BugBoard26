@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Image as ImageIcon } from 'lucide-react';
+// src/features/issues/components/IssueCreate.jsx
+
+import React, { useState } from "react";
+import { Image as ImageIcon } from "lucide-react";
 
 export default function IssueCreate({
   title,
@@ -17,7 +19,6 @@ export default function IssueCreate({
   getPriorityGradient,
   onCreate,
   onCancel,
-  onLogout, 
 }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageData, setImageData] = useState(null);
@@ -36,44 +37,40 @@ export default function IssueCreate({
   };
 
   const handleCreateWithImage = () => {
-  const newErrors = {
-    title: !title.trim(),
-    description: !description.trim(),
+    const newErrors = {
+      title: !title.trim(),
+      description: !description.trim(),
+    };
+    setErrors(newErrors);
+
+    if (newErrors.title || newErrors.description) return;
+
+    const issuePayload = {
+      title,
+      description,
+      type: selectedType || "-",
+      priority: selectedPriority || "-",
+      image: imageData || null,
+    };
+
+    if (onCreate) {
+      onCreate(issuePayload);
+    }
+
+    setTitle("");
+    setDescription("");
+    setSelectedType(null);
+    setSelectedPriority(null);
+    setErrors({});
+    setImagePreview(null);
+    setImageData(null);
   };
-  setErrors(newErrors);
-
-  if (newErrors.title || newErrors.description) return;
-
-  const issuePayload = {
-    title,
-    description,
-    type: selectedType || "-",
-    priority: selectedPriority || "-",
-    image: imageData || null,
-  };
-
-  if (onCreate) {
-    onCreate(issuePayload);
-  }
-
-  
-  setTitle("");
-  setDescription("");
-  setSelectedType(null);
-  setSelectedPriority(null);
-  setErrors({});
-  setImagePreview(null);
-  setImageData(null);
-};
-
-
 
   return (
     <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8 animate-fadeIn">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold">Nuova Issue</h2>
-          
         </div>
 
         {/* Titolo */}
@@ -87,7 +84,9 @@ export default function IssueCreate({
               setErrors({ ...errors, title: false });
             }}
             className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
-              errors.title ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-purple-400'
+              errors.title
+                ? "ring-2 ring-red-500"
+                : "focus:ring-2 focus:ring-purple-400"
             }`}
             placeholder="issueProva"
           />
@@ -95,7 +94,9 @@ export default function IssueCreate({
 
         {/* Descrizione */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">* Descrizione:</label>
+          <label className="block text-lg font-semibold mb-3">
+            * Descrizione:
+          </label>
           <textarea
             value={description}
             onChange={(e) => {
@@ -104,8 +105,8 @@ export default function IssueCreate({
             }}
             className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none min-h-32 resize-none transition-all ${
               errors.description
-                ? 'ring-2 ring-red-500'
-                : 'focus:ring-2 focus:ring-purple-400'
+                ? "ring-2 ring-red-500"
+                : "focus:ring-2 focus:ring-purple-400"
             }`}
             placeholder="descrizione..."
           />
@@ -123,19 +124,21 @@ export default function IssueCreate({
                 }
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   selectedType === type
-                    ? 'bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? "bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
                 {type}
-              </button>
+            </button>
             ))}
           </div>
         </div>
 
         {/* Priorità */}
         <div className="mb-8">
-          <label className="block text-lg font-semibold mb-3">Priorità:</label>
+          <label className="block text-lg font-semibold mb-3">
+            Priorità:
+          </label>
           <div className="flex gap-3">
             {priorities.map((priority) => (
               <button
@@ -150,7 +153,7 @@ export default function IssueCreate({
                     ? `bg-gradient-to-r ${getPriorityGradient(
                         priority
                       )} text-white shadow-lg`
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
                 {priority}
@@ -205,12 +208,11 @@ export default function IssueCreate({
             Annulla
           </button>
           <button
-  onClick={handleCreateWithImage}
-  className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
->
-  Crea
-</button>
-
+            onClick={handleCreateWithImage}
+            className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+          >
+            Crea
+          </button>
         </div>
       </div>
     </div>

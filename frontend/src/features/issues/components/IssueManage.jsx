@@ -1,3 +1,5 @@
+// src/features/issues/components/IssueManage.jsx
+
 import React, { useState } from "react";
 import { Edit, Trash2, X, Image as ImageIcon } from "lucide-react";
 
@@ -12,13 +14,9 @@ export default function IssueManage({
   handleUpdate,
   currentUser,
   isAdmin,
-  onLogout, // non lo usiamo qui, ma può restare per future estensioni
 }) {
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Permessi: l'admin può tutto; un utente può modificare/eliminare solo le issue a lui assegnate.
-  // Per compatibilità con i dati vecchi (assegnatari tipo 'luca') e nuovi (email),
-  // confrontiamo sia email intera che la parte locale (prima della @).
   const canEditIssue = (issue) => {
     if (isAdmin) return true;
 
@@ -51,7 +49,6 @@ export default function IssueManage({
         )}
 
         {editingItem ? (
-          // 👉 MODALITÀ MODIFICA
           <div className="w-full max-w-3xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-green-400 bg-clip-text text-transparent">
@@ -192,7 +189,6 @@ export default function IssueManage({
             </div>
           </div>
         ) : (
-          // 👉 MODALITÀ LISTA GESTIONE
           <div className="bg-gray-100 rounded-2xl p-6 min-h-96">
             <table className="w-full text-left">
               <thead>
@@ -223,9 +219,7 @@ export default function IssueManage({
                       <tr
                         key={issue.id}
                         className={`border-b border-gray-300 transition-colors ${
-                          !canEdit
-                            ? "opacity-50 bg-gray-50"
-                            : "hover:bg-white"
+                          !canEdit ? "opacity-50 bg-gray-50" : "hover:bg-white"
                         }`}
                       >
                         <td className="py-3 font-medium text-gray-700">
