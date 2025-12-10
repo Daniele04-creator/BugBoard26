@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import LoginScreen from "./features/auth/screens/LoginScreen.jsx";
-import BugBoard from "./issues/BugBoard.jsx";
+import BugBoard from "./features/issues/screens/BugBoard.jsx";
 
 export default function App() {
   // Nessun localStorage, nessun recupero automatico
