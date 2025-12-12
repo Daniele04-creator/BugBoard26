@@ -20,7 +20,7 @@ jobs:
 
       - name: Install frontend deps
         working-directory: ./frontend
-        run: npm install
+        run: npm ci
 
       - name: Build frontend
         working-directory: ./frontend
@@ -31,7 +31,7 @@ jobs:
           rm -rf backend/src/main/resources/static/*
           cp -r frontend/dist/* backend/src/main/resources/static/
 
-      # BACKEND BUILD
+      # BACKEND BUILD (serve anche per Sonar)
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -40,7 +40,23 @@ jobs:
 
       - name: Build backend
         working-directory: ./backend
-        run: mvn -B clean package -DskipTests
+        run: mvn -B clean verify
+
+      # SONARCLOUD SCAN - backend only
+      - name: SonarCloud Scan (backend only)
+        working-directory: ./backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORG: ${{ secrets.SONAR_ORG }}
+        run: |
+          mvn -B sonar:sonar \
+            -Dsonar.projectKey=Daniele04-creator_BugBoard26 \
+            -Dsonar.organization=${SONAR_ORG} \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.token=${SONAR_TOKEN} \
+            -Dsonar.sources=src/main/java \
+            -Dsonar.tests=src/test/java \
+            -Dsonar.java.binaries=target/classes
 
       # DOCKER PUSH
       - name: Login to Docker Hub
@@ -66,5 +82,5 @@ jobs:
       - name: Restart Azure Web App
         run: |
           az webapp restart \
-          --resource-group bugboard-rg \
-          --name bugboard-backend-app
+            --resource-group bugboard-rg \
+            --name bugboard-backend-app
