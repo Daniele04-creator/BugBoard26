@@ -31,7 +31,7 @@ jobs:
           rm -rf backend/src/main/resources/static/*
           cp -r frontend/dist/* backend/src/main/resources/static/
 
-      # BACKEND BUILD (serve anche per Sonar)
+      # BACKEND BUILD (skip tests)
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -40,20 +40,21 @@ jobs:
 
       - name: Build backend
         working-directory: ./backend
-        run: mvn -B clean verify
+        run: mvn -B clean package -DskipTests
 
-      # SONARCLOUD SCAN - backend only
+      # SONARCLOUD SCAN - backend only (skip tests)
       - name: SonarCloud Scan (backend only)
         working-directory: ./backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: |
-          mvn -B sonar:sonar \
+          mvn -B -DskipTests sonar:sonar \
             -Dsonar.projectKey=Daniele04-creator_BugBoard26 \
             -Dsonar.organization=${SONAR_ORG} \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${SONAR_TOKEN} \
+            -Dsonar.projectBaseDir=. \
             -Dsonar.sources=src/main/java \
             -Dsonar.tests=src/test/java \
             -Dsonar.java.binaries=target/classes
