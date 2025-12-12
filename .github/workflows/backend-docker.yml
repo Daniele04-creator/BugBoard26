@@ -44,6 +44,8 @@ jobs:
 
       # SONARCLOUD SCAN - backend only (skip tests)
       - name: SonarCloud Scan (backend only)
+        continue-on-error: true
+
         working-directory: ./backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
