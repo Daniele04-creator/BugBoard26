@@ -1,6 +1,11 @@
 package it.unina.bugboard26.backend.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import it.unina.bugboard26.backend.issue.Issue;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -18,6 +23,14 @@ public class User {
 
     @Column(nullable = false)
     private String role; // ADMIN o USER
+
+    /**
+     * Relazione 1 -> N:
+     * un utente può avere più issue assegnate
+     */
+    @OneToMany(mappedBy = "assignee", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Issue> assignedIssues = new ArrayList<>();
 
     public User() {
     }
@@ -61,5 +74,13 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public List<Issue> getAssignedIssues() {
+        return assignedIssues;
+    }
+
+    public void setAssignedIssues(List<Issue> assignedIssues) {
+        this.assignedIssues = assignedIssues;
     }
 }

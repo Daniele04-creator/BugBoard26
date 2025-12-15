@@ -1,6 +1,8 @@
 package it.unina.bugboard26.backend.issue;
 
+import it.unina.bugboard26.backend.user.User;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,10 +28,15 @@ public class Issue {
     @Column(nullable = false)
     private String status;    // TODO, DOING, DONE
 
-    @Column(nullable = false)
-    private String assignee;  // chi l'ha creata / assegnata
+    /**
+     * Relazione MANY-TO-ONE:
+     * molte Issue possono essere assegnate a un solo User
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "assignee_id", nullable = false)
+    private User assignee;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Lob
@@ -40,7 +47,7 @@ public class Issue {
     }
 
     public Issue(Long id, String title, String description, String type,
-                 String priority, String status, String assignee,
+                 String priority, String status, User assignee,
                  LocalDateTime createdAt, String image) {
         this.id = id;
         this.title = title;
@@ -103,11 +110,11 @@ public class Issue {
         this.status = status;
     }
 
-    public String getAssignee() {
+    public User getAssignee() {
         return assignee;
     }
 
-    public void setAssignee(String assignee) {
+    public void setAssignee(User assignee) {
         this.assignee = assignee;
     }
 

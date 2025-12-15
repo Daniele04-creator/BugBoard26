@@ -1,5 +1,7 @@
 package it.unina.bugboard26.backend.issue;
 
+import it.unina.bugboard26.backend.user.User;
+import it.unina.bugboard26.backend.user.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,61 +13,72 @@ import java.util.List;
 public class IssueController {
 
     private final IssueService issueService;
-    private final IssueRepository issueRepository;
+    private final UserRepository userRepository;
 
-    public IssueController(IssueService issueService, IssueRepository issueRepository) {
+    public IssueController(IssueService issueService, UserRepository userRepository) {
         this.issueService = issueService;
-        this.issueRepository = issueRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
-    public ResponseEntity<Issue> create(@RequestBody Issue issue) {
-        Issue saved = issueService.createIssue(issue);
-        return ResponseEntity.ok(saved);
-    }
+public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request) {
+    User assignee = userRepository.findById(request.assigneeId())
+            .orElseThrow(() -> new RuntimeException("Assignee non trovato"));
 
+    Issue issue = issueService.createIssue(request, assignee);
+    return ResponseEntity.ok(issue);
+}
+
+
+    // LIST
     @GetMapping
     public ResponseEntity<List<Issue>> list() {
         return ResponseEntity.ok(issueService.getAllIssues());
     }
 
+    // UPDATE
     @PutMapping("/{id}")
     public ResponseEntity<?> updateIssue(
             @PathVariable Long id,
-            @RequestBody Issue updated,
+            @RequestBody UpdateIssueRequest request,
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Role") String userRole
     ) {
-        return issueRepository.findById(id)
+        return issueService.getIssueById(id)
                 .map(existing -> {
+
                     boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
                     boolean isAssignee = existing.getAssignee() != null &&
-                            existing.getAssignee().equalsIgnoreCase(userEmail);
+                            existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.status(403).body("Non hai i permessi per modificare questa issue");
+                        return ResponseEntity.status(403)
+                                .body("Non hai i permessi per modificare questa issue");
                     }
 
-                    Issue saved = issueService.updateIssue(existing, updated);
-                    return ResponseEntity.ok(saved);
+                    Issue updated = issueService.updateIssue(existing, request);
+                    return ResponseEntity.ok(updated);
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteIssue(
             @PathVariable Long id,
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Role") String userRole
     ) {
-        return issueRepository.findById(id)
+        return issueService.getIssueById(id)
                 .map(existing -> {
+
                     boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
                     boolean isAssignee = existing.getAssignee() != null &&
-                            existing.getAssignee().equalsIgnoreCase(userEmail);
+                            existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.status(403).body("Non hai i permessi per eliminare questa issue");
+                        return ResponseEntity.status(403)
+                                .body("Non hai i permessi per eliminare questa issue");
                     }
 
                     issueService.deleteIssue(existing);
