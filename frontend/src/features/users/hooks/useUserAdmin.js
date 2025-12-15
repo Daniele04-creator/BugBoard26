@@ -5,7 +5,7 @@ import {
   deleteUserAsAdmin,
 } from "../../../api/usersApi";
 
-export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
+export function useUserAdmin({ currentUser, onClose, onLogout }) {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState("");
@@ -25,12 +25,9 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
       try {
         setLoadingUsers(true);
         setUsersError("");
-
         const data = await fetchUsersAsAdmin(currentUser);
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Errore caricamento utenti:", err);
-
         if (err.code === "FORBIDDEN") {
           setUsersError("Non hai i permessi per vedere la lista utenti");
         } else {
@@ -72,22 +69,15 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
 
     try {
       setCreatingUser(true);
-
       await createUserAsAdmin(currentUser, newUser);
-
-      onCreateUser?.(newUser);
-
       setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
       setErrors({});
       setShowCreateDialog(false);
-
       const data = await fetchUsersAsAdmin(currentUser);
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Errore creazione utente:", err);
-
       if (err.code === "FORBIDDEN") {
         setCreateError("Non hai i permessi per creare utenti");
       } else if (err.code === "BAD_REQUEST" || err.code === "CONFLICT") {
@@ -117,17 +107,13 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
 
     try {
       await deleteUserAsAdmin(currentUser, userId);
-
       setUsers((prev) => prev.filter((u) => u.id !== userId));
-
       if (currentUser?.id === userId) {
         alert("Hai eliminato il tuo account. Verrai disconnesso.");
         onClose?.();
         onLogout?.();
       }
     } catch (err) {
-      console.error("Errore eliminazione utente:", err);
-
       if (err.code === "FORBIDDEN") {
         alert("Non hai i permessi per eliminare utenti");
       } else if (err.code === "BAD_REQUEST" || err.code === "CONFLICT") {
@@ -143,10 +129,8 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
     users,
     loadingUsers,
     usersError,
-
     showCreateDialog,
     setShowCreateDialog,
-
     newEmail,
     setNewEmail,
     newPassword,
@@ -156,9 +140,7 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
     createError,
     errors,
     setErrors,
-
     creatingUser,
-
     handleCreateUserSubmit,
     handleCancelCreate,
     handleDeleteUser,
