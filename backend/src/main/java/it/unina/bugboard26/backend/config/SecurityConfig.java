@@ -30,35 +30,42 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-            // API stateless
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // 🔐 AUTORIZZAZIONI
             .authorizeHttpRequests(auth -> auth
 
-                // 🔴 OBBLIGATORIO: preflight CORS
+                // ✅ CORS preflight
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // login
+                // ✅ STATIC RESOURCES (React build)
+                .requestMatchers(
+                        "/",
+                        "/index.html",
+                        "/favicon.ico",
+                        "/assets/**",
+                        "/*.css", "/*.js", "/*.map",
+                        "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.webp"
+                ).permitAll()
+
+                // ✅ error page
+                .requestMatchers("/error").permitAll()
+
+                // ✅ auth endpoint
                 .requestMatchers("/api/auth/login").permitAll()
 
-                // API pubbliche usate dal sito
+                // 🔐 API (scegli tu: qui le lascio aperte per far funzionare il sito)
                 .requestMatchers("/api/issues/**").permitAll()
                 .requestMatchers("/api/admin/**").permitAll()
-
-                // root / error (evita 403 quando apri l’URL)
-                .requestMatchers("/", "/error").permitAll()
 
                 // tutto il resto protetto da JWT
                 .anyRequest().authenticated()
             )
 
-            // niente login form / basic
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
 
-            // 🌍 CORS SEMPRE PRIMA
+            // 🌍 CORS prima del JWT
             .addFilterBefore(corsFilter(), UsernamePasswordAuthenticationFilter.class)
 
             // 🔐 JWT
@@ -67,35 +74,22 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * 🌍 CORS CONFIGURATION (DEV + INTERNET)
-     */
     @Bean
     public CorsFilter corsFilter() {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        // ✅ DOMINI CONSENTITI (DEV + PROD)
+        // Se frontend e backend sono sullo STESSO dominio, CORS serve solo per test in locale.
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "https://*.azurestaticapps.net",
                 "https://*.vercel.app",
                 "https://*.netlify.app"
-                // se hai un dominio tuo tipo https://www.miosito.it funziona già
         ));
 
-        config.setAllowedMethods(List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "OPTIONS"
-        ));
-
+        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("*"));
-
-        // ⚠️ deve essere FALSE con wildcard
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
