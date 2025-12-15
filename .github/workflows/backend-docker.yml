@@ -12,7 +12,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # FRONTEND BUILD
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -31,27 +30,24 @@ jobs:
           rm -rf backend/src/main/resources/static/*
           cp -r frontend/dist/* backend/src/main/resources/static/
 
-      # BACKEND BUILD (skip tests)
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
 
-      - name: Build backend
+      - name: Build backend (with tests)
         working-directory: ./backend
-        run: mvn -B clean package -DskipTests
+        run: mvn -B clean verify
 
-      # SONARCLOUD SCAN - backend only (skip tests)
       - name: SonarCloud Scan (backend only)
         continue-on-error: true
-
         working-directory: ./backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: |
-          mvn -B -DskipTests sonar:sonar \
+          mvn -B sonar:sonar \
             -Dsonar.projectKey=Daniele04-creator_BugBoard26 \
             -Dsonar.organization=${SONAR_ORG} \
             -Dsonar.host.url=https://sonarcloud.io \
@@ -61,7 +57,6 @@ jobs:
             -Dsonar.tests=src/test/java \
             -Dsonar.java.binaries=target/classes
 
-      # DOCKER PUSH
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -76,7 +71,6 @@ jobs:
           push: true
           tags: daniele04/bugboard-backend:latest
 
-      # AZURE RESTART (deploy automatico)
       - name: Login to Azure
         uses: azure/login@v1
         with:
