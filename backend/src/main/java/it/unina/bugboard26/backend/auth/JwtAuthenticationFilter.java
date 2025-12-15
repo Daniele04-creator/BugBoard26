@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-
 import java.io.IOException;
 import java.util.List;
 
@@ -33,30 +32,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
-
-        if (!jwtService.isTokenValid(token)) {
+        String token = authHeader.substring(7).trim();
+        if (token.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        Claims claims = jwtService.parseClaims(token);
-        String email = claims.getSubject();
-        String role = String.valueOf(claims.get("role"));
+        try {
+            if (!jwtService.isTokenValid(token)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+            Claims claims = jwtService.parseClaims(token);
+            String email = claims.getSubject();
 
-        var authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            Object roleObj = claims.get("role");
+            String role = roleObj == null ? "USER" : String.valueOf(roleObj).trim();
+            if (role.isEmpty()) role = "USER";
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
-        filterChain.doFilter(request, response);
+            var authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
+        }
     }
 }

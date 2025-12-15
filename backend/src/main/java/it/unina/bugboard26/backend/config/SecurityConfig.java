@@ -45,7 +45,11 @@ public class SecurityConfig {
                         "/favicon.ico",
                         "/assets/**",
                         "/*.css", "/*.js", "/*.map",
-                        "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.webp"
+                        "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.webp",
+
+                        // ✅ AGGIUNTE: se esiste /Bugboard.web o altri .web
+                        "/*.web",
+                        "/**/*.web"
                 ).permitAll()
 
                 // ✅ error page
@@ -54,7 +58,7 @@ public class SecurityConfig {
                 // ✅ auth endpoint
                 .requestMatchers("/api/auth/login").permitAll()
 
-                // 🔐 API (scegli tu: qui le lascio aperte per far funzionare il sito)
+                // ✅ API aperte (come stai facendo ora)
                 .requestMatchers("/api/issues/**").permitAll()
                 .requestMatchers("/api/admin/**").permitAll()
 
@@ -79,7 +83,6 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        // Se frontend e backend sono sullo STESSO dominio, CORS serve solo per test in locale.
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "https://*.azurestaticapps.net",
