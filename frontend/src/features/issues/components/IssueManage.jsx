@@ -226,7 +226,7 @@ export default function IssueManage({
                           {issue.title}
                         </td>
                         <td className="py-3 text-gray-600">
-                          {issue.assignee?.email ?? ""}
+                          {issue.assignee?.email}
                         </td>
                         <td className="py-3">
                           <span
