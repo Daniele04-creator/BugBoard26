@@ -32,9 +32,10 @@ public class Issue {
      * Relazione MANY-TO-ONE:
      * molte Issue possono essere assegnate a un solo User
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "assignee_id", nullable = false)
-    private User assignee;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+@JoinColumn(name = "assignee_id", nullable = false)
+private User assignee;
+
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
