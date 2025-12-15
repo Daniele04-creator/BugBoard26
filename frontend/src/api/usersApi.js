@@ -1,7 +1,23 @@
 // src/api/usersApi.js
 import { API_BASE_URL } from "../config/api";
 
-// Lista utenti (solo per ADMIN)
+async function parseBody(resp) {
+  const text = await resp.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+function buildError(code, serverMessage) {
+  const err = new Error(code);
+  err.code = code;
+  if (serverMessage) err.serverMessage = serverMessage;
+  return err;
+}
+
 export async function fetchUsersAsAdmin(currentUser) {
   const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
     headers: {
@@ -10,22 +26,17 @@ export async function fetchUsersAsAdmin(currentUser) {
     },
   });
 
-  if (resp.status === 403) {
-    const err = new Error("FORBIDDEN");
-    err.code = "FORBIDDEN";
-    throw err;
-  }
+  if (resp.status === 403) throw buildError("FORBIDDEN");
 
   if (!resp.ok) {
-    const err = new Error("GENERIC_ERROR");
-    err.code = "GENERIC_ERROR";
-    throw err;
+    const body = await parseBody(resp);
+    throw buildError("GENERIC_ERROR", typeof body === "string" ? body : null);
   }
 
-  return resp.json();
+  const body = await parseBody(resp);
+  return Array.isArray(body) ? body : [];
 }
 
-// Creazione utente (ADMIN)
 export async function createUserAsAdmin(currentUser, newUser) {
   const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
     method: "POST",
@@ -37,30 +48,21 @@ export async function createUserAsAdmin(currentUser, newUser) {
     body: JSON.stringify(newUser),
   });
 
-  if (resp.status === 403) {
-    const err = new Error("FORBIDDEN");
-    err.code = "FORBIDDEN";
-    throw err;
-  }
+  if (resp.status === 403) throw buildError("FORBIDDEN");
+
+  const body = await parseBody(resp);
 
   if (resp.status === 400) {
-    const msg = await resp.text();
-    const err = new Error(msg || "BAD_REQUEST");
-    err.code = "BAD_REQUEST";
-    err.serverMessage = msg;
-    throw err;
+    throw buildError("BAD_REQUEST", typeof body === "string" ? body : null);
   }
 
   if (!resp.ok) {
-    const err = new Error("GENERIC_ERROR");
-    err.code = "GENERIC_ERROR";
-    throw err;
+    throw buildError("GENERIC_ERROR", typeof body === "string" ? body : null);
   }
 
-  return resp.json(); // opzionale, se il backend restituisce l'utente creato
+  return body;
 }
 
-// Eliminazione utente (ADMIN)
 export async function deleteUserAsAdmin(currentUser, userId) {
   const resp = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
     method: "DELETE",
@@ -70,24 +72,16 @@ export async function deleteUserAsAdmin(currentUser, userId) {
     },
   });
 
-  if (resp.status === 403) {
-    const err = new Error("FORBIDDEN");
-    err.code = "FORBIDDEN";
-    throw err;
-  }
+  if (resp.status === 403) throw buildError("FORBIDDEN");
+
+  const body = await parseBody(resp);
 
   if (resp.status === 400) {
-    const msg = await resp.text();
-    const err = new Error(msg || "BAD_REQUEST");
-    err.code = "BAD_REQUEST";
-    err.serverMessage = msg;
-    throw err;
+    throw buildError("BAD_REQUEST", typeof body === "string" ? body : null);
   }
 
   if (!resp.ok) {
-    const err = new Error("GENERIC_ERROR");
-    err.code = "GENERIC_ERROR";
-    throw err;
+    throw buildError("GENERIC_ERROR", typeof body === "string" ? body : null);
   }
 
   return true;
