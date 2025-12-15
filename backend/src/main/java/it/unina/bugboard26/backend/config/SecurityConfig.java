@@ -39,18 +39,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // ✅ STATIC RESOURCES (React build)
-                .requestMatchers(
-                        "/",
-                        "/index.html",
-                        "/favicon.ico",
-                        "/assets/**",
-                        "/*.css", "/*.js", "/*.map",
-                        "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.webp",
+              .requestMatchers(
+        "/",
+        "/index.html",
+        "/favicon.ico",
+        "/assets/**",
+        "/*.css", "/*.js", "/*.map",
+        "/*.png", "/*.jpg", "/*.jpeg", "/*.svg", "/*.webp",
+        "/*.webm",
+        "/**/*.webm"
+).permitAll()
 
-                        // ✅ AGGIUNTE: se esiste /Bugboard.web o altri .web
-                        "/*.web",
-                        "/**/*.web"
-                ).permitAll()
 
                 // ✅ error page
                 .requestMatchers("/error").permitAll()
