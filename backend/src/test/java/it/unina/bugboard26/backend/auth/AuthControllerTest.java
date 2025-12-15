@@ -36,7 +36,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> res = authController.login(new LoginRequest("admin@test.it", "pass"));
 
-        assertEquals(200, res.getStatusCode().value());
+        assertEquals(200, res.getStatusCodeValue());
         assertTrue(res.getBody() instanceof LoginResponse);
 
         LoginResponse body = (LoginResponse) res.getBody();
@@ -55,7 +55,7 @@ class AuthControllerTest {
 
         ResponseEntity<?> res = authController.login(new LoginRequest("x@test.it", "wrong"));
 
-        assertEquals(401, res.getStatusCode().value());
+        assertEquals(401, res.getStatusCodeValue());
         assertEquals("Credenziali invalide", res.getBody());
 
         verify(authService).authenticate("x@test.it", "wrong");
