@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/issues")
-@CrossOrigin(origins = "*")
 public class IssueController {
 
     private final IssueService issueService;
@@ -20,27 +19,23 @@ public class IssueController {
         this.userRepository = userRepository;
     }
 
-@PostMapping
-public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request) {
+    @PostMapping
+    public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request) {
 
-    Long assigneeId = (request.assigneeId() != null) ? request.assigneeId() : 1L;
+        Long assigneeId = (request.assigneeId() != null) ? request.assigneeId() : 1L;
 
-    User assignee = userRepository.findById(assigneeId)
-            .orElseThrow(() -> new RuntimeException("Assignee non trovato"));
+        User assignee = userRepository.findById(assigneeId)
+                .orElseThrow(() -> new RuntimeException("Assignee non trovato"));
 
-    Issue issue = issueService.createIssue(request, assignee);
-    return ResponseEntity.ok(issue);
-}
+        Issue issue = issueService.createIssue(request, assignee);
+        return ResponseEntity.ok(issue);
+    }
 
-
-
-    // LIST
     @GetMapping
     public ResponseEntity<List<Issue>> list() {
         return ResponseEntity.ok(issueService.getAllIssues());
     }
 
-    // UPDATE
     @PutMapping("/{id}")
     public ResponseEntity<?> updateIssue(
             @PathVariable Long id,
@@ -66,7 +61,6 @@ public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request) {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteIssue(
             @PathVariable Long id,
