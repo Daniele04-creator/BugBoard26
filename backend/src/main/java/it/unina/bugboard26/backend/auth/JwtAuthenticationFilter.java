@@ -1,6 +1,6 @@
 package it.unina.bugboard26.backend.auth;
 
-import it.unina.bugboard26.backend.services.JwtService;
+import it.unina.bugboard26.backend.service.JwtService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

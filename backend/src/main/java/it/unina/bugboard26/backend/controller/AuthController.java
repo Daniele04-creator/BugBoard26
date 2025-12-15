@@ -1,6 +1,6 @@
 package it.unina.bugboard26.backend.auth;
 
-import it.unina.bugboard26.backend.services.JwtService;
+import it.unina.bugboard26.backend.service.JwtService;
 import it.unina.bugboard26.backend.user.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
