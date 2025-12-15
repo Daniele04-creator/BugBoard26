@@ -30,14 +30,9 @@ public class SecurityConfig {
 
         http
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
-
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
                 .requestMatchers(
                     "/",
                     "/Bugboard.web",
@@ -50,18 +45,13 @@ public class SecurityConfig {
                     "/**/*.webm",
                     "/error"
                 ).permitAll()
-
                 .requestMatchers("/api/auth/login").permitAll()
-
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/issues/**").authenticated()
-
                 .anyRequest().authenticated()
             )
-
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
-
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -73,7 +63,6 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(false);
 
