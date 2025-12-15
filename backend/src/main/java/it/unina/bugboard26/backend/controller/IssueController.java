@@ -20,14 +20,18 @@ public class IssueController {
         this.userRepository = userRepository;
     }
 
-    @PostMapping
+@PostMapping
 public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request) {
-    User assignee = userRepository.findById(request.assigneeId())
+
+    Long assigneeId = (request.assigneeId() != null) ? request.assigneeId() : 1L;
+
+    User assignee = userRepository.findById(assigneeId)
             .orElseThrow(() -> new RuntimeException("Assignee non trovato"));
 
     Issue issue = issueService.createIssue(request, assignee);
     return ResponseEntity.ok(issue);
 }
+
 
 
     // LIST
