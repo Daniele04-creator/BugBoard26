@@ -10,17 +10,16 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState("");
 
-  // stato dialog creazione utente
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("USER");
   const [createError, setCreateError] = useState("");
   const [errors, setErrors] = useState({});
+  const [creatingUser, setCreatingUser] = useState(false);
 
   const isAdmin = currentUser?.role === "ADMIN";
 
-  // Carica utenti all'apertura (solo se ADMIN)
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -28,7 +27,7 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
         setUsersError("");
 
         const data = await fetchUsersAsAdmin(currentUser);
-        setUsers(data);
+        setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Errore caricamento utenti:", err);
 
@@ -50,8 +49,9 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
     }
   }, [currentUser, isAdmin]);
 
-  // submit creazione utente (dal dialog)
   const handleCreateUserSubmit = async () => {
+    if (creatingUser) return;
+
     const newErrors = {
       email: !newEmail.trim(),
       password: !newPassword.trim(),
@@ -71,36 +71,37 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
     };
 
     try {
+      setCreatingUser(true);
+
       await createUserAsAdmin(currentUser, newUser);
 
-      if (onCreateUser) {
-        onCreateUser(newUser);
-      }
+      onCreateUser?.(newUser);
 
-      // reset form
       setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
       setErrors({});
       setShowCreateDialog(false);
 
-      // ricarica lista utenti
       const data = await fetchUsersAsAdmin(currentUser);
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Errore creazione utente:", err);
 
       if (err.code === "FORBIDDEN") {
         setCreateError("Non hai i permessi per creare utenti");
-      } else if (err.code === "BAD_REQUEST") {
+      } else if (err.code === "BAD_REQUEST" || err.code === "CONFLICT") {
         setCreateError(err.serverMessage || "Errore nella creazione dell'utente");
       } else {
         setCreateError("Errore nella creazione dell'utente");
       }
+    } finally {
+      setCreatingUser(false);
     }
   };
 
   const handleCancelCreate = () => {
+    if (creatingUser) return;
     setShowCreateDialog(false);
     setNewEmail("");
     setNewPassword("");
@@ -109,7 +110,6 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
     setCreateError("");
   };
 
-  // eliminazione utente
   const handleDeleteUser = async (userId, userEmail) => {
     if (!window.confirm(`Sei sicuro di voler eliminare l'utente ${userEmail}?`)) {
       return;
@@ -120,7 +120,7 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
 
-      if (currentUser.id === userId) {
+      if (currentUser?.id === userId) {
         alert("Hai eliminato il tuo account. Verrai disconnesso.");
         onClose?.();
         onLogout?.();
@@ -130,7 +130,7 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
 
       if (err.code === "FORBIDDEN") {
         alert("Non hai i permessi per eliminare utenti");
-      } else if (err.code === "BAD_REQUEST") {
+      } else if (err.code === "BAD_REQUEST" || err.code === "CONFLICT") {
         alert(err.serverMessage || "Impossibile eliminare questo utente");
       } else {
         alert("Errore durante l'eliminazione dell'utente");
@@ -155,6 +155,9 @@ export function useUserAdmin({ currentUser, onCreateUser, onClose, onLogout }) {
     setNewRole,
     createError,
     errors,
+    setErrors,
+
+    creatingUser,
 
     handleCreateUserSubmit,
     handleCancelCreate,

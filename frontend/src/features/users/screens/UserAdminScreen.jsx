@@ -25,6 +25,7 @@ export default function UserAdminScreen({
     setNewRole,
     createError,
     errors,
+    setErrors,
 
     handleCreateUserSubmit,
     handleCancelCreate,

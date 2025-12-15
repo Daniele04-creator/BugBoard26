@@ -23,35 +23,39 @@ public class UserAdminController {
     // ----------------------------------------
     // CREATE USER (solo ADMIN)
     // ----------------------------------------
-    @PostMapping
-    public ResponseEntity<?> createUser(
-            @RequestBody CreateUserRequest request,
-            @RequestHeader("X-User-Email") String currentEmail,
-            @RequestHeader("X-User-Role") String currentRole
-    ) {
-        if (!"ADMIN".equalsIgnoreCase(currentRole)) {
-            return ResponseEntity.status(403)
-                    .body("Solo un ADMIN può creare nuovi utenti");
-        }
+ @PostMapping
+public ResponseEntity<?> createUser(
+        @RequestBody CreateUserRequest request,
+        @RequestHeader("X-User-Email") String currentEmail,
+        @RequestHeader("X-User-Role") String currentRole
+) {
+    if (!"ADMIN".equalsIgnoreCase(currentRole)) {
+        return ResponseEntity.status(403)
+                .body("Solo un ADMIN può creare nuovi utenti");
+    }
 
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            return ResponseEntity.status(409)
-                    .body("Email già registrata");
-        }
+    String email = request.email().trim().toLowerCase();
 
-        String role = (request.role() == null || request.role().isBlank())
-                ? "USER"
-                : request.role().toUpperCase();
+    String role = (request.role() == null || request.role().isBlank())
+            ? "USER"
+            : request.role().toUpperCase();
 
+    try {
         User newUser = new User();
-        newUser.setEmail(request.email());
+        newUser.setEmail(email);
         newUser.setPassword(passwordEncoder.encode(request.password()));
         newUser.setRole(role);
 
         userRepository.save(newUser);
 
-        return ResponseEntity.ok("Utente creato con successo");
+        return ResponseEntity.status(201).body(newUser);
+
+    } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+        return ResponseEntity.status(409)
+                .body("Email già registrata");
     }
+}
+
 
 
     // ----------------------------------------
