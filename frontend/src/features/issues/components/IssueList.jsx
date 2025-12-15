@@ -207,7 +207,7 @@ export default function IssueList({ issues = [], loading, onSelectIssue }) {
                     <td className="py-3">{issue.type}</td>
                     <td className="py-3">{issue.priority}</td>
                     <td className="py-3">{issue.status}</td>
-                    <td className="py-3">{issue.assignee}</td>
+                    <td className="py-3">{issue.assignee?.email ?? ""}</td>
                     <td className="py-3">
                       {issue.createdAt
                         ? issue.createdAt.replace("T", " ").split(".")[0]

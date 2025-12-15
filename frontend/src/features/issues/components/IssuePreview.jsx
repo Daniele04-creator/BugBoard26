@@ -11,7 +11,7 @@ export default function IssuePreview({ issue, onClose, getPriorityGradient }) {
   const type = issue.type || "";
   const status = issue.status || "";
   const priority = issue.priority || "";
-  const assignee = issue.assignee || "";
+  const assignee = issue.assignee?.email || "";
   const dateString = issue.date || issue.createdAt || "";
   const date = dateString
     ? (() => {
