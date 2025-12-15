@@ -23,17 +23,15 @@
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
     </properties>
 
+    <!-- ===================== -->
+    <!-- DEPENDENCIES -->
+    <!-- ===================== -->
     <dependencies>
+
         <!-- JPA + Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
-        <!-- Sicurezza (login, ruoli, permessi) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
         <!-- Web / REST API -->
@@ -42,14 +40,20 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Driver PostgreSQL -->
+        <!-- Sicurezza -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.3</version>
         </dependency>
 
-        <!-- Lombok (per getter/setter/builder) -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -57,23 +61,45 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Test base -->
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.11.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Test di sicurezza -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
+    <!-- ===================== -->
+    <!-- BUILD -->
+    <!-- ===================== -->
     <build>
-        <!-- NON filtriamo le risorse e usiamo encoding coerente -->
+
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -82,13 +108,14 @@
         </resources>
 
         <plugins>
-            <!-- Plugin Spring Boot (gestisce gi� il compiler) -->
+
+            <!-- Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Plugin resources: usa encoding dichiarato -->
+            <!-- Resources encoding -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -100,25 +127,8 @@
                     </nonFilteredFileExtensions>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
-
-    <dependency>
-  <groupId>io.jsonwebtoken</groupId>
-  <artifactId>jjwt-api</artifactId>
-  <version>0.11.5</version>
-</dependency>
-<dependency>
-  <groupId>io.jsonwebtoken</groupId>
-  <artifactId>jjwt-impl</artifactId>
-  <version>0.11.5</version>
-  <scope>runtime</scope>
-</dependency>
-<dependency>
-  <groupId>io.jsonwebtoken</groupId>
-  <artifactId>jjwt-jackson</artifactId>
-  <version>0.11.5</version>
-  <scope>runtime</scope>
-</dependency>
 
 </project>
