@@ -26,7 +26,7 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-    @SuppressWarnings({"java:S112", "java:S4502"}) // S4502: CSRF disabled because stateless JWT via Authorization header (no cookie/session auth)
+    @SuppressWarnings({"java:S112", "java:S4502"})
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -49,7 +49,7 @@ public class SecurityConfig {
                     "/error"
                 ).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/issues/**").authenticated()
                 .anyRequest().authenticated()
             )
