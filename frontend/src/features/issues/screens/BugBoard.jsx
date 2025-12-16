@@ -8,21 +8,16 @@ import UserAdminScreen from "../../users/screens/UserAdminScreen.jsx";
 
 import { useIssues } from "../hooks/useIssues.js";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-
 export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const [currentView, setCurrentView] = useState("none");
   const [showUserAdminModal, setShowUserAdminModal] = useState(false);
   const [selectedIssuePreview, setSelectedIssuePreview] = useState(null);
 
- 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedType, setSelectedType] = useState(null);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [errors, setErrors] = useState({ title: false, description: false });
-
 
   const [filterType, setFilterType] = useState("Tutti");
   const [filterStatus, setFilterStatus] = useState("Tutti");
@@ -54,12 +49,10 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-
   const filteredIssues = issues.filter((issue) => {
     const matchType = filterType === "Tutti" || issue.type === filterType;
     const matchStatus = filterStatus === "Tutti" || issue.status === filterStatus;
-    const matchPriority =
-      filterPriority === "Tutti" || issue.priority === filterPriority;
+    const matchPriority = filterPriority === "Tutti" || issue.priority === filterPriority;
     return matchType && matchStatus && matchPriority;
   });
 
@@ -77,14 +70,12 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         break;
       case "Priorità": {
         const priorityOrder = { Alta: 3, Media: 2, Bassa: 1 };
-        result =
-          (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+        result = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
         break;
       }
       case "Stato": {
         const statusOrder = { TODO: 1, DOING: 2, DONE: 3 };
-        result =
-          (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
+        result = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
         break;
       }
       default:
@@ -93,7 +84,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     return sortOrder === "asc" ? result : -result;
   });
 
-  
   const handleCreateWithAlerts = async (issuePayload) => {
     try {
       await handleCreate(issuePayload);
@@ -125,10 +115,9 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-
   const handleCreateUser = async (userData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+      const response = await fetch(`/api/admin/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +169,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         onOpenUserAdmin={() => setShowUserAdminModal(true)}
       />
 
-      {/* HOME */}
       {currentView === "none" && (
         <div className="flex flex-col items-center justify-center w-full text-center px-10">
           <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mb-4">
@@ -199,7 +187,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         </div>
       )}
 
-      {/* CREA ISSUE */}
       {currentView === "new" && (
         <IssueCreate
           title={title}
@@ -220,7 +207,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         />
       )}
 
-      {/* LISTA ISSUE */}
       {currentView === "list" && (
         <IssueList
           issues={issues}
@@ -229,7 +215,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         />
       )}
 
-      {/* MANAGE ISSUE */}
       {currentView === "manage" && (
         <IssueManage
           issues={sortedIssues}
@@ -246,7 +231,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         />
       )}
 
-      {/* MODALE ADMIN UTENTI */}
       {showUserAdminModal && (
         <UserAdminScreen
           onClose={() => setShowUserAdminModal(false)}
@@ -256,7 +240,6 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
         />
       )}
 
-      {/* PREVIEW ISSUE */}
       {selectedIssuePreview && (
         <IssuePreview
           issue={selectedIssuePreview}
