@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   fetchUsersAsAdmin,
   createUserAsAdmin,
+  updateUserAsAdmin,
   deleteUserAsAdmin,
 } from "../../../api/usersApi";
 
@@ -18,15 +19,28 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
   const [errors, setErrors] = useState({});
   const [creatingUser, setCreatingUser] = useState(false);
 
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editRole, setEditRole] = useState("USER");
+  const [editError, setEditError] = useState("");
+  const [editErrors, setEditErrors] = useState({});
+  const [updatingUser, setUpdatingUser] = useState(false);
+
   const isAdmin = currentUser?.role === "ADMIN";
+
+  const reloadUsers = async () => {
+    const data = await fetchUsersAsAdmin();
+    setUsers(Array.isArray(data) ? data : []);
+  };
 
   useEffect(() => {
     const loadUsers = async () => {
       try {
         setLoadingUsers(true);
         setUsersError("");
-        const data = await fetchUsersAsAdmin();
-        setUsers(Array.isArray(data) ? data : []);
+        await reloadUsers();
       } catch (err) {
         if (err.code === "FORBIDDEN") {
           setUsersError("Non hai i permessi per vedere la lista utenti");
@@ -75,8 +89,7 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
       setNewRole("USER");
       setErrors({});
       setShowCreateDialog(false);
-      const data = await fetchUsersAsAdmin();
-      setUsers(Array.isArray(data) ? data : []);
+      await reloadUsers();
     } catch (err) {
       if (err.code === "FORBIDDEN") {
         setCreateError("Non hai i permessi per creare utenti");
@@ -100,6 +113,73 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
     setNewRole("USER");
     setErrors({});
     setCreateError("");
+  };
+
+  const handleOpenEditUser = (user) => {
+    setEditId(user.id);
+    setEditEmail(user.email || "");
+    setEditPassword("");
+    setEditRole(user.role || "USER");
+    setEditErrors({});
+    setEditError("");
+    setShowEditDialog(true);
+  };
+
+  const handleEditUserSubmit = async () => {
+    if (updatingUser) return;
+
+    const newErrs = {
+      email: !editEmail.trim(),
+    };
+    setEditErrors(newErrs);
+    setEditError("");
+
+    if (newErrs.email) {
+      setEditError("Email obbligatoria");
+      return;
+    }
+
+    const payload = {
+      email: editEmail.trim(),
+      role: editRole,
+      password: editPassword.trim() ? editPassword.trim() : "",
+    };
+
+    try {
+      setUpdatingUser(true);
+      await updateUserAsAdmin(editId, payload);
+      setShowEditDialog(false);
+      setEditId(null);
+      setEditEmail("");
+      setEditPassword("");
+      setEditRole("USER");
+      setEditErrors({});
+      setEditError("");
+      await reloadUsers();
+    } catch (err) {
+      if (err.code === "FORBIDDEN") {
+        setEditError("Non hai i permessi per modificare utenti");
+      } else if (err.code === "BAD_REQUEST") {
+        setEditError(err.serverMessage || "Errore nella modifica dell'utente");
+      } else if (err.code === "USER_ALREADY_EXISTS") {
+        setEditError("Esiste già un utente con questa email");
+      } else {
+        setEditError("Errore nella modifica dell'utente");
+      }
+    } finally {
+      setUpdatingUser(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (updatingUser) return;
+    setShowEditDialog(false);
+    setEditId(null);
+    setEditEmail("");
+    setEditPassword("");
+    setEditRole("USER");
+    setEditErrors({});
+    setEditError("");
   };
 
   const handleDeleteUser = async (userId, userEmail) => {
@@ -131,6 +211,7 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
     users,
     loadingUsers,
     usersError,
+
     showCreateDialog,
     setShowCreateDialog,
     newEmail,
@@ -145,6 +226,23 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
     creatingUser,
     handleCreateUserSubmit,
     handleCancelCreate,
+
+    showEditDialog,
+    setShowEditDialog,
+    editId,
+    editEmail,
+    setEditEmail,
+    editPassword,
+    setEditPassword,
+    editRole,
+    setEditRole,
+    editError,
+    editErrors,
+    setEditErrors,
+    handleOpenEditUser,
+    handleEditUserSubmit,
+    handleCancelEdit,
+
     handleDeleteUser,
   };
 }

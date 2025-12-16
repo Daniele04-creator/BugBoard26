@@ -1,4 +1,3 @@
-// src/api/usersApi.js
 import { API_BASE_URL } from "../config/api";
 
 async function parseBody(resp) {
@@ -20,9 +19,7 @@ function buildError(code, serverMessage) {
 
 function authHeaders(extra = {}) {
   const token = localStorage.getItem("token");
-  return token
-    ? { Authorization: token, ...extra }
-    : { ...extra };
+  return token ? { Authorization: token, ...extra } : { ...extra };
 }
 
 export async function fetchUsersAsAdmin() {
@@ -49,6 +46,30 @@ export async function createUserAsAdmin(newUser) {
   });
 
   if (resp.status === 403) throw buildError("FORBIDDEN");
+  if (resp.status === 409) throw buildError("USER_ALREADY_EXISTS");
+
+  const body = await parseBody(resp);
+
+  if (resp.status === 400) {
+    throw buildError("BAD_REQUEST", typeof body === "string" ? body : null);
+  }
+
+  if (!resp.ok) {
+    throw buildError("GENERIC_ERROR", typeof body === "string" ? body : null);
+  }
+
+  return body;
+}
+
+export async function updateUserAsAdmin(userId, payload) {
+  const resp = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+    method: "PUT",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+
+  if (resp.status === 403) throw buildError("FORBIDDEN");
+  if (resp.status === 409) throw buildError("USER_ALREADY_EXISTS");
 
   const body = await parseBody(resp);
 

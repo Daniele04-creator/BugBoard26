@@ -24,7 +24,14 @@ public class UserAdminController {
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody CreateUserRequest request) {
 
-        String email = request.email().trim().toLowerCase();
+        String email = request.email() == null ? null : request.email().trim().toLowerCase();
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if (request.password() == null || request.password().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
 
         String role = (request.role() == null || request.role().isBlank())
                 ? "USER"
@@ -43,11 +50,44 @@ public class UserAdminController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody CreateUserRequest request) {
+
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        User user = userOpt.get();
+
+        String email = request.email() == null ? null : request.email().trim().toLowerCase();
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        String role = (request.role() == null || request.role().isBlank())
+                ? "USER"
+                : request.role().toUpperCase();
+
+        user.setEmail(email);
+        user.setRole(role);
+
+        if (request.password() != null && !request.password().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.password()));
+        }
+
+        try {
+            User saved = userRepository.save(user);
+            return ResponseEntity.ok(saved);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
 
         Optional<User> userOpt = userRepository.findById(id);
-
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
