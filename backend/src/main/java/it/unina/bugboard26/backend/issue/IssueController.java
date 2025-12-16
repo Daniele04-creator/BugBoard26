@@ -2,6 +2,7 @@ package it.unina.bugboard26.backend.issue;
 
 import it.unina.bugboard26.backend.user.User;
 import it.unina.bugboard26.backend.user.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,7 +38,7 @@ public class IssueController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateIssue(
+    public ResponseEntity<Issue> updateIssue(
             @PathVariable Long id,
             @RequestBody UpdateIssueRequest request,
             @RequestHeader("X-User-Email") String userEmail,
@@ -51,8 +52,7 @@ public class IssueController {
                             existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.status(403)
-                                .body("Non hai i permessi per modificare questa issue");
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                     }
 
                     Issue updated = issueService.updateIssue(existing, request);
@@ -62,7 +62,7 @@ public class IssueController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteIssue(
+    public ResponseEntity<Void> deleteIssue(
             @PathVariable Long id,
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Role") String userRole
@@ -75,8 +75,7 @@ public class IssueController {
                             existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.status(403)
-                                .body("Non hai i permessi per eliminare questa issue");
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                     }
 
                     issueService.deleteIssue(existing);

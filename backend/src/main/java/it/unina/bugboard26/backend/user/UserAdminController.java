@@ -1,9 +1,11 @@
 package it.unina.bugboard26.backend.user;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -20,7 +22,7 @@ public class UserAdminController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<User> createUser(@RequestBody CreateUserRequest request) {
 
         String email = request.email().trim().toLowerCase();
 
@@ -28,28 +30,26 @@ public class UserAdminController {
                 ? "USER"
                 : request.role().toUpperCase();
 
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setPassword(passwordEncoder.encode(request.password()));
+        newUser.setRole(role);
+
         try {
-            User newUser = new User();
-            newUser.setEmail(email);
-            newUser.setPassword(passwordEncoder.encode(request.password()));
-            newUser.setRole(role);
-
-            userRepository.save(newUser);
-
-            return ResponseEntity.status(201).body(newUser);
-
+            User saved = userRepository.save(newUser);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-            return ResponseEntity.status(409).body("Email già registrata");
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
 
         Optional<User> userOpt = userRepository.findById(id);
 
         if (userOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Utente non trovato");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         User user = userOpt.get();
@@ -57,18 +57,16 @@ public class UserAdminController {
         if ("ADMIN".equalsIgnoreCase(user.getRole())) {
             long adminCount = userRepository.countByRole("ADMIN");
             if (adminCount <= 1) {
-                return ResponseEntity.status(400)
-                        .body("Impossibile eliminare l’ultimo ADMIN del sistema");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
         }
 
         userRepository.delete(user);
-
-        return ResponseEntity.ok("Utente eliminato con successo");
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<?> listUsers() {
+    public ResponseEntity<List<User>> listUsers() {
         return ResponseEntity.ok(userRepository.findAll());
     }
 }

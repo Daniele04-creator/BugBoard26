@@ -8,18 +8,20 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Controller
 public class SpaController {
 
+    private static final String FORWARD_INDEX = "forward:/index.html";
+
     @RequestMapping(value = "/", method = {RequestMethod.GET, RequestMethod.HEAD})
     public String forwardRoot() {
-        return "forward:/index.html";
+        return FORWARD_INDEX;
     }
 
     @RequestMapping(value = "/{path:[^\\.]*}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public String forwardSingle(@PathVariable String path) {
-        return "forward:/index.html";
+        return FORWARD_INDEX;
     }
 
     @RequestMapping(value = "/**/{path:[^\\.]*}", method = {RequestMethod.GET, RequestMethod.HEAD})
     public String forwardNested(@PathVariable String path) {
-        return "forward:/index.html";
+        return FORWARD_INDEX;
     }
 }

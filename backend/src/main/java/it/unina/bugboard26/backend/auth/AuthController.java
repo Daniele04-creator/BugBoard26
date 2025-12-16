@@ -2,6 +2,7 @@ package it.unina.bugboard26.backend.auth;
 
 import it.unina.bugboard26.backend.service.JwtService;
 import it.unina.bugboard26.backend.user.User;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,12 +19,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
 
         User user = authService.authenticate(request.email(), request.password());
 
         if (user == null) {
-            return ResponseEntity.status(401).body("Credenziali invalide");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         String token = jwtService.generateToken(user);
