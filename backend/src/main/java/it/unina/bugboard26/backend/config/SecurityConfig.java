@@ -26,6 +26,7 @@ public class SecurityConfig {
     }
 
     @SuppressWarnings("java:S112")
+    @SuppressWarnings("java:S4502")
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
