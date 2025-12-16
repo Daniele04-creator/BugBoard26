@@ -52,13 +52,13 @@ public class IssueController {
                             existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                        return ResponseEntity.<Issue>status(HttpStatus.FORBIDDEN).build();
                     }
 
                     Issue updated = issueService.updateIssue(existing, request);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.<Issue>notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -75,12 +75,12 @@ public class IssueController {
                             existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
                     if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                        return ResponseEntity.<Void>status(HttpStatus.FORBIDDEN).build();
                     }
 
                     issueService.deleteIssue(existing);
                     return ResponseEntity.noContent().build();
                 })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.<Void>notFound().build());
     }
 }
