@@ -1,17 +1,13 @@
-import { API_BASE_URL } from "../config/api";
-
-// Carica tutte le issue
 export async function fetchIssues() {
-  const response = await fetch(`${API_BASE_URL}/api/issues`);
+  const response = await fetch(`/api/issues`);
   if (!response.ok) {
     throw new Error(`Errore caricamento issue: ${response.status}`);
   }
   return response.json();
 }
 
-// Crea una nuova issue
 export async function createIssue(issuePayload, currentUser) {
-  const response = await fetch(`${API_BASE_URL}/api/issues`, {
+  const response = await fetch(`/api/issues`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -31,9 +27,8 @@ export async function createIssue(issuePayload, currentUser) {
   return response.json();
 }
 
-// Elimina una issue
 export async function deleteIssue(issueId, currentUser) {
-  const response = await fetch(`${API_BASE_URL}/api/issues/${issueId}`, {
+  const response = await fetch(`/api/issues/${issueId}`, {
     method: "DELETE",
     headers: {
       "X-User-Email": currentUser.email,
@@ -52,9 +47,8 @@ export async function deleteIssue(issueId, currentUser) {
   return true;
 }
 
-// Aggiorna una issue
 export async function updateIssue(issue, currentUser) {
-  const response = await fetch(`${API_BASE_URL}/api/issues/${issue.id}`, {
+  const response = await fetch(`/api/issues/${issue.id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

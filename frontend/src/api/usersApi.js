@@ -1,6 +1,3 @@
-// src/api/usersApi.js
-import { API_BASE_URL } from "../config/api";
-
 async function parseBody(resp) {
   const text = await resp.text();
   if (!text) return null;
@@ -19,7 +16,7 @@ function buildError(code, serverMessage) {
 }
 
 export async function fetchUsersAsAdmin(currentUser) {
-  const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
+  const resp = await fetch(`/api/admin/users`, {
     headers: {
       "X-User-Email": currentUser.email,
       "X-User-Role": currentUser.role,
@@ -38,7 +35,7 @@ export async function fetchUsersAsAdmin(currentUser) {
 }
 
 export async function createUserAsAdmin(currentUser, newUser) {
-  const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
+  const resp = await fetch(`/api/admin/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -64,7 +61,7 @@ export async function createUserAsAdmin(currentUser, newUser) {
 }
 
 export async function deleteUserAsAdmin(currentUser, userId) {
-  const resp = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+  const resp = await fetch(`/api/admin/users/${userId}`, {
     method: "DELETE",
     headers: {
       "X-User-Email": currentUser.email,

@@ -1,8 +1,8 @@
-// src/api/authApi.js
 import { API_BASE_URL } from "../config/api";
 
 export async function login(email, password) {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+  const base = API_BASE_URL ?? "";
+  const response = await fetch(`${base}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
