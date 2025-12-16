@@ -23,11 +23,25 @@ public class IssueController {
     }
 
     @PostMapping
-    public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request, Authentication auth) {
-        Long assigneeId = (request.assigneeId() != null) ? request.assigneeId() : 1L;
+    public ResponseEntity<Issue> create(
+            @RequestBody CreateIssueRequest request,
+            Authentication auth
+    ) {
+        if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-        User assignee = userRepository.findById(assigneeId)
-                .orElseThrow(() -> new RuntimeException("Assignee non trovato"));
+        String email = auth.getName().toLowerCase();
+
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utente autenticato non trovato"));
+
+        User assignee = currentUser;
+
+        if (request.assigneeId() != null) {
+            assignee = userRepository.findById(request.assigneeId())
+                    .orElseThrow(() -> new RuntimeException("Assignee non trovato"));
+        }
 
         Issue issue = issueService.createIssue(request, assignee);
         return ResponseEntity.ok(issue);
@@ -54,12 +68,13 @@ public class IssueController {
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
 
-        String userEmail = (auth != null) ? auth.getName() : null;
+        String userEmail = auth != null ? auth.getName() : null;
 
-        boolean isAssignee = userEmail != null
-                && existing.getAssignee() != null
-                && existing.getAssignee().getEmail() != null
-                && existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+        boolean isAssignee =
+                userEmail != null &&
+                existing.getAssignee() != null &&
+                existing.getAssignee().getEmail() != null &&
+                existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
         if (!isAdmin && !isAssignee) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -70,7 +85,10 @@ public class IssueController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteIssue(@PathVariable Long id, Authentication auth) {
+    public ResponseEntity<Void> deleteIssue(
+            @PathVariable Long id,
+            Authentication auth
+    ) {
         Optional<Issue> opt = issueService.getIssueById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -81,12 +99,13 @@ public class IssueController {
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
 
-        String userEmail = (auth != null) ? auth.getName() : null;
+        String userEmail = auth != null ? auth.getName() : null;
 
-        boolean isAssignee = userEmail != null
-                && existing.getAssignee() != null
-                && existing.getAssignee().getEmail() != null
-                && existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+        boolean isAssignee =
+                userEmail != null &&
+                existing.getAssignee() != null &&
+                existing.getAssignee().getEmail() != null &&
+                existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
         if (!isAdmin && !isAssignee) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
