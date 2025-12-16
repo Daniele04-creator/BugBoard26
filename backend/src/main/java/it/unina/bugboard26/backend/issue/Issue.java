@@ -20,54 +20,60 @@ public class Issue {
     private String description;
 
     @Column(nullable = false)
-    private String type;      // BUG, FEATURE, DOCUMENTATION, QUESTION
+    private String type;
 
     @Column(nullable = false)
-    private String priority;  // BASSA, MEDIA, ALTA
+    private String priority;
 
     @Column(nullable = false)
-    private String status;  
+    private String status;
 
-    /**
-     * Relazione MANY-TO-ONE:
-     * molte Issue possono essere assegnate a un solo User
-     */
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
-@JoinColumn(name = "assignee_id", nullable = false)
-private User assignee;
-
+    @JoinColumn(name = "assignee_id", nullable = false)
+    private User assignee;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Lob
     @Column(columnDefinition = "TEXT")
-    private String image;     // opzionale
+    private String image;
 
     public Issue() {
     }
 
-    public Issue(Long id, String title, String description, String type,
-                 String priority, String status, User assignee,
-                 LocalDateTime createdAt, String image) {
-        this.id = id;
+    private Issue(String title, String description, String type,
+                  String priority, String status, User assignee, String image) {
         this.title = title;
         this.description = description;
         this.type = type;
         this.priority = priority;
         this.status = status;
         this.assignee = assignee;
-        this.createdAt = createdAt;
         this.image = image;
+        this.createdAt = LocalDateTime.now();
     }
 
-    // GETTER & SETTER
+    public static Issue create(String title, String description, String type,
+                               String priority, String status, User assignee) {
+        return new Issue(title, description, type, priority, status, assignee, null);
+    }
+
+    public static Issue createWithImage(String title, String description, String type,
+                                        String priority, String status, User assignee, String image) {
+        return new Issue(title, description, type, priority, status, assignee, image);
+    }
+
+    public Issue withImage(String image) {
+        this.image = image;
+        return this;
+    }
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    private void setId(Long id) {
         this.id = id;
     }
 
@@ -123,7 +129,7 @@ private User assignee;
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    private void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
