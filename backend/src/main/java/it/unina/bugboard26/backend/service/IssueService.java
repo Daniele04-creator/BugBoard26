@@ -3,7 +3,6 @@ package it.unina.bugboard26.backend.issue;
 import it.unina.bugboard26.backend.user.User;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,23 +16,32 @@ public class IssueService {
     }
 
     public Issue createIssue(CreateIssueRequest request, User assignee) {
-    Issue issue = new Issue();
-    issue.setTitle(request.title());
-    issue.setDescription(request.description());
-    issue.setType(request.type());
-    issue.setPriority(request.priority());
-    issue.setStatus(
-        request.status() == null || request.status().isBlank()
-            ? "TODO"
-            : request.status()
-    );
-    issue.setAssignee(assignee);
-    issue.setCreatedAt(LocalDateTime.now());
-    issue.setImage(request.image());
+        String status = (request.status() == null || request.status().isBlank()) ? "TODO" : request.status();
 
-    return issueRepository.save(issue);
-}
+        Issue issue;
+        if (request.image() == null || request.image().isBlank()) {
+            issue = Issue.create(
+                    request.title(),
+                    request.description(),
+                    request.type(),
+                    request.priority(),
+                    status,
+                    assignee
+            );
+        } else {
+            issue = Issue.createWithImage(
+                    request.title(),
+                    request.description(),
+                    request.type(),
+                    request.priority(),
+                    status,
+                    assignee,
+                    request.image()
+            );
+        }
 
+        return issueRepository.save(issue);
+    }
 
     public List<Issue> getAllIssues() {
         return issueRepository.findAll();
@@ -44,7 +52,6 @@ public class IssueService {
     }
 
     public Issue updateIssue(Issue existing, UpdateIssueRequest request) {
-
         if (request.title() != null) existing.setTitle(request.title());
         if (request.description() != null) existing.setDescription(request.description());
         if (request.type() != null) existing.setType(request.type());
