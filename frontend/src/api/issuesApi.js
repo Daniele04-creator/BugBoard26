@@ -1,19 +1,28 @@
 import { API_BASE_URL } from "../config/api";
 
-// Carica tutte le issue
+function authHeaders(extra = {}) {
+  const token = localStorage.getItem("token");
+  return token
+    ? { Authorization: token, ...extra }
+    : { ...extra };
+}
+
 export async function fetchIssues() {
-  const response = await fetch(`${API_BASE_URL}/api/issues`);
+  const response = await fetch(`${API_BASE_URL}/api/issues`, {
+    headers: authHeaders(),
+  });
+
   if (!response.ok) {
     throw new Error(`Errore caricamento issue: ${response.status}`);
   }
+
   return response.json();
 }
 
-// Crea una nuova issue
 export async function createIssue(issuePayload, currentUser) {
   const response = await fetch(`${API_BASE_URL}/api/issues`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       title: issuePayload.title,
       description: issuePayload.description,
@@ -31,14 +40,10 @@ export async function createIssue(issuePayload, currentUser) {
   return response.json();
 }
 
-// Elimina una issue
-export async function deleteIssue(issueId, currentUser) {
+export async function deleteIssue(issueId) {
   const response = await fetch(`${API_BASE_URL}/api/issues/${issueId}`, {
     method: "DELETE",
-    headers: {
-      "X-User-Email": currentUser.email,
-      "X-User-Role": currentUser.role,
-    },
+    headers: authHeaders(),
   });
 
   if (response.status === 403) {
@@ -52,15 +57,10 @@ export async function deleteIssue(issueId, currentUser) {
   return true;
 }
 
-// Aggiorna una issue
-export async function updateIssue(issue, currentUser) {
+export async function updateIssue(issue) {
   const response = await fetch(`${API_BASE_URL}/api/issues/${issue.id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Email": currentUser.email,
-      "X-User-Role": currentUser.role,
-    },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       title: issue.title,
       status: issue.status,
