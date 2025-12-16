@@ -18,12 +18,16 @@ function buildError(code, serverMessage) {
   return err;
 }
 
-export async function fetchUsersAsAdmin(currentUser) {
+function authHeaders(extra = {}) {
+  const token = localStorage.getItem("token");
+  return token
+    ? { Authorization: token, ...extra }
+    : { ...extra };
+}
+
+export async function fetchUsersAsAdmin() {
   const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
-    headers: {
-      "X-User-Email": currentUser.email,
-      "X-User-Role": currentUser.role,
-    },
+    headers: authHeaders(),
   });
 
   if (resp.status === 403) throw buildError("FORBIDDEN");
@@ -37,14 +41,10 @@ export async function fetchUsersAsAdmin(currentUser) {
   return Array.isArray(body) ? body : [];
 }
 
-export async function createUserAsAdmin(currentUser, newUser) {
+export async function createUserAsAdmin(newUser) {
   const resp = await fetch(`${API_BASE_URL}/api/admin/users`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Email": currentUser.email,
-      "X-User-Role": currentUser.role,
-    },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(newUser),
   });
 
@@ -63,13 +63,10 @@ export async function createUserAsAdmin(currentUser, newUser) {
   return body;
 }
 
-export async function deleteUserAsAdmin(currentUser, userId) {
+export async function deleteUserAsAdmin(userId) {
   const resp = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
     method: "DELETE",
-    headers: {
-      "X-User-Email": currentUser.email,
-      "X-User-Role": currentUser.role,
-    },
+    headers: authHeaders(),
   });
 
   if (resp.status === 403) throw buildError("FORBIDDEN");
