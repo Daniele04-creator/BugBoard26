@@ -73,10 +73,6 @@ public class Issue {
         return id;
     }
 
-    private void setId(Long id) {
-        this.id = id;
-    }
-
     public String getTitle() {
         return title;
     }
@@ -127,10 +123,6 @@ public class Issue {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    private void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 
     public String getImage() {
