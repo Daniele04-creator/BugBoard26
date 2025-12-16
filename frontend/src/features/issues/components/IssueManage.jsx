@@ -16,15 +16,20 @@ export default function IssueManage({
   const [imagePreview, setImagePreview] = useState(null);
 
   const canEditIssue = (issue) => {
-    if (isAdmin) return true;
+  if (isAdmin) return true;
 
-    const assignee = (issue?.assignee || "").toLowerCase();
-    const userEmail = (currentUser?.email || "").toLowerCase();
-    if (!assignee || !userEmail) return false;
+  const assigneeEmail =
+    (issue?.assignee && typeof issue.assignee === "object"
+      ? issue.assignee.email
+      : issue?.assignee) ?? "";
 
-    const userLocal = userEmail.split("@")[0];
-    return assignee === userEmail || assignee === userLocal;
-  };
+  const assignee = String(assigneeEmail).toLowerCase();
+  const userEmail = String(currentUser?.email ?? "").toLowerCase();
+  if (!assignee || !userEmail) return false;
+
+  return assignee === userEmail;
+};
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
