@@ -1,5 +1,3 @@
-// src/features/issues/components/IssueManage.jsx
-
 import React, { useState } from "react";
 import { Edit, Trash2, X, Image as ImageIcon } from "lucide-react";
 

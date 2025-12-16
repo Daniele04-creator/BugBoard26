@@ -1,5 +1,3 @@
-// src/features/issues/components/IssuePreview.jsx
-
 import React from "react";
 import { X } from "lucide-react";
 

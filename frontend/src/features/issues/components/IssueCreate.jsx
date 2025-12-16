@@ -1,5 +1,3 @@
-// src/features/issues/components/IssueCreate.jsx
-
 import React, { useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 
