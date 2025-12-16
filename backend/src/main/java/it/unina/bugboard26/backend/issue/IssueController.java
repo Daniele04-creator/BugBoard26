@@ -4,6 +4,7 @@ import it.unina.bugboard26.backend.user.User;
 import it.unina.bugboard26.backend.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,8 +23,7 @@ public class IssueController {
     }
 
     @PostMapping
-    public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request) {
-
+    public ResponseEntity<Issue> create(@RequestBody CreateIssueRequest request, Authentication auth) {
         Long assigneeId = (request.assigneeId() != null) ? request.assigneeId() : 1L;
 
         User assignee = userRepository.findById(assigneeId)
@@ -42,10 +42,8 @@ public class IssueController {
     public ResponseEntity<Issue> updateIssue(
             @PathVariable Long id,
             @RequestBody UpdateIssueRequest request,
-            @RequestHeader("X-User-Email") String userEmail,
-            @RequestHeader("X-User-Role") String userRole
+            Authentication auth
     ) {
-
         Optional<Issue> opt = issueService.getIssueById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -53,9 +51,15 @@ public class IssueController {
 
         Issue existing = opt.get();
 
-        boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
-        boolean isAssignee = existing.getAssignee() != null &&
-                existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+
+        String userEmail = (auth != null) ? auth.getName() : null;
+
+        boolean isAssignee = userEmail != null
+                && existing.getAssignee() != null
+                && existing.getAssignee().getEmail() != null
+                && existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
         if (!isAdmin && !isAssignee) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -66,12 +70,7 @@ public class IssueController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteIssue(
-            @PathVariable Long id,
-            @RequestHeader("X-User-Email") String userEmail,
-            @RequestHeader("X-User-Role") String userRole
-    ) {
-
+    public ResponseEntity<Void> deleteIssue(@PathVariable Long id, Authentication auth) {
         Optional<Issue> opt = issueService.getIssueById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -79,9 +78,15 @@ public class IssueController {
 
         Issue existing = opt.get();
 
-        boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
-        boolean isAssignee = existing.getAssignee() != null &&
-                existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+
+        String userEmail = (auth != null) ? auth.getName() : null;
+
+        boolean isAssignee = userEmail != null
+                && existing.getAssignee() != null
+                && existing.getAssignee().getEmail() != null
+                && existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
 
         if (!isAdmin && !isAssignee) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
