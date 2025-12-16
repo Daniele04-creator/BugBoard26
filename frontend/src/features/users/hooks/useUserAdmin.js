@@ -25,7 +25,7 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
       try {
         setLoadingUsers(true);
         setUsersError("");
-        const data = await fetchUsersAsAdmin(currentUser);
+        const data = await fetchUsersAsAdmin();
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err.code === "FORBIDDEN") {
@@ -44,7 +44,7 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
       setUsersError("Solo gli ADMIN possono gestire gli utenti");
       setLoadingUsers(false);
     }
-  }, [currentUser, isAdmin]);
+  }, [isAdmin]);
 
   const handleCreateUserSubmit = async () => {
     if (creatingUser) return;
@@ -69,19 +69,21 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
 
     try {
       setCreatingUser(true);
-      await createUserAsAdmin(currentUser, newUser);
+      await createUserAsAdmin(newUser);
       setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
       setErrors({});
       setShowCreateDialog(false);
-      const data = await fetchUsersAsAdmin(currentUser);
+      const data = await fetchUsersAsAdmin();
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       if (err.code === "FORBIDDEN") {
         setCreateError("Non hai i permessi per creare utenti");
-      } else if (err.code === "BAD_REQUEST" || err.code === "CONFLICT") {
+      } else if (err.code === "BAD_REQUEST") {
         setCreateError(err.serverMessage || "Errore nella creazione dell'utente");
+      } else if (err.code === "USER_ALREADY_EXISTS") {
+        setCreateError("Esiste già un utente con questa email");
       } else {
         setCreateError("Errore nella creazione dell'utente");
       }
@@ -106,7 +108,7 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
     }
 
     try {
-      await deleteUserAsAdmin(currentUser, userId);
+      await deleteUserAsAdmin(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
       if (currentUser?.id === userId) {
         alert("Hai eliminato il tuo account. Verrai disconnesso.");
@@ -116,7 +118,7 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
     } catch (err) {
       if (err.code === "FORBIDDEN") {
         alert("Non hai i permessi per eliminare utenti");
-      } else if (err.code === "BAD_REQUEST" || err.code === "CONFLICT") {
+      } else if (err.code === "BAD_REQUEST") {
         alert(err.serverMessage || "Impossibile eliminare questo utente");
       } else {
         alert("Errore durante l'eliminazione dell'utente");
