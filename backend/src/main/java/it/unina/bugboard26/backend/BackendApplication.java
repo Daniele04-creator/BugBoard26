@@ -9,8 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Objects;
-
 @SpringBootApplication
 public class BackendApplication {
 

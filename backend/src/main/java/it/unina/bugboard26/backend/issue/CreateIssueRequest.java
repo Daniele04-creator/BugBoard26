@@ -6,7 +6,7 @@ public record CreateIssueRequest(
         String description,
         String type,        // BUG, FEATURE, DOCUMENTATION, QUESTION
         String priority,    // BASSA, MEDIA, ALTA
-        String status,      // opzionale (default: TODO)
+        String status,     
         Long assigneeId,    // ID dello user a cui assegnare la issue
         String image        // opzionale
 

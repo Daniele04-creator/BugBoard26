@@ -26,7 +26,7 @@ public class Issue {
     private String priority;  // BASSA, MEDIA, ALTA
 
     @Column(nullable = false)
-    private String status;    // TODO, DOING, DONE
+    private String status;  
 
     /**
      * Relazione MANY-TO-ONE:
