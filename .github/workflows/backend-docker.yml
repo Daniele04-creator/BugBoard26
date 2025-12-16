@@ -40,22 +40,17 @@ jobs:
         working-directory: ./backend
         run: mvn -B clean verify
 
-      - name: SonarCloud Scan (backend only)
-        continue-on-error: true
+            - name: SonarCloud Scan (backend only)
         working-directory: ./backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: |
           mvn -B sonar:sonar \
-            -Dsonar.projectKey=Daniele04-creator_BugBoard26 \
-            -Dsonar.organization=${SONAR_ORG} \
+            -Dsonar.projectKey=Daniele04-creator_backend \
+            -Dsonar.organization=daniele04-creator \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${SONAR_TOKEN} \
-            -Dsonar.projectBaseDir=. \
-            -Dsonar.sources=src/main/java \
-            -Dsonar.tests=src/test/java \
-            -Dsonar.java.binaries=target/classes
+            -Dsonar.token=${SONAR_TOKEN}
+
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
