@@ -1,4 +1,3 @@
-// src/features/auth/screens/LoginScreen.jsx
 import React from "react";
 import LoginForm from "../components/LoginForm";
 import LoginVideoPanel from "../components/LoginVideoPanel";
@@ -6,7 +5,7 @@ import LoginVideoPanel from "../components/LoginVideoPanel";
 export default function LoginScreen({ onLoginSuccess }) {
   return (
     <div className="min-h-screen flex">
-      {/* LEFT SIDE – LOGIN FORM */}
+      {/* SINISTRA – LOGIN */}
       <div className="w-1/2 bg-white flex items-center justify-center relative overflow-hidden animate-fadeIn">
         <div
           className="absolute top-10 left-10 w-32 h-32 rounded-full opacity-5"
@@ -33,7 +32,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         </div>
       </div>
 
-      {/* RIGHT SIDE – VIDEO PANEL */}
+      {/* DESTRA – VIDEO */}
       <LoginVideoPanel />
     </div>
   );

@@ -1,5 +1,3 @@
-// src/features/issues/hooks/useIssues.js
-
 import { useEffect, useState } from "react";
 import {
   fetchIssues,
@@ -12,10 +10,9 @@ export function useIssues(currentUser) {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // carica all’avvio
+  
   useEffect(() => {
     loadIssues();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadIssues = async () => {

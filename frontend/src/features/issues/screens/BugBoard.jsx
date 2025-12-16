@@ -1,7 +1,4 @@
-// src/features/issues/screens/BugBoard.jsx
-
 import React, { useState } from "react";
-
 import Sidebar from "../../../layout/Sidebar.jsx";
 import IssueCreate from "../components/IssueCreate.jsx";
 import IssueList from "../components/IssueList.jsx";
@@ -19,14 +16,14 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
   const [showUserAdminModal, setShowUserAdminModal] = useState(false);
   const [selectedIssuePreview, setSelectedIssuePreview] = useState(null);
 
-  // stato creazione
+ 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedType, setSelectedType] = useState(null);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [errors, setErrors] = useState({ title: false, description: false });
 
-  // filtri & sort per la vista manage
+
   const [filterType, setFilterType] = useState("Tutti");
   const [filterStatus, setFilterStatus] = useState("Tutti");
   const [filterPriority, setFilterPriority] = useState("Tutti");
@@ -57,7 +54,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  // filtro & sort solo per la vista manage
+
   const filteredIssues = issues.filter((issue) => {
     const matchType = filterType === "Tutti" || issue.type === filterType;
     const matchStatus = filterStatus === "Tutti" || issue.status === filterStatus;
@@ -96,7 +93,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     return sortOrder === "asc" ? result : -result;
   });
 
-  // wrapper con alert per create / delete / update
+  
   const handleCreateWithAlerts = async (issuePayload) => {
     try {
       await handleCreate(issuePayload);
@@ -128,7 +125,7 @@ export default function BugBoard({ onLogout, currentUser, onImpersonate }) {
     }
   };
 
-  // creazione utente admin (lo lascio qui, parte user feature già è separata)
+
   const handleCreateUser = async (userData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/admin/users`, {

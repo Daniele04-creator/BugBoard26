@@ -1,20 +1,18 @@
-// src/features/issues/components/IssueList.jsx
-
 import React, { useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 export default function IssueList({ issues = [], loading, onSelectIssue }) {
-  // FILTRI
+  
   const [filterType, setFilterType] = useState("Tutti");
   const [filterStatus, setFilterStatus] = useState("Tutti");
   const [filterPriority, setFilterPriority] = useState("Tutti");
   const [searchTitle, setSearchTitle] = useState("");
 
-  // ORDINAMENTO
+  
   const [sortBy, setSortBy] = useState("Data");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // FILTRI LOCALI
+  
   const filtered = issues.filter((issue) => {
     const matchType = filterType === "Tutti" || issue.type === filterType;
     const matchStatus = filterStatus === "Tutti" || issue.status === filterStatus;
@@ -27,7 +25,7 @@ export default function IssueList({ issues = [], loading, onSelectIssue }) {
     return matchType && matchStatus && matchPriority && matchTitle;
   });
 
-  // ORDINAMENTO LOCALE
+  
   const sorted = [...filtered].sort((a, b) => {
     let result = 0;
 
