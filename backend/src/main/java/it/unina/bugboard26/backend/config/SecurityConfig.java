@@ -25,10 +25,7 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-    /**
-     * Spring Security richiede throws Exception nella firma.
-     * La segnalazione Sonar (java:S112) viene soppressa consapevolmente.
-     */
+    
     @SuppressWarnings("java:S112")
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

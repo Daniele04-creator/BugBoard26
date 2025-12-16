@@ -22,12 +22,9 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private String role; // ADMIN o USER
+    private String role; 
 
-    /**
-     * Relazione 1 -> N:
-     * un utente può avere più issue assegnate
-     */
+    
     @OneToMany(mappedBy = "assignee", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Issue> assignedIssues = new ArrayList<>();
@@ -42,7 +39,7 @@ public class User {
         this.role = role;
     }
 
-    // GETTER & SETTER
+    
 
     public Long getId() {
         return id;

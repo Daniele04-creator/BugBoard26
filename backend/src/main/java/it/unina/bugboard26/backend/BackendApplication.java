@@ -26,7 +26,7 @@ public class BackendApplication {
             String rawPassword = env.getProperty("app.admin.password");
 
             if (rawPassword == null || rawPassword.isBlank()) {
-                // Niente password configurata -> non creare admin automaticamente
+                
                 return;
             }
 

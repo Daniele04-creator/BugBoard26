@@ -4,10 +4,10 @@ public record CreateIssueRequest(
 
         String title,
         String description,
-        String type,        // BUG, FEATURE, DOCUMENTATION, QUESTION
-        String priority,    // BASSA, MEDIA, ALTA
+        String type,        
+        String priority,    
         String status,     
-        Long assigneeId,    // ID dello user a cui assegnare la issue
-        String image        // opzionale
+        Long assigneeId,    
+        String image        
 
 ) {}
