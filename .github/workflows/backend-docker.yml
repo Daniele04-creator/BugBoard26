@@ -40,7 +40,7 @@ jobs:
         working-directory: ./backend
         run: mvn -B clean verify
 
-            - name: SonarCloud Scan (backend only)
+      - name: SonarCloud Scan (backend only)
         working-directory: ./backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
