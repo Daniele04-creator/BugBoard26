@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/issues")
@@ -44,21 +45,24 @@ public class IssueController {
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Role") String userRole
     ) {
-        return issueService.getIssueById(id)
-                .map(existing -> {
 
-                    boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
-                    boolean isAssignee = existing.getAssignee() != null &&
-                            existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+        Optional<Issue> opt = issueService.getIssueById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-                    if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.<Issue>status(HttpStatus.FORBIDDEN).build();
-                    }
+        Issue existing = opt.get();
 
-                    Issue updated = issueService.updateIssue(existing, request);
-                    return ResponseEntity.ok(updated);
-                })
-                .orElseGet(() -> ResponseEntity.<Issue>notFound().build());
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
+        boolean isAssignee = existing.getAssignee() != null &&
+                existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+
+        if (!isAdmin && !isAssignee) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Issue updated = issueService.updateIssue(existing, request);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
@@ -67,20 +71,23 @@ public class IssueController {
             @RequestHeader("X-User-Email") String userEmail,
             @RequestHeader("X-User-Role") String userRole
     ) {
-        return issueService.getIssueById(id)
-                .map(existing -> {
 
-                    boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
-                    boolean isAssignee = existing.getAssignee() != null &&
-                            existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+        Optional<Issue> opt = issueService.getIssueById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-                    if (!isAdmin && !isAssignee) {
-                        return ResponseEntity.<Void>status(HttpStatus.FORBIDDEN).build();
-                    }
+        Issue existing = opt.get();
 
-                    issueService.deleteIssue(existing);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElseGet(() -> ResponseEntity.<Void>notFound().build());
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(userRole);
+        boolean isAssignee = existing.getAssignee() != null &&
+                existing.getAssignee().getEmail().equalsIgnoreCase(userEmail);
+
+        if (!isAdmin && !isAssignee) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        issueService.deleteIssue(existing);
+        return ResponseEntity.noContent().build();
     }
 }
