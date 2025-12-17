@@ -30,6 +30,10 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
 
   const isAdmin = currentUser?.role === "ADMIN";
 
+  const DEFAULT_ADMIN_EMAIL = "admin@bugboard.com";
+  const isDefaultAdmin = (u) =>
+    (u?.email || "").toLowerCase() === DEFAULT_ADMIN_EMAIL;
+
   const reloadUsers = async () => {
     const data = await fetchUsersAsAdmin();
     setUsers(Array.isArray(data) ? data : []);
@@ -116,6 +120,10 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
   };
 
   const handleOpenEditUser = (user) => {
+    if (isDefaultAdmin(user)) {
+      alert("Questo è l'admin di sistema: non può essere modificato.");
+      return;
+    }
     setEditId(user.id);
     setEditEmail(user.email || "");
     setEditPassword("");
@@ -183,6 +191,11 @@ export function useUserAdmin({ currentUser, onClose, onLogout }) {
   };
 
   const handleDeleteUser = async (userId, userEmail) => {
+    if ((userEmail || "").toLowerCase() === DEFAULT_ADMIN_EMAIL) {
+      alert("Questo è l'admin di sistema: non può essere eliminato.");
+      return;
+    }
+
     if (!window.confirm(`Sei sicuro di voler eliminare l'utente ${userEmail}?`)) {
       return;
     }

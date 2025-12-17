@@ -15,10 +15,16 @@ public class UserAdminController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private static final String DEFAULT_ADMIN_EMAIL = "admin@bugboard.com";
+
     public UserAdminController(UserRepository userRepository,
                                PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    private boolean isDefaultAdmin(User u) {
+        return u.getEmail() != null && u.getEmail().equalsIgnoreCase(DEFAULT_ADMIN_EMAIL);
     }
 
     @PostMapping
@@ -60,6 +66,10 @@ public class UserAdminController {
 
         User user = userOpt.get();
 
+        if (isDefaultAdmin(user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         String email = request.email() == null ? null : request.email().trim().toLowerCase();
         if (email == null || email.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -93,6 +103,10 @@ public class UserAdminController {
         }
 
         User user = userOpt.get();
+
+        if (isDefaultAdmin(user)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         if ("ADMIN".equalsIgnoreCase(user.getRole())) {
             long adminCount = userRepository.countByRole("ADMIN");
