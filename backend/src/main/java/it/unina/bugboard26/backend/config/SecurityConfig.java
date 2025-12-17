@@ -28,7 +28,7 @@ public class SecurityConfig {
 
     @SuppressWarnings({"java:S112", "java:S4502"})
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
         http
             .csrf(AbstractHttpConfigurer::disable)
