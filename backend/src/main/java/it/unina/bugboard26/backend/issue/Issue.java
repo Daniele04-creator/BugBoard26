@@ -42,6 +42,14 @@ public class Issue {
     public Issue() {
     }
 
+    @PrePersist
+private void onCreate() {
+    if (this.createdAt == null) {
+        this.createdAt = LocalDateTime.now();
+    }
+}
+
+
     private Issue(String title, String description, String type,
                   String priority, String status, User assignee, String image) {
         this.title = title;
