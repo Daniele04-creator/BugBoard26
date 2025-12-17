@@ -22,14 +22,14 @@ export default function IssueCreate({
   const [imageData, setImageData] = useState(null);
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const base64 = event.target.result;
-      setImageData(base64);
-      setImagePreview(base64);
+      const base64 = event.target?.result;
+      setImageData(base64 || null);
+      setImagePreview(base64 || null);
     };
     reader.readAsDataURL(file);
   };
@@ -44,16 +44,14 @@ export default function IssueCreate({
     if (newErrors.title || newErrors.description) return;
 
     const issuePayload = {
-      title,
-      description,
-      type: selectedType || "-",
-      priority: selectedPriority || "-",
+      title: title.trim(),
+      description: description.trim(),
+      type: selectedType || null,
+      priority: selectedPriority || null,
       image: imageData || null,
     };
 
-    if (onCreate) {
-      onCreate(issuePayload);
-    }
+    onCreate?.(issuePayload);
 
     setTitle("");
     setDescription("");
@@ -71,7 +69,6 @@ export default function IssueCreate({
           <h2 className="text-3xl font-bold">Nuova Issue</h2>
         </div>
 
-        {/* Titolo */}
         <div className="mb-6">
           <label className="block text-lg font-semibold mb-3">* Titolo:</label>
           <input
@@ -90,7 +87,6 @@ export default function IssueCreate({
           />
         </div>
 
-        {/* Descrizione */}
         <div className="mb-6">
           <label className="block text-lg font-semibold mb-3">
             * Descrizione:
@@ -110,16 +106,14 @@ export default function IssueCreate({
           />
         </div>
 
-        {/* Tipo */}
         <div className="mb-6">
           <label className="block text-lg font-semibold mb-3">Tipo:</label>
           <div className="flex gap-3 flex-wrap">
             {types.map((type) => (
               <button
                 key={type}
-                onClick={() =>
-                  setSelectedType(selectedType === type ? null : type)
-                }
+                type="button"
+                onClick={() => setSelectedType(selectedType === type ? null : type)}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   selectedType === type
                     ? "bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg"
@@ -127,30 +121,24 @@ export default function IssueCreate({
                 }`}
               >
                 {type}
-            </button>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Priorità */}
         <div className="mb-8">
-          <label className="block text-lg font-semibold mb-3">
-            Priorità:
-          </label>
+          <label className="block text-lg font-semibold mb-3">Priorità:</label>
           <div className="flex gap-3">
             {priorities.map((priority) => (
               <button
                 key={priority}
+                type="button"
                 onClick={() =>
-                  setSelectedPriority(
-                    selectedPriority === priority ? null : priority
-                  )
+                  setSelectedPriority(selectedPriority === priority ? null : priority)
                 }
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   selectedPriority === priority
-                    ? `bg-gradient-to-r ${getPriorityGradient(
-                        priority
-                      )} text-white shadow-lg`
+                    ? `bg-gradient-to-r ${getPriorityGradient(priority)} text-white shadow-lg`
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
               >
@@ -160,11 +148,8 @@ export default function IssueCreate({
           </div>
         </div>
 
-        {/* Immagine */}
         <div className="mb-8">
-          <label className="block text-lg font-semibold mb-3">
-            Immagine:
-          </label>
+          <label className="block text-lg font-semibold mb-3">Immagine:</label>
           <div className="flex gap-4 items-start">
             <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">
               <ImageIcon className="inline mr-2" size={20} />
@@ -176,6 +161,7 @@ export default function IssueCreate({
                 className="hidden"
               />
             </label>
+
             {imagePreview && (
               <div className="relative">
                 <img
@@ -184,6 +170,7 @@ export default function IssueCreate({
                   className="h-24 w-24 object-cover rounded-lg shadow-lg"
                 />
                 <button
+                  type="button"
                   onClick={() => {
                     setImagePreview(null);
                     setImageData(null);
@@ -197,15 +184,16 @@ export default function IssueCreate({
           </div>
         </div>
 
-        {/* Bottoni azione */}
         <div className="flex gap-4 justify-end">
           <button
+            type="button"
             onClick={onCancel}
             className="px-8 py-3 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
           >
             Annulla
           </button>
           <button
+            type="button"
             onClick={handleCreateWithImage}
             className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
           >

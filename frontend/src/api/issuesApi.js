@@ -2,9 +2,7 @@ import { API_BASE_URL } from "../config/api";
 
 function authHeaders(extra = {}) {
   const token = localStorage.getItem("token");
-  return token
-    ? { Authorization: token, ...extra }
-    : { ...extra };
+  return token ? { Authorization: token, ...extra } : { ...extra };
 }
 
 export async function fetchIssues() {
@@ -19,22 +17,36 @@ export async function fetchIssues() {
   return response.json();
 }
 
-export async function createIssue(issuePayload, currentUser) {
+export async function createIssue(issuePayload) {
+  const cleanType =
+    issuePayload.type === "-" || !issuePayload.type ? null : issuePayload.type;
+
+  const cleanPriority =
+    issuePayload.priority === "-" || !issuePayload.priority
+      ? null
+      : issuePayload.priority;
+
+  const cleanAssigneeId =
+    issuePayload.assigneeId !== undefined && issuePayload.assigneeId !== null
+      ? Number(issuePayload.assigneeId)
+      : null;
+
   const response = await fetch(`${API_BASE_URL}/api/issues`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       title: issuePayload.title,
       description: issuePayload.description,
-      type: issuePayload.type,
-      priority: issuePayload.priority,
-      assignee: currentUser?.email || "admin@bugboard.com",
+      type: cleanType,
+      priority: cleanPriority,
+      assigneeId: cleanAssigneeId,
       image: issuePayload.image || null,
     }),
   });
 
   if (!response.ok) {
-    throw new Error("Errore durante la creazione dell'issue");
+    const text = await response.text().catch(() => "");
+    throw new Error(text || "Errore durante la creazione dell'issue");
   }
 
   return response.json();
@@ -51,7 +63,8 @@ export async function deleteIssue(issueId) {
   }
 
   if (!response.ok && response.status !== 204) {
-    throw new Error("Errore durante l'eliminazione");
+    const text = await response.text().catch(() => "");
+    throw new Error(text || "Errore durante l'eliminazione");
   }
 
   return true;
@@ -74,7 +87,8 @@ export async function updateIssue(issue) {
   }
 
   if (!response.ok) {
-    throw new Error("Errore durante l'aggiornamento");
+    const text = await response.text().catch(() => "");
+    throw new Error(text || "Errore durante l'aggiornamento");
   }
 
   return response.json();
