@@ -19,10 +19,10 @@ public class Issue {
     @Column(nullable = false, length = 4000)
     private String description;
 
-    @Column(nullable = false)
+    @Column
     private String type;
 
-    @Column(nullable = false)
+    @Column
     private String priority;
 
     @Column(nullable = false)

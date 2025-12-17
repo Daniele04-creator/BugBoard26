@@ -24,31 +24,21 @@ public class IssueService {
             throw new IllegalArgumentException("Description required");
         }
 
-        String type = normalizeType(request.type());
-        String priority = normalizePriority(request.priority());
-
         String status = "TODO";
 
-        Issue issue;
-        if (request.image() == null || request.image().isBlank()) {
-            issue = Issue.create(
-                    request.title().trim(),
-                    request.description().trim(),
-                    type,
-                    priority,
-                    status,
-                    assignee
-            );
-        } else {
-            issue = Issue.createWithImage(
-                    request.title().trim(),
-                    request.description().trim(),
-                    type,
-                    priority,
-                    status,
-                    assignee,
-                    request.image().trim()
-            );
+        String type = normalizeTypeOrNull(request.type());
+        String priority = normalizePriorityOrNull(request.priority());
+        String image = normalizeImageOrNull(request.image());
+
+        Issue issue = new Issue();
+        issue.setTitle(request.title().trim());
+        issue.setDescription(request.description().trim());
+        issue.setType(type);
+        issue.setPriority(priority);
+        issue.setStatus(status);
+        issue.setAssignee(assignee);
+        if (image != null) {
+            issue.setImage(image);
         }
 
         return issueRepository.save(issue);
@@ -63,15 +53,25 @@ public class IssueService {
     }
 
     public Issue updateIssue(Issue existing, UpdateIssueRequest request) {
-        if (request.title() != null) existing.setTitle(request.title().trim());
-        if (request.description() != null) existing.setDescription(request.description().trim());
+
+        if (request.title() != null) {
+            String t = request.title().trim();
+            if (t.isBlank()) throw new IllegalArgumentException("Title cannot be blank");
+            existing.setTitle(t);
+        }
+
+        if (request.description() != null) {
+            String d = request.description().trim();
+            if (d.isBlank()) throw new IllegalArgumentException("Description cannot be blank");
+            existing.setDescription(d);
+        }
 
         if (request.type() != null) {
-            existing.setType(normalizeType(request.type()));
+            existing.setType(normalizeTypeOrNull(request.type()));
         }
 
         if (request.priority() != null) {
-            existing.setPriority(normalizePriority(request.priority()));
+            existing.setPriority(normalizePriorityOrNull(request.priority()));
         }
 
         if (request.status() != null) {
@@ -79,8 +79,7 @@ public class IssueService {
         }
 
         if (request.image() != null) {
-            String img = request.image().trim();
-            existing.setImage(img.isBlank() ? null : img);
+            existing.setImage(normalizeImageOrNull(request.image()));
         }
 
         return issueRepository.save(existing);
@@ -90,10 +89,13 @@ public class IssueService {
         issueRepository.delete(issue);
     }
 
-    private String normalizeType(String raw) {
-        if (raw == null || raw.isBlank()) return "Bug";
-        String v = raw.trim().toLowerCase();
-        return switch (v) {
+    private String normalizeTypeOrNull(String raw) {
+        if (raw == null) return null;
+        String v = raw.trim();
+        if (v.isBlank()) return null;
+
+        String low = v.toLowerCase();
+        return switch (low) {
             case "question" -> "Question";
             case "bug" -> "Bug";
             case "documentation" -> "Documentation";
@@ -102,10 +104,13 @@ public class IssueService {
         };
     }
 
-    private String normalizePriority(String raw) {
-        if (raw == null || raw.isBlank()) return "Media";
-        String v = raw.trim().toLowerCase();
-        return switch (v) {
+    private String normalizePriorityOrNull(String raw) {
+        if (raw == null) return null;
+        String v = raw.trim();
+        if (v.isBlank()) return null;
+
+        String low = v.toLowerCase();
+        return switch (low) {
             case "bassa", "low" -> "Bassa";
             case "media", "medium" -> "Media";
             case "alta", "high" -> "Alta";
@@ -114,7 +119,7 @@ public class IssueService {
     }
 
     private String normalizeStatus(String raw) {
-        if (raw == null || raw.isBlank()) return "TODO";
+        if (raw == null) throw new IllegalArgumentException("Invalid status");
         String v = raw.trim().toUpperCase();
         return switch (v) {
             case "TODO" -> "TODO";
@@ -122,5 +127,11 @@ public class IssueService {
             case "DONE" -> "DONE";
             default -> throw new IllegalArgumentException("Invalid status");
         };
+    }
+
+    private String normalizeImageOrNull(String raw) {
+        if (raw == null) return null;
+        String v = raw.trim();
+        return v.isBlank() ? null : v;
     }
 }
