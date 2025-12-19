@@ -1,4 +1,4 @@
-package it.unina.bugboard26.backend.service;
+package it.unina.bugboard26.backend.auth;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
