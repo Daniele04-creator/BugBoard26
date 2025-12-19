@@ -20,6 +20,17 @@ export default function IssueCreate({
 }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageData, setImageData] = useState(null);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setSelectedType(null);
+    setSelectedPriority(null);
+    setErrors({});
+    setImagePreview(null);
+    setImageData(null);
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -52,155 +63,201 @@ export default function IssueCreate({
     };
 
     onCreate?.(issuePayload);
+    resetForm();
+  };
 
-    setTitle("");
-    setDescription("");
-    setSelectedType(null);
-    setSelectedPriority(null);
-    setErrors({});
-    setImagePreview(null);
-    setImageData(null);
+  const handleConfirmCancel = () => {
+    resetForm();
+    setShowConfirmCancel(false);
+    onCancel?.();
   };
 
   return (
-    <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8 animate-fadeIn">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">Nuova Issue</h2>
-        </div>
+    <>
+      <div className="flex-1 p-8 flex items-center justify-center overflow-auto">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl p-8 animate-fadeIn">
+          <h2 className="text-3xl font-bold mb-8">Nuova Issue</h2>
 
-        <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">* Titolo:</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              setErrors({ ...errors, title: false });
-            }}
-            className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
-              errors.title
-                ? "ring-2 ring-red-500"
-                : "focus:ring-2 focus:ring-purple-400"
-            }`}
-            placeholder="issueProva"
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">
-            * Descrizione:
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              setErrors({ ...errors, description: false });
-            }}
-            className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none min-h-32 resize-none transition-all ${
-              errors.description
-                ? "ring-2 ring-red-500"
-                : "focus:ring-2 focus:ring-purple-400"
-            }`}
-            placeholder="descrizione..."
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">Tipo:</label>
-          <div className="flex gap-3 flex-wrap">
-            {types.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setSelectedType(selectedType === type ? null : type)}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  selectedType === type
-                    ? "bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <label className="block text-lg font-semibold mb-3">Priorità:</label>
-          <div className="flex gap-3">
-            {priorities.map((priority) => (
-              <button
-                key={priority}
-                type="button"
-                onClick={() =>
-                  setSelectedPriority(selectedPriority === priority ? null : priority)
-                }
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  selectedPriority === priority
-                    ? `bg-gradient-to-r ${getPriorityGradient(priority)} text-white shadow-lg`
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                {priority}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <label className="block text-lg font-semibold mb-3">Immagine:</label>
-          <div className="flex gap-4 items-start">
-            <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">
-              <ImageIcon className="inline mr-2" size={20} />
-              Carica Immagine
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
+          {/* Titolo */}
+          <div className="mb-6">
+            <label className="block text-lg font-semibold mb-3">
+              * Titolo:
             </label>
-
-            {imagePreview && (
-              <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="h-24 w-24 object-cover rounded-lg shadow-lg"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImagePreview(null);
-                    setImageData(null);
-                  }}
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 hover:bg-red-600 rounded-bl-lg"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setErrors({ ...errors, title: false });
+              }}
+              className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none transition-all ${
+                errors.title
+                  ? "ring-2 ring-red-500"
+                  : "focus:ring-2 focus:ring-purple-400"
+              }`}
+              placeholder="issueProva"
+            />
           </div>
-        </div>
 
-        <div className="flex gap-4 justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-8 py-3 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            Annulla
-          </button>
-          <button
-            type="button"
-            onClick={handleCreateWithImage}
-            className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            Crea
-          </button>
+          {/* Descrizione */}
+          <div className="mb-6">
+            <label className="block text-lg font-semibold mb-3">
+              * Descrizione:
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setErrors({ ...errors, description: false });
+              }}
+              className={`w-full bg-gray-100 rounded-xl px-4 py-3 text-gray-600 focus:outline-none min-h-32 resize-none transition-all ${
+                errors.description
+                  ? "ring-2 ring-red-500"
+                  : "focus:ring-2 focus:ring-purple-400"
+              }`}
+              placeholder="descrizione..."
+            />
+          </div>
+
+          {/* Tipo */}
+          <div className="mb-6">
+            <label className="block text-lg font-semibold mb-3">Tipo:</label>
+            <div className="flex gap-3 flex-wrap">
+              {types.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() =>
+                    setSelectedType(selectedType === type ? null : type)
+                  }
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                    selectedType === type
+                      ? "bg-gradient-to-r from-purple-400 to-cyan-400 text-white shadow-lg"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Priorità */}
+          <div className="mb-8">
+            <label className="block text-lg font-semibold mb-3">
+              Priorità:
+            </label>
+            <div className="flex gap-3">
+              {priorities.map((priority) => (
+                <button
+                  key={priority}
+                  type="button"
+                  onClick={() =>
+                    setSelectedPriority(
+                      selectedPriority === priority ? null : priority
+                    )
+                  }
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                    selectedPriority === priority
+                      ? `bg-gradient-to-r ${getPriorityGradient(
+                          priority
+                        )} text-white shadow-lg`
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {priority}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Immagine */}
+          <div className="mb-8">
+            <label className="block text-lg font-semibold mb-3">
+              Immagine:
+            </label>
+            <div className="flex gap-4 items-start">
+              <label className="px-6 py-3 bg-gradient-to-r from-purple-400 to-cyan-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                <ImageIcon className="inline mr-2" size={20} />
+                Carica Immagine
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {imagePreview && (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-24 w-24 object-cover rounded-lg shadow-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setImageData(null);
+                    }}
+                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg hover:bg-red-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Azioni */}
+          <div className="flex gap-4 justify-end">
+            <button
+              type="button"
+              onClick={() => setShowConfirmCancel(true)}
+              className="px-8 py-3 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+            >
+              Annulla
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateWithImage}
+              className="px-8 py-3 bg-gradient-to-r from-teal-500 to-green-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+            >
+              Crea
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* MODAL CONFERMA ANNULLA */}
+      {showConfirmCancel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fadeIn">
+            <h3 className="text-xl font-bold mb-4">
+              Sei sicuro di voler annullare?
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Tutti i dati inseriti andranno persi.
+            </p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowConfirmCancel(false)}
+                className="px-6 py-2 bg-gray-200 rounded-xl font-semibold hover:bg-gray-300"
+              >
+                No
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                className="px-6 py-2 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-xl font-semibold"
+              >
+                Sì, annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

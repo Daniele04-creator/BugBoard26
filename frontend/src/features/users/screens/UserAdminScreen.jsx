@@ -276,11 +276,6 @@ export default function UserAdminScreen({ onClose, currentUser, onLogout }) {
                 <X size={28} />
               </button>
             </div>
-
-            <div className="mb-2 text-sm text-gray-400">
-              ID: {editId}
-            </div>
-
             <div className="mb-6">
               <label className="block text-lg font-semibold mb-3">
                 * Email:
