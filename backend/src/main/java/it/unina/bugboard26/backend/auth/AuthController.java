@@ -1,6 +1,5 @@
 package it.unina.bugboard26.backend.auth;
 
-import it.unina.bugboard26.backend.auth.JwtService;
 import it.unina.bugboard26.backend.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
