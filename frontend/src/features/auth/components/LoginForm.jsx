@@ -4,8 +4,8 @@ import PasswordInput from "./PasswordInput";
 import { useLogin } from "../hooks/useLogin";
 
 export default function LoginForm({ onLoginSuccess }) {
-  const [email, setEmail] = useState("admin@bugboard.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ email: false, password: false });
 
   const { isLoading, apiError, handleLogin, setApiError } =
