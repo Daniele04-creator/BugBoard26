@@ -26,7 +26,7 @@ export default function PasswordInput({ value, onChange, hasError }) {
         className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/80 hover:text-white"
       >
         {showPassword ? (
-          // occhio aperto
+        
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="w-6 h-6"
@@ -49,7 +49,7 @@ export default function PasswordInput({ value, onChange, hasError }) {
             />
           </svg>
         ) : (
-          // occhio sbarrato
+       
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="w-6 h-6"
