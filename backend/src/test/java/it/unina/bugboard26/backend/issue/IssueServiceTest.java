@@ -21,10 +21,6 @@ class IssueServiceTest {
     @InjectMocks
     IssueService issueService;
 
-    // -------------------------
-    // createIssue(request, assignee)
-    // -------------------------
-
     @Test
     void createIssue_ok_trimsNormalizesAndSaves() {
         CreateIssueRequest req = new CreateIssueRequest(
@@ -164,10 +160,7 @@ class IssueServiceTest {
         assertNull(saved.getImage());
         verify(issueRepository, times(1)).save(any(Issue.class));
     }
-
-    // -------------------------
-    // updateIssue(existing, request)
-    // -------------------------
+    
 
     @Test
     void updateIssue_ok_updatesTitleDescriptionAndStatus_andSaves() {
