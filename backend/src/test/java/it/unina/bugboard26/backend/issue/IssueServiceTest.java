@@ -61,9 +61,10 @@ class IssueServiceTest {
         CreateIssueRequest req = new CreateIssueRequest(
                 null, "desc", "bug", "low", 1L, null
         );
+        User assignee = new User();
 
         assertThrows(IllegalArgumentException.class,
-                () -> issueService.createIssue(req, new User()));
+                () -> issueService.createIssue(req, assignee));
 
         verify(issueRepository, never()).save(any());
     }
@@ -73,9 +74,10 @@ class IssueServiceTest {
         CreateIssueRequest req = new CreateIssueRequest(
                 "   ", "desc", "bug", "low", 1L, null
         );
+        User assignee = new User();
 
         assertThrows(IllegalArgumentException.class,
-                () -> issueService.createIssue(req, new User()));
+                () -> issueService.createIssue(req, assignee));
 
         verify(issueRepository, never()).save(any());
     }
@@ -85,9 +87,10 @@ class IssueServiceTest {
         CreateIssueRequest req = new CreateIssueRequest(
                 "titolo", "   ", "bug", "low", 1L, null
         );
+        User assignee = new User();
 
         assertThrows(IllegalArgumentException.class,
-                () -> issueService.createIssue(req, new User()));
+                () -> issueService.createIssue(req, assignee));
 
         verify(issueRepository, never()).save(any());
     }
@@ -97,9 +100,10 @@ class IssueServiceTest {
         CreateIssueRequest req = new CreateIssueRequest(
                 "titolo", null, "bug", "low", 1L, null
         );
+        User assignee = new User();
 
         assertThrows(IllegalArgumentException.class,
-                () -> issueService.createIssue(req, new User()));
+                () -> issueService.createIssue(req, assignee));
 
         verify(issueRepository, never()).save(any());
     }
@@ -109,9 +113,10 @@ class IssueServiceTest {
         CreateIssueRequest req = new CreateIssueRequest(
                 "titolo", "desc", "xxx", "low", 1L, null
         );
+        User assignee = new User();
 
         assertThrows(IllegalArgumentException.class,
-                () -> issueService.createIssue(req, new User()));
+                () -> issueService.createIssue(req, assignee));
 
         verify(issueRepository, never()).save(any());
     }
@@ -121,9 +126,10 @@ class IssueServiceTest {
         CreateIssueRequest req = new CreateIssueRequest(
                 "titolo", "desc", "bug", "xxx", 1L, null
         );
+        User assignee = new User();
 
         assertThrows(IllegalArgumentException.class,
-                () -> issueService.createIssue(req, new User()));
+                () -> issueService.createIssue(req, assignee));
 
         verify(issueRepository, never()).save(any());
     }
