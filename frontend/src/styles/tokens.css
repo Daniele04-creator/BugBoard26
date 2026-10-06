@@ -1,0 +1,53 @@
+:root {
+  --color-bg: #f6f8fc;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #eef2f7;
+  --color-text: #17243b;
+  --color-text-muted: #526078;
+  --color-border: #d7dfea;
+  --color-control-border: #738198;
+  --color-primary: #174db5;
+  --color-primary-hover: #113b8c;
+  --color-primary-subtle: #eaf0ff;
+  --color-focus: #174db5;
+  --color-danger: #b42318;
+  --color-danger-subtle: #feece9;
+  --color-success: #146c43;
+  --color-success-subtle: #e8f5ed;
+  --color-warning: #805600;
+  --color-warning-subtle: #fff3d6;
+  --color-purple: #6536a4;
+  --color-purple-subtle: #f1eafe;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --shadow-dialog: 0 16px 48px rgb(23 36 59 / 20%);
+  --font-body:
+    Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-small: 14px;
+  --font-title: 28px;
+  --font-section: 20px;
+  --font-label: 14px;
+  --control-height: 44px;
+  --content-max: 1280px;
+  --form-max: 760px;
+  --header-height: 64px;
+  --sidebar-width: 216px;
+  --z-header: 20;
+  --z-backdrop: 40;
+  --z-dialog: 50;
+  --z-toast: 60;
+  --transition-fast: 120ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+  }
+}
