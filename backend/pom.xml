@@ -94,7 +94,6 @@
     </plugins>
   </build>
   <profiles>
-    <profile><id>scaffold</id><properties><quality.coverage.skip>true</quality.coverage.skip></properties></profile>
     <profile><id>security</id><build><plugins><plugin>
       <groupId>org.owasp</groupId><artifactId>dependency-check-maven</artifactId><version>13.0.0</version>
       <configuration>
