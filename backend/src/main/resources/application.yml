@@ -1,4 +1,6 @@
 spring:
+  main:
+    banner-mode: "off"
   application:
     name: bugboard26
   profiles:
@@ -35,6 +37,12 @@ spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: true
+      accept-float-as-int: false
+    mapper:
+      allow-coercion-of-scalars: false
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
 server:
   port: ${SERVER_PORT:8080}
   forward-headers-strategy: none
@@ -50,21 +58,11 @@ server:
         http-only: true
         secure: ${SESSION_COOKIE_SECURE:false}
         same-site: lax
-management:
-  endpoints:
-    web:
-      base-path: /
-      exposure:
-        include: health
-  endpoint:
-    health:
-      show-details: never
-      probes:
-        enabled: true
 logging:
   structured:
     format:
       console: logstash
+      file: logstash
   file:
     name: ${LOG_FILE:logs/bugboard26.log}
   logback:
@@ -81,6 +79,7 @@ app:
   bootstrap-admin-email: ${BOOTSTRAP_ADMIN_EMAIL:admin@bugboard.local}
   bootstrap-admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:BugBoard26-ChangeMe!}
   demo-seed: ${DEMO_SEED:false}
+  public-base-url: ${PUBLIC_BASE_URL:}
   session:
     absolute-timeout: 8h
   request:
