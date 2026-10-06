@@ -2,33 +2,79 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Buffer } from "node:buffer";
 import process from "node:process";
+import { createHash } from "node:crypto";
 
-const source = resolve(
-  process.env.UI_E2E_REPORT ?? "../output/reports/playwright-results.json",
-);
+const inputPaths = process.env.UI_E2E_REPORTS
+  ? JSON.parse(process.env.UI_E2E_REPORTS)
+  : [process.env.UI_E2E_REPORT ?? "../output/reports/playwright-results.json"];
+if (!Array.isArray(inputPaths) || !inputPaths.length)
+  throw new Error("UI_E2E_REPORTS must contain a nonempty JSON array of paths");
 const destination = resolve(
   process.env.UI_ACCEPTANCE_REPORT ?? "../output/reports/ui-acceptance.json",
 );
-const report = JSON.parse(await readFile(source, "utf8"));
-const tests = [];
-function visit(suites) {
+const manifest = [];
+const selected = new Map();
+function visit(suites, tests, source) {
   for (const suite of suites ?? []) {
     for (const spec of suite.specs ?? [])
       for (const test of spec.tests ?? []) {
         const result = test.results.at(-1);
         tests.push({
+          testId: spec.id,
           title: spec.title,
           file: spec.file,
           project: test.projectName,
           status: result.status,
+          classification: test.status,
           durationMs: result.duration,
           attachments: result.attachments ?? [],
+          source,
         });
       }
-    visit(suite.suites);
+    visit(suite.suites, tests, source);
   }
 }
-visit(report.suites);
+for (const [index, input] of inputPaths.entries()) {
+  const source = resolve(input);
+  const raw = await readFile(source);
+  const report = JSON.parse(raw.toString("utf8"));
+  const current = [];
+  visit(report.suites, current, source);
+  if (index === 0 && current.length !== 61)
+    throw new Error("The baseline report must cover all 61 required scenarios");
+  if (
+    index > 0 &&
+    Date.parse(report.stats.startTime) <
+      Date.parse(manifest.at(-1).stats.startTime)
+  )
+    throw new Error("Reports must be supplied in chronological order");
+  const seen = new Set();
+  for (const test of current) {
+    const identity = JSON.stringify([test.file, test.title, test.project]);
+    if (seen.has(identity)) throw new Error("Duplicate scenario identity");
+    seen.add(identity);
+    const previous = selected.get(identity);
+    if (index > 0 && !previous)
+      throw new Error("Focused rerun contains a scenario absent from baseline");
+    if (previous && previous.testId !== test.testId)
+      throw new Error("Focused rerun changed the Playwright scenario ID");
+    selected.set(identity, {
+      ...test,
+      history: [
+        ...(previous?.history ?? []),
+        { source, testId: test.testId, status: test.status },
+      ],
+    });
+  }
+  manifest.push({
+    source,
+    sha256: createHash("sha256").update(raw).digest("hex"),
+    bytes: raw.length,
+    stats: report.stats,
+    scenarioCount: current.length,
+  });
+}
+const tests = [...selected.values()];
 const axe = [];
 const tasks = [];
 for (const test of tests)
@@ -60,15 +106,25 @@ for (const test of tests)
         ...value,
       });
   }
-const pass =
-  report.stats.unexpected === 0 &&
-  report.stats.skipped === 0 &&
-  report.stats.flaky === 0;
+const pass = tests.every(
+  (test) => test.status === "passed" && test.classification === "expected",
+);
 const summary = {
-  source,
-  startedAt: report.stats.startTime,
-  durationMs: report.stats.duration,
-  stats: report.stats,
+  manifest,
+  evidenceMode: manifest.length === 1 ? "single-run" : "composite",
+  aggregation:
+    "Latest result per identical Playwright ID and file/title/project identity. Raw source reports are unmodified and SHA256-addressed; focused runs must be chronological subsets of the 61-scenario baseline. Earlier failures remain visible in each history and source stats.",
+  startedAt: manifest[0].stats.startTime,
+  durationMs: manifest.reduce((sum, item) => sum + item.stats.duration, 0),
+  stats: {
+    covered: tests.length,
+    passed: tests.filter((test) => test.status === "passed").length,
+    failed: tests.filter(
+      (test) => test.status !== "passed" && test.status !== "skipped",
+    ).length,
+    skipped: tests.filter((test) => test.status === "skipped").length,
+    flaky: tests.filter((test) => test.classification === "flaky").length,
+  },
   pass,
   projects: [...new Set(tests.map((test) => test.project))],
   tests: tests.map(({ attachments, ...test }) => ({

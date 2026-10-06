@@ -71,16 +71,23 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
   await page.getByRole("button", { name: /Assegna|Riassegna/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  const searchBox = await dialog
-    .getByRole("button", { name: "Cerca utenti", exact: true })
-    .boundingBox();
-  const refreshBox = await dialog
-    .getByRole("button", { name: "Aggiorna carichi", exact: true })
-    .boundingBox();
-  expect(searchBox).not.toBeNull();
-  expect(
-    refreshBox!.y - (searchBox!.y + searchBox!.height),
-  ).toBeGreaterThanOrEqual(8);
+  await expect(dialog.locator('[aria-busy="true"]')).toHaveCount(0);
+  // Read both rectangles together: arriving candidates can recenter the dialog.
+  const controlsGap = await dialog.evaluate((element) => {
+    const buttons = [...element.querySelectorAll("button")];
+    const search = buttons.find(
+      (button) => button.textContent?.trim().startsWith("Cerca utenti"),
+    );
+    const refresh = buttons.find(
+      (button) => button.textContent?.trim().startsWith("Aggiorna carichi"),
+    );
+    if (!search || !refresh) throw new Error("Assignment controls are missing");
+    return (
+      refresh.getBoundingClientRect().top -
+      search.getBoundingClientRect().bottom
+    );
+  });
+  expect(controlsGap).toBeGreaterThanOrEqual(8);
   await noHorizontalOverflow(page);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
