@@ -18,5 +18,6 @@ tmp/
 .tools/
 *.log
 *.dump
-/logs/
+*.tsbuildinfo
+**/logs/
 .DS_Store

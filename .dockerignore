@@ -1,0 +1,15 @@
+.git
+docs
+README.md
+**/node_modules
+**/target
+**/dist
+**/.env
+**/.env.*
+**/test-results
+**/playwright-report
+output
+backups
+tmp
+.tools
+**/logs
