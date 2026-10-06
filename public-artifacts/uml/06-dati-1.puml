@@ -1,0 +1,26 @@
+@startuml
+!pragma layout smetana
+entity "user_accounts" as user_accounts
+entity "user_accounts" as assignee_accounts
+entity issues
+entity labels
+entity issue_labels
+entity issue_images
+entity comments
+entity issue_events
+entity resolution_cycles
+entity notifications
+user_accounts ||--o{ issues : reporter
+assignee_accounts |o--o{ issues : assignee
+issues ||--o{ issue_labels
+labels ||--o{ issue_labels
+issues ||--o| issue_images
+issues ||--o{ comments
+issues ||--|{ issue_events
+issues ||--o{ resolution_cycles
+user_accounts ||--o{ comments : author
+user_accounts ||--o{ notifications : recipient
+issue_events ||--o{ notifications
+issue_events ||--o| resolution_cycles
+issues }o--o| issues : duplicate
+@enduml

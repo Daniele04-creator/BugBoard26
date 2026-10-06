@@ -1,0 +1,27 @@
+@startuml
+!pragma layout smetana
+skinparam componentStyle rectangle
+actor "Utente" as U
+node "Browser" {
+  component "SPA React / TypeScript" as UI
+}
+node "Frontend process" {
+  component "Nginx static server + proxy" as WEB
+}
+node "Backend process" {
+  component "REST controllers" as API
+  component "Spring Security" as SEC
+  component "Application services" as SVC
+  component "Domain policies" as DOM
+  component "JPA / SQL repositories" as REPO
+}
+database "PostgreSQL\nissues + images + sessions" as DB
+U --> UI
+UI --> WEB : HTTPS HTTP API
+WEB --> API : HTTP API
+SEC --> API : authentication / CSRF
+API --> SVC
+SVC --> DOM
+SVC --> REPO
+REPO --> DB : SQL
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+!pragma layout smetana
+state TODO
+state IN_PROGRESS
+state RESOLVED
+state DUPLICATE
+[*] --> TODO : creazione
+TODO --> IN_PROGRESS : avvio
+IN_PROGRESS --> TODO : sospensione / riassegnazione
+TODO --> RESOLVED : risoluzione
+IN_PROGRESS --> RESOLVED : risoluzione
+RESOLVED --> TODO : riapertura / nuovo ciclo
+TODO --> DUPLICATE : ADMIN marca duplicato
+IN_PROGRESS --> DUPLICATE : ADMIN marca duplicato
+RESOLVED --> DUPLICATE : ADMIN marca duplicato
+DUPLICATE --> TODO : ADMIN annulla / nuovo ciclo
+note right of DUPLICATE
+  Chiuso senza nuova risoluzione.
+  Target canonico obbligatorio.
+end note
+note left of TODO
+  Archivio è un flag separato.
+  Quando archived=true:
+  solo lettura e ripristino ADMIN.
+  Permessi e precondizioni:
+  tabella DOM-04 e DOM-02.
+end note
+@enduml

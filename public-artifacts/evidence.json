@@ -1,0 +1,75 @@
+{
+  "measuredAt": "2026-10-07T00:44:04+02:00; revisione software di input 59c39d3",
+  "checks": [
+    {
+      "check": "Backend JUnit/Testcontainers",
+      "status": "PASS: 990 test, zero skip",
+      "evidence": "Clone pulito revisione 3c910a0: comando unico clean verify -Psecurity completato con exit 0. 990 test JUnit/Testcontainers su PostgreSQL reale; output/reports/clean-clone-backend/clean-verify.log."
+    },
+    {
+      "check": "Copertura progetto",
+      "status": "PASS: 85,360% linee, 76,962% rami",
+      "evidence": "Report finale clean-clone-backend/jacoco/jacoco.xml: 1860 linee coperte su 2179, 902 rami su 1172. Soglie 80% linee e 70% rami."
+    },
+    {
+      "check": "Quattro policy unit",
+      "status": "PASS: quattro metodi oltre il 90% rami",
+      "evidence": "Report JaCoCo finale: IssuePolicy.canEdit 100,000%; WorkflowPolicy.transition 98,148%; AssignmentAdvisor.rank 100,000%; MetricsCalculator.summarize 95,000%. Strategie e input in VER-04; non si sostituisce copertura metodo con quella della classe."
+    },
+    {
+      "check": "PMD / SpotBugs / feed vulnerabilità",
+      "status": "PASS: PMD/SpotBugs zero finding non giustificati; CVE0",
+      "evidence": "Clone pulito 3c910a0: gate completo riuscito; escluse specifiche segnalazioni infrastrutturali documentate (quattro filtri DI SpotBugs e regola PMD namespace). Nessuna suppression di vulnerabilità; report pmd.xml, spotbugsXml.xml e dependency-check-report.json. nvd-feed.json: metadata ufficiale modified fresco (età 0,027635 giorni), SHA256 verificato. Tomcat 11.0.26; Dependency-Check completo su 47 dipendenze, zero vulnerabilità note nel report; nessun PASS dedotto dalla sola freschezza del feed."
+    },
+    {
+      "check": "Frontend unit/componenti",
+      "status": "PASS: 69 test, lint, typecheck, build e audit zero",
+      "evidence": "Verifica da clone pulito della revisione 3c02718: npm ci, lint, typecheck, 69 test, build e npm audit con zero finding. Fonti frontend equivalenti dopo le successive correzioni solo backend; P09 include 14 test users/labels/reporting."
+    },
+    {
+      "check": "Browser E2E e accessibilità",
+      "status": "PASS composito: 61 scenari coperti, zero residui",
+      "evidence": "ui-acceptance.json: run completo 60/61 PASS e rerun mirato compatibilità 12/12 PASS; report grezzi conservati con SHA256. Non è un singolo run completo verde. Sei progetti Chromium/Firefox ×360/768/1440; 67 allegati axe con zero violazioni; errori diagnostici delle fixture corretti senza modifica del prodotto. Rerun auth/protocol dopo patch health 9/9 PASS sulla stessa UI: tre prove auth e U-01...03 nei sei progetti."
+    },
+    {
+      "check": "Runtime, persistenza e indisponibilità DB",
+      "status": "PASS: 6 controlli, 45 richieste reali",
+      "evidence": "runtime-verification.json: riavvio backend/DB conserva dati, audit, notifiche, sessione JDBC e SHA256 immagine; replay create/commento unico. DB fermo: live 200 e ready 503 anche con cookie, letture/scritture 503 senza mutazioni. Chunked oversize 413; JSON console/file con correlation ID e senza password, cookie, body o query privati. Prova precedente fallita conservata."
+    },
+    {
+      "check": "Recupero amministratore locale",
+      "status": "PASS: revoca sessioni e cambio obbligatorio",
+      "evidence": "recovery-result.json e log wrapper: authVersion/version da 1 a 2, tre sessioni precedenti revocate, un evento ACCOUNT_PASSWORD_RESET con attore di sistema; login 200, mustChange=true, azioni di prodotto 403. Consegna della password mediante file privato fuori Git; nessuna credenziale o percorso privato in questa documentazione. delivery-first-access.json: login reale sulla UI sulla porta 8088 apre il cambio obbligatorio con tre campi vuoti e accesso tastiera; navigazione di prodotto assente, zero errori console e nessun cambio password inviato."
+    },
+    {
+      "check": "Dataset non funzionale",
+      "status": "PASS: composizione completa",
+      "evidence": "Seed 2606: 10.000 issue, 100 account, 50.000 commenti, 100.000 eventi, 30.000 notifiche,100 immagini da 100 KiB (102.400 byte). output/reports/performance-dataset.json."
+    },
+    {
+      "check": "Backup e restore separato",
+      "status": "PASS: conteggi e SHA256 immagini",
+      "evidence": "Dataset grande ripristinato su database separato; questo singolo restore non prova storico giornaliero RPO 24 ore."
+    },
+    {
+      "check": "Benchmark T-NFR-01/02/03",
+      "status": "PASS soglie API, dashboard, report, CSV e UI; RAM diversa dalla baseline",
+      "evidence": "NFR-01: performance-final/summary.json (30 s warm-up, 120 s misura, 20 utenti). NFR-02 ripetuto dopo ottimizzazione: performance-report-optimized/summary.json; 30 richieste: dashboard p95 39,3891 ms, report p95 190,7605 ms. Tre CSV da 10.000 righe: 216,135 / 122,1284 / 122,6892 ms, heap aggiuntivo 73 / 70 / 34 MiB. Heap campionato ogni 25 ms può perdere picchi più brevi; JFR presente. NFR-03: ui-performance.json, cinque contesti browser Chromium nuovi; mediana 224,0644 ms, JavaScript iniziale gzip 139.028 byte, zero errori console. Login API prima della misura; navigazione reale alla lista e controlli utilizzabili. Server con affinità condivisa 0-3; host fisico da 12 CPU. Docker: 8.167.542.784 byte = 7,6066169739 GiB utilizzabili, inferiori agli 8 GiB della baseline. Tutte le soglie misurate sono rispettate con RAM ridotta; non si dichiara identità hardware né corrispondenza esatta alla baseline da 8 GiB."
+    },
+    {
+      "check": "Usabilità OUT-11 / NFR-12",
+      "status": "PASS tecnico U-01...05; persone escluse",
+      "evidence": "Tutti i task U-01...05 superati nei sei progetti browser reali; screenshot e risultati in ui-acceptance.json. Richiesta esplicita dell’utente: nessuna survey né risultato di comprensione o soddisfazione umana."
+    },
+    {
+      "check": "Build da clone pulito",
+      "status": "PASS: backend, frontend e generatore pubblico",
+      "evidence": "Backend 3c910a0: clean verify -Psecurity con 990 test e tutti i gate; frontend 3c02718 equivalente: npm ci/lint/typecheck/69 test/build/audit con zero finding. Generatore source-only fuori dal repository: PDF da 97 pagine senza docs/README; build normale conserva SHA dello snapshot HTML. Cleanup59c39d3 elimina solo un profilo inattivo: modello Maven attivo canonicalizzato identico a3c910a0, Enforcer/JaCoCo post-cleanup PASS; cleanup-model-validation.json. Il full990 appartiene a3c910a0, non viene presentato come ripetizione su59c39d3."
+    },
+    {
+      "check": "PDF tecnico",
+      "status": "PASS struttura; verifica visiva separata",
+      "evidence": "Copertura completa degli identificatori, link e immagini; otto modelli UML editabili con SVG e tre screenshot reali. Indice e font Vera incorporati. Ispezione dei render e limiti registrati nel rapporto esterno output/reports/documentation-visual-review.json, senza auto-certificazione del generatore."
+    }
+  ]
+}

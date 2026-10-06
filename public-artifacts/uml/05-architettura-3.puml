@@ -1,0 +1,22 @@
+@startuml
+actor Admin
+participant "SPA" as UI
+participant "IssueWorkflowController" as API
+participant "IssueWorkflowService" as S
+database PostgreSQL as DB
+Admin -> UI : seleziona responsabile
+UI -> API : PUT assignment + expectedVersion + CSRF
+API -> S : assign(id, request)
+S -> DB : BEGIN; lock actor/candidato; lock issue
+S -> S : ruolo, stato, versione, eleggibilità
+alt valida e diversa
+  S -> DB : update issue/version + evento + notifica
+  S -> DB : COMMIT
+  S --> API : dettaglio nuovo
+  API --> UI : 200
+else invalida / conflitto
+  S -> DB : ROLLBACK
+  S --> API : errore dominio
+  API --> UI : Problem 403/409
+end
+@enduml

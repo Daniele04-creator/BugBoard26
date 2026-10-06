@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>Avviare BugBoard26 e rigenerare la documentazione</title><link rel="stylesheet" href="technical-document.css"></head><body>
+<h1>Avviare BugBoard26</h1>
+<p>Per eseguire l’app sono sufficienti Docker Engine con Docker Compose operativo e PowerShell (7 consigliato; l’avvio supporta anche 5.1). Eseguire il comando dalla cartella principale del clone. Java, Node e PostgreSQL sono inclusi nelle immagini Docker; la prima build richiede accesso alle distribuzioni delle dipendenze.</p>
+<pre>pwsh -File scripts/start-local.ps1</pre>
+<p>Lo script crea automaticamente deploy/.env privato da <a href="../deploy/.env.example">deploy/.env.example</a>, genera i segreti locali, controlla le porte e avvia database, backend e frontend con healthcheck. Al termine aprire <a href="http://localhost:8088">http://localhost:8088</a>. Non aggiungere deploy/.env a Git.</p>
+<p>Su un database nuovo il bootstrap demo del template è admin@bugboard.local con password temporanea BugBoard26-ChangeMe!. Il primo accesso richiede il cambio password prima di usare il prodotto. Il bootstrap non reimposta account esistenti: dopo il cambio usare la password scelta, oppure il recupero locale documentato. Le credenziali correnti dei collaudi non sono incluse in questa guida.</p>
+<h2>Collaudo isolato e sviluppo</h2>
+<pre>pwsh -File scripts/start-local.ps1 -Test</pre>
+<p>L’istanza isolata usa frontend sulla porta 8089, backend sulla 8081 e PostgreSQL sulla 55434, con volume separato. Per i test browser dal frontend impostare E2E_BASE_URL=http://localhost:8089. Per i test locali dei sorgenti servono Java 21, Node 24/npm e Docker operativo per Testcontainers:</p>
+<pre>cd backend
+.\mvnw.cmd clean verify
+.\mvnw.cmd -Psecurity verify</pre>
+<pre>cd frontend
+npm ci
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npx playwright install chromium firefox
+$env:E2E_BASE_URL = 'http://localhost:8089'
+npm run e2e</pre>
+<p>I due gruppi di comandi partono ciascuno dalla cartella principale. La scansione backend richiede un feed NVD fresco; un errore o feed vecchio non equivale a nessuna vulnerabilità. Le prove E2E richiedono l’istanza avviata, creano dati sintetici e normalizzano la password dell’account demo: usare l’istanza isolata per il collaudo. I report sono locali in output/reports e nelle directory di test ignorate.</p>
+<p>Per sviluppo frontend: npm run dev dalla cartella frontend; API_PROXY_TARGET specifica l’origine backend del proxy Vite, default http://127.0.0.1:8080. VITE_API_BASE_URL è incorporato nel build, default /api/v1; non contiene segreti. Per configurazione, permessi, contratti e recupero amministratore leggere la <a href="technical-document.html">documentazione tecnica completa</a>.</p>
+<h1>Rigenerare la documentazione tecnica</h1>
+<p>La sorgente editabile è technical-document.template.html; technical-document.html è uno snapshot pubblico completo con evidenze e schermate. Completano le sorgenti evidence.json, manifest.json, gli otto modelli PlantUML con SVG e gli screenshot reali. Nessun comando richiede i Markdown privati di pianificazione.</p>
+<p>Prerequisiti: Python 3.12 con venv/pip, PowerShell 5.1 o successivo. Java 21 serve soltanto per rigenerare UML; Poppler serve per renderizzare le pagine PDF. Alla prima esecuzione pip scarica i tool documentali nel virtual environment ignorato tmp/documentation-venv. Non modifica le dipendenze dell’applicazione.</p>
+<pre>pwsh -File scripts/verify-docs.ps1
+pwsh -File scripts/build-technical-documents.ps1
+pwsh -File scripts/render-docs.ps1
+pwsh -File scripts/render-docs.ps1 -RefreshUml</pre>
+<p>Il parametro -Python consente di indicare il percorso assoluto di Python; -Poppler specifica pdftoppm. Il renderer UML locale scarica PlantUML 1.2026.8 solo quando richiesto e verifica lo SHA256 del manifest prima di eseguire il jar. Nessun diagramma è inviato a servizi remoti.</p>
+<p>Output: output/documentation/BugBoard26-documentazione.pdf, HTML autosufficiente con immagini incorporate e metadati JSON con hash SHA256, conteggio pagine e data. I render PNG sono in tmp/pdfs/rendered. I font Bitstream Vera sono redistribuiti con la relativa licenza in fonts/.</p>
+<h2>Aggiornare risultati senza inventare evidenze</h2>
+<p>Aggiornare evidence.json solo dopo una prova effettivamente conclusa, indicando comando/report, revisione e limiti. I criteri presenti nel documento restano risultati attesi; PASS richiede evidenza reale. Un gate della revisione precedente deve essere ripetuto dopo modifiche pertinenti. Le statistiche Git vengono lette al momento della generazione; i dettagli completi si rigenerano con scripts/report-versioning.ps1.</p>
+<p>Prima di salvare una nuova revisione documentale eseguire build-technical-documents.ps1 -PublishHtml per aggiornare lo snapshot HTML pubblico. La generazione normale produce PDF e HTML autosufficiente sotto output/documentation senza modificare i sorgenti Git: dopo il commit si può rigenerare con le statistiche effettive della nuova HEAD mantenendo pulita la copia di lavoro.</p>
+<p>Gli screenshot in screenshots/ sono catture reali dei tre casi significativi. Sostituirli dopo cambiamenti UI e nuove prove browser. La verifica strutturale controlla ID, link, immagini e modelli; non dimostra correttezza dei comportamenti né impaginazione. Ispezionare i PNG del PDF e registrare separatamente la verifica visuale prima della consegna.</p>
+<p>L’utente ha escluso persone reali: il collaudo UI riporta prove browser e ispezione, senza survey o conclusioni sulla comprensione umana. Un singolo restore riuscito non dimostra lo storico operativo RPO 24 ore.</p>
+</body></html>

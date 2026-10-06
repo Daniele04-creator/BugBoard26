@@ -1,0 +1,54 @@
+@startuml
+!pragma layout smetana
+hide empty members
+skinparam defaultFontSize 15
+skinparam classAttributeIconSize 0
+class IssueController <<REST>>
+class IssueWorkflowController <<REST>>
+class IssueService {
+ create(request, image, key)
+ update(id, request)
+}
+class IssueWorkflowService {
+ assign(id, request)
+ state(id, request)
+ deadline(id, request)
+ archive(id, request)
+ duplicate(id, request)
+}
+class IssuePolicy {
+ canEdit(actor, issue)
+}
+class WorkflowPolicy {
+ transition(issue, target, actor, now)
+}
+class IssueRepository <<JDBC>> {
+ find(id)
+ lock(id)
+ create(issue)
+}
+class Issue <<aggregate>>
+class ActorAccess {
+ current()
+ lockAccounts(ids)
+}
+class IssueEventWriter
+class LabelDirectory
+class UserRepository <<JPA>>
+IssueController --> IssueService
+IssueWorkflowController --> IssueWorkflowService
+IssueService --> IssuePolicy
+IssueWorkflowService --> WorkflowPolicy
+IssueService --> IssueRepository
+IssueWorkflowService --> IssueRepository
+IssueService --> IssueEventWriter
+IssueWorkflowService --> IssueEventWriter
+IssueService --> LabelDirectory
+IssueWorkflowService --> UserRepository
+IssueWorkflowService --> ActorAccess
+IssueRepository --> Issue
+note bottom of IssueEventWriter
+ Evento e notifica nella
+ stessa transazione.
+end note
+@enduml
