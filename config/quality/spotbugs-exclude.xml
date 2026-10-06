@@ -25,6 +25,10 @@
   <!-- HttpSecurity.configure/build declares Exception as part of Spring's builder API.
        Only this bean factory method delegates that required checked exception. -->
   <Match><Class name="it.unina.bugboard26.auth.SecurityConfig"/><Method name="securityFilterChain"/><Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.SecurityConfig"/><Method name="healthSecurityFilterChain"/><Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.application.AdminRecoveryService"/><Field name="entityManager" type="jakarta.persistence.EntityManager"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.application.AdminRecoveryService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.api.IssueController"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <!-- These exact constructor fields retain container-owned Spring service/repository collaborators.
        Their mutable infrastructure is shared intentionally; no business collection or accessor is excluded. -->
   <Match><Class name="it.unina.bugboard26.issues.api.IssueController"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
