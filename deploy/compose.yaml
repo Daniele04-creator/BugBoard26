@@ -1,0 +1,68 @@
+name: bugboard26
+x-logging: &application-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+services:
+  db:
+    logging: *application-logging
+    image: postgres:18.6@sha256:fc973eb97c9fd04bfa1840e0f510719a584ccb3be8debfe6a4144637a9dfe8cf
+    environment:
+      POSTGRES_DB: bugboard26
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Run scripts/start-local.ps1 to configure local secrets}
+      MIGRATION_PASSWORD: ${MIGRATION_PASSWORD:?Missing migration password}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Missing runtime password}
+    volumes:
+      - bugboard26_db:/var/lib/postgresql
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-bugboard26.sh:ro
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-55433}:5432"
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d bugboard26']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+  backend:
+    logging: *application-logging
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_PROFILE: ${APP_PROFILE:-demo}
+      PROJECT_NAME: ${PROJECT_NAME:-BugBoard26}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8088}
+      DATABASE_URL: jdbc:postgresql://db:5432/bugboard26
+      DATABASE_USERNAME: bugboard_runtime
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Missing runtime password}
+      MIGRATION_USERNAME: bugboard_owner
+      MIGRATION_PASSWORD: ${MIGRATION_PASSWORD:?Missing migration password}
+      AUTH_IP_HASH_SECRET: ${AUTH_IP_HASH_SECRET:?Missing private IP hashing secret}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@bugboard.local}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-BugBoard26-ChangeMe!}
+      DEMO_SEED: ${DEMO_SEED:-false}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8088,http://localhost:5173}
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    logging: *application-logging
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8088}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  bugboard26_db:
