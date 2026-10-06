@@ -14,4 +14,11 @@ mvnw text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 *.xml text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.html text eol=lf
+*.py text eol=lf
+*.puml text eol=lf
+*.txt text eol=lf
+*.ttf binary
 Dockerfile text eol=lf
