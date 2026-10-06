@@ -2,6 +2,7 @@ package it.unina.bugboard26.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.session.autoconfigure.DefaultCookieSerializerCustomizer;
@@ -27,11 +28,16 @@ public class HealthSessionConfiguration {
         if (cookie.getName() != null) { serializer.setCookieName(cookie.getName()); }
         if (cookie.getDomain() != null) { serializer.setDomainName(cookie.getDomain()); }
         if (cookie.getPath() != null) { serializer.setCookiePath(cookie.getPath()); }
-        if (cookie.getHttpOnly() != null) { serializer.setUseHttpOnlyCookie(cookie.getHttpOnly()); }
-        if (cookie.getSecure() != null) { serializer.setUseSecureCookie(cookie.getSecure()); }
-        if (cookie.getMaxAge() != null) { serializer.setCookieMaxAge(Math.toIntExact(cookie.getMaxAge().getSeconds())); }
-        if (cookie.getSameSite() != null) { serializer.setSameSite(cookie.getSameSite().attributeValue()); }
-        if (cookie.getPartitioned() != null) { serializer.setPartitioned(cookie.getPartitioned()); }
+        Boolean httpOnly = cookie.getHttpOnly();
+        if (httpOnly != null) { serializer.setUseHttpOnlyCookie(httpOnly); }
+        Boolean secure = cookie.getSecure();
+        if (secure != null) { serializer.setUseSecureCookie(secure); }
+        Duration maxAge = cookie.getMaxAge();
+        if (maxAge != null) { serializer.setCookieMaxAge(Math.toIntExact(maxAge.getSeconds())); }
+        Cookie.SameSite sameSite = cookie.getSameSite();
+        if (sameSite != null) { serializer.setSameSite(sameSite.attributeValue()); }
+        Boolean partitioned = cookie.getPartitioned();
+        if (partitioned != null) { serializer.setPartitioned(partitioned); }
         customizers.orderedStream().forEach(customizer -> customizer.customize(serializer));
         return serializer;
     }
