@@ -93,7 +93,7 @@ class WorkflowPolicyTest {
         if (eligible) {
             assertEquals(target, policy.transition(original, target, admin(), START).snapshot().status());
         } else {
-            assertEquals("ASSIGNEE_NOT_ELIGIBLE", assertThrows(DomainException.class,
+            assertEquals("INVALID_TRANSITION", assertThrows(DomainException.class,
                     () -> policy.transition(original, target, admin(), START)).code());
         }
     }
@@ -101,7 +101,7 @@ class WorkflowPolicyTest {
     @Test
     void missingAssigneeCannotAdvance() {
         for (IssueStatus target : List.of(IssueStatus.IN_PROGRESS, IssueStatus.RESOLVED)) {
-            assertEquals("ASSIGNEE_NOT_ELIGIBLE", assertThrows(DomainException.class,
+            assertEquals("INVALID_TRANSITION", assertThrows(DomainException.class,
                     () -> policy.transition(snapshot(IssueStatus.TODO, false, null, false, false, null),
                             target, admin(), START)).code());
         }
@@ -156,10 +156,10 @@ class WorkflowPolicyTest {
         }
         assertEquals("VALIDATION_ERROR", assertThrows(DomainException.class,
                 () -> policy.transition(original, IssueStatus.RESOLVED, admin(), START.minusNanos(1))).code());
-        assertThrows(NullPointerException.class, () -> policy.transition(null, IssueStatus.TODO, admin(), START));
-        assertThrows(NullPointerException.class, () -> policy.transition(original, null, admin(), START));
-        assertThrows(NullPointerException.class, () -> policy.transition(original, IssueStatus.TODO, null, START));
-        assertThrows(NullPointerException.class, () -> policy.transition(original, IssueStatus.TODO, admin(), null));
+        assertThrows(IllegalArgumentException.class, () -> policy.transition(null, IssueStatus.TODO, admin(), START));
+        assertThrows(IllegalArgumentException.class, () -> policy.transition(original, null, admin(), START));
+        assertThrows(IllegalArgumentException.class, () -> policy.transition(original, IssueStatus.TODO, null, START));
+        assertThrows(IllegalArgumentException.class, () -> policy.transition(original, IssueStatus.TODO, admin(), null));
     }
 
     private Actor admin() {

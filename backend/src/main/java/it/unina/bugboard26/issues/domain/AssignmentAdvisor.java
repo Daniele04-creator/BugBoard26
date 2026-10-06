@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -14,19 +13,24 @@ public final class AssignmentAdvisor {
     public List<AssignmentSuggestion> rank(List<AssignmentCandidate> candidates,
                                            List<OpenIssueAssignment> openIssues,
                                            UUID excludedIssueId) {
-        Objects.requireNonNull(candidates, "candidates");
-        Objects.requireNonNull(openIssues, "openIssues");
+        if (candidates == null || openIssues == null) {
+            throw new IllegalArgumentException("candidates and openIssues are required");
+        }
         Map<UUID, Long> loads = new HashMap<>();
         Set<UUID> candidateIds = new HashSet<>();
         for (AssignmentCandidate candidate : candidates) {
-            Objects.requireNonNull(candidate, "candidate");
+            if (candidate == null) {
+                throw new IllegalArgumentException("candidate cannot be null");
+            }
             if (!candidateIds.add(candidate.id())) {
                 throw new IllegalArgumentException("Duplicate candidate id");
             }
         }
         Set<UUID> issueIds = new HashSet<>();
         for (OpenIssueAssignment issue : openIssues) {
-            Objects.requireNonNull(issue, "issue");
+            if (issue == null) {
+                throw new IllegalArgumentException("issue cannot be null");
+            }
             if (!issueIds.add(issue.issueId())) {
                 throw new IllegalArgumentException("Duplicate issue id");
             }

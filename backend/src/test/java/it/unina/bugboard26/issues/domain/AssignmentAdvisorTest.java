@@ -86,10 +86,10 @@ class AssignmentAdvisorTest {
     void rejectsNullAndDuplicateIdentities() {
         AssignmentCandidate candidate = candidate(A, "a@x.test");
         OpenIssueAssignment issue = new OpenIssueAssignment(B, A, IssueStatus.TODO, false);
-        assertThrows(NullPointerException.class, () -> advisor.rank(null, List.of(), null));
-        assertThrows(NullPointerException.class, () -> advisor.rank(List.of(), null, null));
-        assertThrows(NullPointerException.class, () -> advisor.rank(Collections.singletonList(null), List.of(), null));
-        assertThrows(NullPointerException.class, () -> advisor.rank(List.of(), Collections.singletonList(null), null));
+        assertThrows(IllegalArgumentException.class, () -> advisor.rank(null, List.of(), null));
+        assertThrows(IllegalArgumentException.class, () -> advisor.rank(List.of(), null, null));
+        assertThrows(IllegalArgumentException.class, () -> advisor.rank(Collections.singletonList(null), List.of(), null));
+        assertThrows(IllegalArgumentException.class, () -> advisor.rank(List.of(), Collections.singletonList(null), null));
         assertThrows(IllegalArgumentException.class, () -> advisor.rank(List.of(candidate, candidate), List.of(), null));
         assertThrows(IllegalArgumentException.class, () -> advisor.rank(List.of(), List.of(issue, issue), null));
     }

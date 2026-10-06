@@ -5,16 +5,14 @@ import it.unina.bugboard26.shared.domain.Actor;
 import it.unina.bugboard26.shared.domain.DomainException;
 import it.unina.bugboard26.users.domain.UserRole;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 
 public final class WorkflowPolicy {
     public TransitionResult transition(IssueSnapshot issue, IssueStatus target, Actor actor,
                                        Instant now) {
-        Objects.requireNonNull(issue, "issue");
-        Objects.requireNonNull(target, "target");
-        Objects.requireNonNull(actor, "actor");
-        Objects.requireNonNull(now, "now");
+        if (issue == null || target == null || actor == null || now == null) {
+            throw new IllegalArgumentException("issue, target, actor and now are required");
+        }
         requireAuthority(actor, issue);
         if (issue.archived()) {
             throw new DomainException(409, "ISSUE_READ_ONLY", "La issue è archiviata.");
@@ -33,7 +31,7 @@ public final class WorkflowPolicy {
         }
         if ((target == IssueStatus.IN_PROGRESS || target == IssueStatus.RESOLVED)
                 && !issue.assigneeEligible()) {
-            throw new DomainException(409, "ASSIGNEE_NOT_ELIGIBLE",
+            throw new DomainException(409, "INVALID_TRANSITION",
                     "È necessario un assegnatario disponibile.");
         }
         boolean reopening = issue.status() == IssueStatus.RESOLVED;

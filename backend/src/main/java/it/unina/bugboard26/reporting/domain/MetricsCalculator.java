@@ -3,20 +3,22 @@ package it.unina.bugboard26.reporting.domain;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 public final class MetricsCalculator {
     public ResolutionSummary summarize(List<ResolutionCycleSnapshot> cycles, ReportPeriod period,
                                         UUID userId) {
-        Objects.requireNonNull(cycles, "cycles");
-        Objects.requireNonNull(period, "period");
+        if (cycles == null || period == null) {
+            throw new IllegalArgumentException("cycles and period are required");
+        }
         long count = 0;
         double seconds = 0;
         Set<UUID> issues = new HashSet<>();
         for (ResolutionCycleSnapshot cycle : cycles) {
-            Objects.requireNonNull(cycle, "cycle");
+            if (cycle == null) {
+                throw new IllegalArgumentException("cycle cannot be null");
+            }
             if (!cycle.resolvedAt().isBefore(period.startInclusive())
                     && cycle.resolvedAt().isBefore(period.endExclusive())
                     && (userId == null || userId.equals(cycle.creditedAssigneeId()))) {

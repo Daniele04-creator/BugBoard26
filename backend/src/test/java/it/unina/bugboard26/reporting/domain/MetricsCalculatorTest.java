@@ -82,9 +82,9 @@ class MetricsCalculatorTest {
     @Test
     void rejectsNullInputsAndNegativeDurations() {
         ReportPeriod period = new ReportPeriod(START, END);
-        assertThrows(NullPointerException.class, () -> calculator.summarize(null, period, null));
-        assertThrows(NullPointerException.class, () -> calculator.summarize(List.of(), null, null));
-        assertThrows(NullPointerException.class, () -> calculator.summarize(Collections.singletonList(null), period, null));
+        assertThrows(IllegalArgumentException.class, () -> calculator.summarize(null, period, null));
+        assertThrows(IllegalArgumentException.class, () -> calculator.summarize(List.of(), null, null));
+        assertThrows(IllegalArgumentException.class, () -> calculator.summarize(Collections.singletonList(null), period, null));
         assertThrows(IllegalArgumentException.class, () -> new ReportPeriod(END, START));
         assertThrows(IllegalArgumentException.class, () -> new ResolutionCycleSnapshot(B, END, START, B));
         assertThrows(NullPointerException.class, () -> new ResolutionCycleSnapshot(null, START, END, B));

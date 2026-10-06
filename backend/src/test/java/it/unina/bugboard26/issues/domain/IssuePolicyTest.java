@@ -63,8 +63,8 @@ class IssuePolicyTest {
         Actor actor = new Actor(ACTOR, UserRole.ADMIN, true, false, 0);
         IssueSnapshot issue = new IssueSnapshot(OTHER, IssueStatus.TODO, false, null, ACTOR,
                 0, Instant.EPOCH, null, false, null, false);
-        assertThrows(NullPointerException.class, () -> policy.canEdit(null, issue));
-        assertThrows(NullPointerException.class, () -> policy.canEdit(actor, null));
+        assertThrows(IllegalArgumentException.class, () -> policy.canEdit(null, issue));
+        assertThrows(IllegalArgumentException.class, () -> policy.canEdit(actor, null));
         assertThrows(NullPointerException.class, () -> new Actor(null, UserRole.ADMIN, true, false, 0));
         assertThrows(NullPointerException.class, () -> new IssueSnapshot(null, IssueStatus.TODO,
                 false, null, ACTOR, 0, Instant.EPOCH, null, false, null, false));
