@@ -1,0 +1,21 @@
+# Private planning sources stay on this machine.
+/README.md
+/docs/
+
+# Build, dependencies, runtime evidence, and private configuration.
+**/target/
+**/node_modules/
+**/dist/
+**/.env
+**/.env.*
+!**/.env.example
+**/test-results/
+**/playwright-report/
+output/reports/
+output/documentation/
+backups/
+tmp/
+.tools/
+*.log
+*.dump
+.DS_Store
