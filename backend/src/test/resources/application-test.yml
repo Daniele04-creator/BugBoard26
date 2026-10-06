@@ -1,0 +1,23 @@
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  session:
+    jdbc:
+      initialize-schema: never
+logging:
+  level:
+    root: WARN
+app:
+  profile: test
+  auth-ip-hash-secret: synthetic-test-secret-not-for-production
+  bootstrap-enabled: false
+  bootstrap-admin-email: admin@bugboard.local
+  bootstrap-admin-password: BugBoard26-ChangeMe!
+  demo-seed: false
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false

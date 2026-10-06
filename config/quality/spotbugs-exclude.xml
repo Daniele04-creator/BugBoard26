@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- These constructor fields intentionally retain shared Spring collaborators.
+       Copying a managed JdbcTemplate, JsonMapper or ProblemWriter would break dependency
+       injection ownership. Each exception matches one exact field and one pattern;
+       other bugs in these classes and mutable business values remain checked.
+       Filter syntax: https://spotbugs.readthedocs.io/en/latest/filter.html -->
+  <Match><Class name="it.unina.bugboard26.auth.api.LoginConverter"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.api.SessionFreshnessFilter"/><Field name="problems" type="it.unina.bugboard26.shared.api.ProblemWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.application.BootstrapService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.persistence.LoginAttemptRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.auth.persistence.SessionRevocationService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.AssignmentLookupAdapter"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.api.ApiExceptionHandler"/><Field name="problems" type="it.unina.bugboard26.shared.api.ProblemWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.api.HealthController"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.api.ProblemWriter"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.api.RequestContextFilter"/><Field name="problems" type="it.unina.bugboard26.shared.api.ProblemWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.application.ExpiredRecordCleanup"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.users.application.UserService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <!-- HttpSecurity.configure/build declares Exception as part of Spring's builder API.
+       Only this bean factory method delegates that required checked exception. -->
+  <Match><Class name="it.unina.bugboard26.auth.SecurityConfig"/><Method name="securityFilterChain"/><Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/></Match>
+</FindBugsFilter>

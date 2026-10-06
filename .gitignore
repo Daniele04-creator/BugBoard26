@@ -18,4 +18,5 @@ tmp/
 .tools/
 *.log
 *.dump
+/logs/
 .DS_Store
