@@ -347,8 +347,11 @@ public class PerformanceSeeder implements ApplicationRunner {
                         java.io.OutputStream output = Files.newOutputStream(measurementFile("bugboard26-performance.jfr"))) {
                     if (input == null) { throw new IOException("Flight recording contains no data."); }
                     byte[] buffer = new byte[8192];
-                    int count;
-                    while ((count = input.read(buffer)) != -1) { output.write(buffer, 0, count); }
+                    int count = input.read(buffer);
+                    while (count != -1) {
+                        output.write(buffer, 0, count);
+                        count = input.read(buffer);
+                    }
                 }
             }
         }
