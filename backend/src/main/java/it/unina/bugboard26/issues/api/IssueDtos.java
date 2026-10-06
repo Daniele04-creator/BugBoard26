@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+// A namespace for transport records; there is intentionally no public utility API.
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
 public final class IssueDtos {
     private IssueDtos() { }
     public record LabelRef(UUID id, String name, String color, boolean active, long version) { }

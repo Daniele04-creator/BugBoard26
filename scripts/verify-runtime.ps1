@@ -79,10 +79,11 @@ function Assert-Runtime([bool]$Condition, [string]$Message) {
 
 function Invoke-RuntimeRequest([string]$Method, [string]$Path, [int[]]$Expected,
     [object]$Body = $null, [string]$Key = '', [Net.Http.HttpContent]$Content = $null,
-    [Net.Http.HttpClient]$Client = $script:RuntimeHttp) {
+    [Net.Http.HttpClient]$Client = $script:RuntimeHttp, [bool]$Chunked = $false) {
     $requestId = [Guid]::NewGuid().ToString()
     $request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::new($Method), [Uri]::new($baseUri, $Path.TrimStart('/')))
     $request.Headers.Add('X-Request-ID', $requestId)
+    if ($Chunked) { $request.Headers.TransferEncodingChunked = $true }
     if ($Key) { $request.Headers.Add('Idempotency-Key', $Key) }
     if ($Method -ne 'GET' -and $script:RuntimeCsrf -and $Client -eq $script:RuntimeHttp) { $request.Headers.Add($script:RuntimeCsrf.headerName, $script:RuntimeCsrf.token) }
     if ($Content) { $request.Content = $Content }
@@ -206,7 +207,7 @@ try {
     $privateQueryResult = (Invoke-RuntimeRequest GET ('issues?q=' + [Uri]::EscapeDataString($queryMarker)) 200).Json
     Assert-Runtime ($privateQueryResult.totalElements -eq 0) 'The independent query sentinel unexpectedly matched an issue.'
     Invoke-RuntimeRequest PUT ('issues/' + $issueId + '/state') 409 @{ expectedVersion = $resolved.version; status = 'IN_PROGRESS' } | Out-Null
-    Invoke-RuntimeRequest POST ('issues/' + $issueId + '/comments') 413 @{ body = $bodyMarker + ('x' * 131072) } ([Guid]::NewGuid().ToString()) | Out-Null
+    Invoke-RuntimeRequest POST ('issues/' + $issueId + '/comments') 413 @{ body = $bodyMarker + ('x' * 131072) } ([Guid]::NewGuid().ToString()) -Chunked $true | Out-Null
     Invoke-RuntimeRequest GET 'issues' 401 -Client $anonymous | Out-Null
     $before = Get-RuntimeSnapshot $issueId
     Assert-Runtime ($before.imageSha256 -eq $created.image.sha256) 'Stored image hash differs from the HTTP download.'
