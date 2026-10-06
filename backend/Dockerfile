@@ -15,5 +15,5 @@ RUN mkdir logs && chown bugboard:bugboard logs
 USER bugboard
 ENV JAVA_TOOL_OPTIONS="-Xmx1g -Djava.awt.headless=true -Duser.timezone=UTC"
 EXPOSE 8080
-HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=4 CMD wget -q -O /dev/null http://127.0.0.1:8080/health/readiness || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=4 CMD wget -q -O /dev/null http://127.0.0.1:8080/api/v1/health/ready || exit 1
 ENTRYPOINT ["java", "-jar", "app.jar"]

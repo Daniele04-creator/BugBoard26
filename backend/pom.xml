@@ -11,9 +11,11 @@
   <properties>
     <java.version>21</java.version>
     <maven.compiler.release>21</maven.compiler.release>
+    <tomcat.version>11.0.26</tomcat.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quality.coverage.skip>false</quality.coverage.skip>
+    <security.nvd.feed.url>https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{0}.json.gz</security.nvd.feed.url>
   </properties>
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc</artifactId></dependency>
@@ -24,7 +26,6 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-flyway</artifactId></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
     <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
-    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc-test</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security-test</artifactId><scope>test</scope></dependency>
@@ -100,6 +101,7 @@
         <failBuildOnCVSS>7</failBuildOnCVSS><formats><format>HTML</format><format>JSON</format></formats>
         <suppressionFiles><suppressionFile>${project.basedir}/../config/quality/dependency-check-suppressions.xml</suppressionFile></suppressionFiles>
         <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable><failOnError>true</failOnError>
+        <nvdDatafeedUrl>${security.nvd.feed.url}</nvdDatafeedUrl>
       </configuration>
       <executions><execution><phase>verify</phase><goals><goal>check</goal></goals></execution></executions>
     </plugin></plugins></build></profile>

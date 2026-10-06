@@ -1,0 +1,113 @@
+name: Product quality
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test, static analysis and coverage gates
+        working-directory: backend
+        run: ./mvnw -B -ntp clean verify
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: backend-quality
+          retention-days: 14
+          path: |
+            backend/target/surefire-reports
+            backend/target/site/jacoco
+            backend/target/pmd.xml
+            backend/target/spotbugsXml.xml
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Locked dependencies, checks and independent production build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+          npm audit --audit-level=high
+  system:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Start isolated system
+        shell: pwsh
+        run: ./scripts/start-local.ps1 -Test
+      - name: Install locked browsers and test actual services
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost:8089
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium firefox
+          npm run test:e2e
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: system-evidence
+          retention-days: 14
+          path: output/reports/playwright*
+      - name: Stop isolated services
+        if: always()
+        run: docker compose --env-file deploy/.env -f deploy/compose.yaml -f deploy/compose.test.yaml down
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Dependency security gate with current feeds
+        working-directory: backend
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          pwsh -File ../scripts/verify-security-feed.ps1
+          ./mvnw -B -ntp -Psecurity verify
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: backend-dependency-security
+          retention-days: 14
+          path: backend/target/dependency-check-report.*

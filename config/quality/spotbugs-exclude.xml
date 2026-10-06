@@ -17,7 +17,44 @@
   <Match><Class name="it.unina.bugboard26.shared.api.RequestContextFilter"/><Field name="problems" type="it.unina.bugboard26.shared.api.ProblemWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="it.unina.bugboard26.shared.application.ExpiredRecordCleanup"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="it.unina.bugboard26.users.application.UserService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.persistence.IssueRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.application.IdempotencyService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.application.IdempotencyService"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <!-- This managed EntityManager is a Spring transaction-aware shared proxy. -->
+  <Match><Class name="it.unina.bugboard26.shared.application.ActorAccess"/><Field name="entityManager" type="jakarta.persistence.EntityManager"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <!-- HttpSecurity.configure/build declares Exception as part of Spring's builder API.
        Only this bean factory method delegates that required checked exception. -->
   <Match><Class name="it.unina.bugboard26.auth.SecurityConfig"/><Method name="securityFilterChain"/><Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/></Match>
+  <!-- These exact constructor fields retain container-owned Spring service/repository collaborators.
+       Their mutable infrastructure is shared intentionally; no business collection or accessor is excluded. -->
+  <Match><Class name="it.unina.bugboard26.issues.api.IssueController"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.api.IssueDiscussionController"/><Field name="issues" type="it.unina.bugboard26.issues.persistence.IssueRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.api.IssueDiscussionController"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.CommentService"/><Field name="events" type="it.unina.bugboard26.issues.application.IssueEventWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.CommentService"/><Field name="issues" type="it.unina.bugboard26.issues.persistence.IssueRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.CommentService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.CommentService"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.CommentService"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueEventWriter"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueEventWriter"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueExportService"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueQueryService"/><Field name="issues" type="it.unina.bugboard26.issues.persistence.IssueRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueQueryService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueService"/><Field name="events" type="it.unina.bugboard26.issues.application.IssueEventWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueService"/><Field name="issues" type="it.unina.bugboard26.issues.persistence.IssueRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueService"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueService"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueWorkflowService"/><Field name="events" type="it.unina.bugboard26.issues.application.IssueEventWriter"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueWorkflowService"/><Field name="issues" type="it.unina.bugboard26.issues.persistence.IssueRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.issues.application.IssueWorkflowService"/><Field name="queries" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.labels.application.LabelDirectoryAdapter"/><Field name="labels" type="it.unina.bugboard26.labels.persistence.LabelRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.labels.application.LabelService"/><Field name="events" type="it.unina.bugboard26.labels.persistence.LabelEventRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.labels.application.LabelService"/><Field name="labels" type="it.unina.bugboard26.labels.persistence.LabelRepository"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.labels.persistence.LabelEventRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.labels.persistence.LabelRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.notifications.persistence.NotificationRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.reporting.application.AssignmentSuggestionService"/><Field name="issues" type="it.unina.bugboard26.issues.application.IssueQueryService"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.reporting.persistence.ReportQueryRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.application.PerformanceSeeder"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.application.PerformanceSeeder"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
 </FindBugsFilter>
