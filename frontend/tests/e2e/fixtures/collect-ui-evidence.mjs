@@ -40,8 +40,8 @@ for (const [index, input] of inputPaths.entries()) {
   const report = JSON.parse(raw.toString("utf8"));
   const current = [];
   visit(report.suites, current, source);
-  if (index === 0 && current.length !== 61)
-    throw new Error("The baseline report must cover all 61 required scenarios");
+  if (index === 0 && current.length !== 67)
+    throw new Error("The baseline report must cover all 67 required scenarios (61 existing and 6 redesign checks)");
   if (
     index > 0 &&
     Date.parse(report.stats.startTime) <
@@ -113,7 +113,7 @@ const summary = {
   manifest,
   evidenceMode: manifest.length === 1 ? "single-run" : "composite",
   aggregation:
-    "Latest result per identical Playwright ID and file/title/project identity. Raw source reports are unmodified and SHA256-addressed; focused runs must be chronological subsets of the 61-scenario baseline. Earlier failures remain visible in each history and source stats.",
+    "Latest result per identical Playwright ID and file/title/project identity. Raw source reports are unmodified and SHA256-addressed; focused runs must be chronological subsets of the 67-scenario baseline (61 existing plus 6 redesign checks). Earlier failures remain visible in each history and source stats.",
   startedAt: manifest[0].stats.startTime,
   durationMs: manifest.reduce((sum, item) => sum + item.stats.duration, 0),
   stats: {

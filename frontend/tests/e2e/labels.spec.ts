@@ -8,6 +8,7 @@ test("label creation, rename and deactivation retain the existing issue associat
   const page = await admin.context.newPage(),
     name = `UI-${randomUUID().slice(0, 8)}`;
   await page.goto("/admin/labels");
+  await page.getByRole("button", { name: "Nuova etichetta", exact: true }).click();
   await page.getByLabel("Nome nuova etichetta", { exact: false }).fill(name);
   await page.getByLabel("Colore", { exact: true }).selectOption("purple");
   await page

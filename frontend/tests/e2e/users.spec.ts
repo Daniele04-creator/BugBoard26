@@ -20,7 +20,7 @@ test("administrator creates an account, confirms access changes and resets its t
   await page.getByRole("button", { name: "Crea utente", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/users\/[0-9a-f-]+\/edit$/);
   await expect(
-    page.getByRole("heading", { name: `Gestisci ${name}` }),
+    page.getByRole("heading", { name: "Gestisci utente", exact: true }),
   ).toBeVisible();
   await page.getByLabel("Ruolo", { exact: false }).selectOption("VIEWER");
   await page
@@ -107,7 +107,7 @@ test("a real concurrent profile update preserves the draft and requires explicit
   const page = await admin.context.newPage();
   await page.goto(`/admin/users/${member.user.id}/edit`);
   await expect(
-    page.getByRole("heading", { name: `Gestisci ${member.user.displayName}` }),
+    page.getByRole("heading", { name: "Gestisci utente", exact: true }),
   ).toBeVisible();
   const current = await apiRead<UserAdmin>(
     admin.request,

@@ -1,3 +1,4 @@
+/* global document */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { gzipSync } from "node:zlib";
@@ -64,7 +65,7 @@ try {
         timeout: 30_000,
       });
       await expect(
-        page.getByRole("button", { name: "Applica filtri", exact: true }),
+        page.getByRole("button", { name: /^Filtri/ }),
       ).toBeEnabled({ timeout: 30_000 });
       await expect(
         page.getByRole("button", { name: "Esporta CSV", exact: true }),
@@ -72,11 +73,16 @@ try {
       await expect(
         page.getByRole("link", { name: "Nuova issue", exact: true }),
       ).toBeEnabled({ timeout: 30_000 });
+      await page.evaluate(() => document.fonts.ready);
+      const localFontLoaded = await page.evaluate(() =>
+        [...document.fonts].some((font) => font.family.includes("Inter") && font.status === "loaded"),
+      );
       const firstUsableListMs = performance.now() - start;
       const scripts = await Promise.all(scriptDownloads);
       runs.push({
         run,
         firstUsableListMs,
+        localFontLoaded,
         initialGzipBytes: scripts.reduce(
           (sum, item) => sum + item.gzipBytes,
           0,
@@ -99,7 +105,7 @@ const pass =
   medianMs <= 2500 &&
   runs.every(
     (run) =>
-      run.initialGzipBytes <= 350 * 1024 && run.consoleErrors.length === 0,
+      run.initialGzipBytes <= 350 * 1024 && run.consoleErrors.length === 0 && run.localFontLoaded,
   );
 const report = {
   criterion: "NFR-03",
@@ -109,7 +115,7 @@ const report = {
   browserVersion: browser.version(),
   viewport: { width: 1440, height: 900 },
   method:
-    "Five fresh BrowserContexts; real API login before timing; production /issues navigation until first issue and filter/export/create controls usable. Gzip calculated from actual initial JavaScript response bodies.",
+    "Five fresh BrowserContexts; real API login before timing; production /issues navigation until first issue and filter/export/create controls usable, including local Inter loaded. Gzip calculated from actual initial JavaScript response bodies.",
   thresholds: {
     medianMs: 2500,
     initialGzipBytes: 350 * 1024,

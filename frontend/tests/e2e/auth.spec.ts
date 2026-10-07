@@ -50,11 +50,9 @@ test("login UI, cambio iniziale obbligatorio, profilo e logout reali", async ({
   const name = `Nome aggiornato ${randomUUID().slice(0, 8)}`;
   await page.getByLabel("Nome", { exact: false }).fill(name);
   await page.getByRole("button", { name: "Salva nome" }).click();
-  await expect(page.getByRole("status")).toContainText("Modifiche salvate");
+  await expect(page.getByRole("status").filter({ hasText: "Modifiche salvate" })).toBeVisible();
   expect((await apiRead<Me>(page.request, "/auth/me")).displayName).toBe(name);
-  await page
-    .getByRole("button", { name: new RegExp(`${name}.*MEMBER`) })
-    .click();
+  await expect(page.getByRole("link", { name: "Il tuo profilo", exact: true })).toContainText(name);
   await page.getByRole("button", { name: "Esci", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect((await page.request.get("/api/v1/auth/me")).status()).toBe(401);

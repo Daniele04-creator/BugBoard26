@@ -1,8 +1,15 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "./fixtures/session";
-import { apiWrite, createIssue } from "./fixtures/api";
+import { apiWrite, createIssue, createUser, login } from "./fixtures/api";
 import type { Page } from "@playwright/test";
 async function noHorizontalOverflow(page: Page) {
+  // Check the local brand has finished decoding before the next navigation.
+  await expect.poll(() => page.locator('img[src*="bugboard-mark"]').evaluateAll(
+    (images) => images.length > 0 && images.every((image) => {
+      const brand = image as HTMLImageElement;
+      return brand.complete && brand.naturalWidth > 0;
+    }),
+  )).toBe(true);
   expect(
     await page.evaluate(() => ({
       document: document.documentElement.scrollWidth,
@@ -198,4 +205,134 @@ test("testo al 200 per cento e spaziatura aumentata conservano campi e azioni", 
   ).toBeVisible();
   await expect(page.getByLabel("Titolo", { exact: false })).toBeVisible();
   await noHorizontalOverflow(page);
+});
+
+test("redesign: tutte le 17 schermate conservano contenuti, font locale e layout accessibile", async ({
+  admin, viewer, browser, baseURL, viewport,
+}, testInfo) => {
+  test.setTimeout(180_000);
+  const labelName = `Design-${Date.now()}-${testInfo.project.name.slice(0, 2)}`;
+  const label = await apiWrite<{ id: string }>(admin.request, "/admin/labels", "POST", { name: labelName, color: "green" });
+  const issue = await createIssue(admin.request, {
+    title: `Redesign ${testInfo.project.name} ${Date.now()}`,
+    description: "Una descrizione lunga verifica la leggibilità e conserva i dati del prodotto.",
+    labelIds: [label.id],
+  });
+  const account = await createUser(admin.request);
+  const page = await admin.context.newPage();
+  const screens = [
+    ["S03", `/issues?q=${encodeURIComponent(issue.title)}`],
+    ["S04", `/issues/${issue.id}`],
+    ["S05", "/issues/new"],
+    ["S06", `/issues/${issue.id}/edit`],
+    ["S07", "/archive"],
+    ["S08", "/notifications"],
+    ["S09", "/profile"],
+    ["S10", "/admin/dashboard"],
+    ["S11", "/admin/users"],
+    ["S12", "/admin/users/new"],
+    ["S13", `/admin/users/${account.user.id}/edit`],
+    ["S14", `/admin/labels?q=${encodeURIComponent(labelName)}`],
+    ["S15", "/admin/reports"],
+    ["S17", "/missing-redesign-route"],
+  ];
+  async function inspect(current: Page, id: string) {
+    await expect(current.locator("h1")).toBeVisible();
+    await expect(current.locator('[aria-busy="true"]')).toHaveCount(0);
+    await current.evaluate(() => document.fonts.ready);
+    expect(await current.evaluate(() => ({
+      loaded: [...document.fonts].some((font) => font.family.includes("Inter") && font.status === "loaded"),
+      body: getComputedStyle(document.body).fontFamily,
+    }))).toMatchObject({ loaded: true, body: expect.stringContaining("Inter") });
+    await noHorizontalOverflow(current);
+    await current.screenshot({
+      path: `../output/reports/redesign/${testInfo.project.name}-${id}.png`,
+      fullPage: true,
+    });
+    const audit = await new AxeBuilder({ page: current })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    await testInfo.attach(`axe-redesign-${id}`, {
+      body: Buffer.from(JSON.stringify({
+        testEngine: audit.testEngine, testEnvironment: audit.testEnvironment,
+        url: audit.url, violations: audit.violations, incomplete: audit.incomplete,
+      })), contentType: "application/json",
+    });
+    expect.soft(audit.violations.filter((v) => v.impact === "critical" || v.impact === "serious"), id).toEqual([]);
+  }
+  for (const [id, route] of screens) {
+    await page.goto(route!);
+    await inspect(page, id!);
+    if (id === "S03") {
+      await expect(page.getByRole("button", { name: /^Filtri/ })).toHaveAttribute("aria-expanded", "false");
+      await expect(page.locator(`a[data-issue-id="${issue.id}"]`).filter({ visible: true })).toContainText(issue.title);
+      if ((viewport?.width ?? 1440) >= 1200) expect((await page.locator(".issue-table-wrapper").boundingBox())!.y).toBeLessThanOrEqual(298);
+      for (const control of [page.getByRole("button", { name: /^Filtri/ }), page.getByRole("button", { name: "Esporta CSV", exact: true }), page.getByRole("link", { name: "Nuova issue", exact: true })]) {
+        const box = await control.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.height).toBeLessThanOrEqual(46);
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+      }
+      for (const badge of await page.locator(".issue-badge:visible").all()) {
+        expect((await badge.boundingBox())!.height).toBeLessThanOrEqual(32);
+      }
+      const exportButton = page.locator(".issue-export");
+      const before = await exportButton.boundingBox();
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => { release = resolve; });
+      await page.route("**/api/v1/issues/export?*", async (route) => {
+        await held;
+        await route.continue();
+      });
+      const downloaded = page.waitForEvent("download");
+      try {
+        await exportButton.click();
+        await expect(exportButton).toHaveAttribute("aria-busy", "true");
+        const during = await exportButton.boundingBox();
+        expect(during).toEqual(before);
+        await expect(exportButton).toContainText("Esporta CSV");
+      } finally { release(); }
+      expect((await downloaded).suggestedFilename()).toMatch(/\.csv$/);
+      await page.unroute("**/api/v1/issues/export?*");
+    }
+    if (id === "S06") await expect(page.getByLabel("Titolo", { exact: false })).toHaveValue(issue.title);
+    if (id === "S14") {
+      await expect(page.getByRole("button", { name: "Nuova etichetta", exact: true })).toHaveAttribute("aria-expanded", "false");
+      await expect(page.getByLabel("Nome nuova etichetta", { exact: false })).toHaveCount(0);
+      const edit = page.getByRole("button", { name: `Modifica etichetta ${labelName}`, exact: true });
+      await expect(edit).toBeVisible();
+      const top = await edit.evaluate((element) => element.closest("tr,article")!.getBoundingClientRect().top);
+      expect(top).toBeLessThanOrEqual((viewport?.width ?? 1440) >= 1024 ? 300 : 400);
+    }
+    if (id === "S15") await expect(page.getByRole("columnheader")).toHaveCount(7);
+  }
+  const denied = await viewer.context.newPage();
+  await denied.goto("/admin/users");
+  await expect(denied.getByRole("heading", { name: "Accesso non consentito" })).toBeVisible();
+  await inspect(denied, "S16");
+  if ((viewport?.width ?? 1440) < 640) {
+    await page.setViewportSize({ width: 320, height: 800 });
+    for (const route of ["/issues", "/issues/new", "/admin/users", "/admin/labels", "/admin/reports"]) {
+      await page.goto(route);
+      await expect(page.locator("h1")).toBeVisible();
+      await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+      await noHorizontalOverflow(page);
+    }
+    await page.setViewportSize(viewport!);
+  }
+  const anonymous = await browser.newContext({ baseURL, viewport });
+  const temporary = await browser.newContext({ baseURL, viewport });
+  try {
+    const authPage = await anonymous.newPage();
+    await authPage.goto("/login");
+    await inspect(authPage, "S01");
+    await expect(authPage.getByRole("navigation")).toHaveCount(0);
+    await login(temporary.request, account.email, account.temporaryPassword);
+    const passwordPage = await temporary.newPage();
+    await passwordPage.goto("/change-password");
+    await inspect(passwordPage, "S02");
+    await expect(passwordPage.getByRole("heading", { name: "Cambia la password iniziale", exact: true })).toBeVisible();
+  } finally {
+    await anonymous.close();
+    await temporary.close();
+  }
 });

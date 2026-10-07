@@ -19,7 +19,7 @@ test("dashboard uses server totals and navigates from workload to the exact open
   await expect(
     page.getByRole("heading", { name: "Dashboard", exact: true }),
   ).toBeVisible();
-  const cards = page.locator(".admin-metric");
+  const cards = page.locator(".reporting-metric");
   await expect(
     cards
       .filter({
@@ -63,7 +63,7 @@ test("monthly report matches historical server values, identifies partial data a
     ),
     page = await admin.context.newPage();
   await page.goto(`/admin/reports?month=${month}`);
-  const cards = page.locator(".admin-metric");
+  const cards = page.locator(".reporting-metric");
   await expect(
     cards
       .filter({ has: page.locator("dt", { hasText: /^Gestite$/ }) })
