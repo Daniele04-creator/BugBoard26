@@ -8,6 +8,8 @@ import { Button } from "../../components/Button";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { ApiError } from "../../api/ApiClient";
 import { Dialog } from "../../components/Dialog";
+import { roleNames } from "../users/adminPresentation";
+import "./auth.css";
 export function ProfilePage() {
   const auth = useAuth();
   const [displayName, setDisplayName] = useState(
@@ -86,54 +88,58 @@ export function ProfilePage() {
     }
   }
   return (
-    <section className="form-layout">
-      <h1 tabIndex={-1}>Il tuo profilo</h1>
-      <p>
-        {auth.user?.email} · {auth.user?.role}
-      </p>
-      <section className="panel">
-        <h2>Nome visualizzato</h2>
-        {saved && <Alert variant="success">Modifiche salvate.</Alert>}
-        <ErrorAlert error={error} focus />
-        <form onSubmit={(e) => void submit(e)}>
-          <p className="muted">* Campo obbligatorio.</p>
-          <TextField
-            label="Nome"
-            value={displayName}
-            onChange={(e) => {
-              setDisplayName(e.target.value);
-              setSaved(false);
-            }}
-            error={fieldError}
-            required
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            busy={busy}
-            disabled={
-              displayName.normalize("NFC").trim() === auth.user?.displayName
-            }
-          >
-            Salva nome
-          </Button>
-        </form>
-      </section>
-      <section className="panel">
-        <h2>Cambia password</h2>
-        <PasswordChangeForm />
-      </section>
+    <section className="profile-page">
+      <header className="profile-heading">
+        <h1 tabIndex={-1}>Il tuo profilo</h1>
+        <p className="muted">
+          {auth.user?.email} · {auth.user && roleNames[auth.user.role]}
+        </p>
+      </header>
+      <div className="profile-sections">
+        <section className="panel profile-section">
+          <h2>Nome visualizzato</h2>
+          {saved && <Alert variant="success">Modifiche salvate.</Alert>}
+          <ErrorAlert error={error} focus />
+          <form className="profile-name-form" onSubmit={(e) => void submit(e)}>
+            <p className="muted">* Campo obbligatorio.</p>
+            <TextField
+              label="Nome"
+              value={displayName}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                setSaved(false);
+              }}
+              error={fieldError}
+              hint="Da 2 a 80 caratteri."
+              required
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              busy={busy}
+              disabled={
+                displayName.normalize("NFC").trim() === auth.user?.displayName
+              }
+            >
+              Salva nome
+            </Button>
+          </form>
+        </section>
+        <section className="panel profile-section">
+          <h2>Cambia password</h2>
+          <PasswordChangeForm />
+        </section>
+      </div>
       <Dialog
+        className="profile-conflict-dialog"
         open={conflict}
         title="Profilo aggiornato da un altro utente"
         onClose={() => setConflict(false)}
       >
         <p>Nessuna delle tue modifiche è stata salvata.</p>
-        <dl>
-          <dt>La tua bozza</dt>
-          <dd>{displayName}</dd>
-          <dt>Valore attuale</dt>
-          <dd>{currentName}</dd>
+        <dl className="profile-comparison">
+          <div><dt>La tua bozza</dt><dd>{displayName}</dd></div>
+          <div><dt>Valore attuale</dt><dd>{currentName}</dd></div>
         </dl>
         <p>Puoi mantenere la bozza e confermare nuovamente il salvataggio.</p>
         {confirmDiscard ? (

@@ -128,6 +128,16 @@ describe("report presentation", () => {
     await screen.findByText("32,0 ore");
     const card = screen.getByText("Issue non archiviate").closest("div");
     expect(within(card!).getByText("5")).toBeInTheDocument();
+    expect(document.querySelectorAll("dt")).toHaveLength(9);
+    for (const [label, href] of [
+      ["Aperte", "/issues?status=TODO&status=IN_PROGRESS"],
+      ["In corso", "/issues?status=IN_PROGRESS"],
+      ["Aperte senza responsabile", "/issues?assignedTo=unassigned&status=TODO&status=IN_PROGRESS"],
+      ["Scadute", "/issues?overdue=true&status=TODO&status=IN_PROGRESS"],
+    ]) {
+      const metric = screen.getByText(label).closest("div");
+      expect(within(metric!).getByRole("link")).toHaveAttribute("href", href);
+    }
     expect(
       screen.getByRole("link", { name: "Apri elenco di B" }),
     ).toHaveAttribute(
@@ -140,6 +150,30 @@ describe("report presentation", () => {
     ).toHaveTextContent("0");
     expect(screen.getByText("C · Inattivo")).toBeInTheDocument();
     expect(screen.getByText("36,0 ore")).toBeInTheDocument();
+  });
+  it("keeps zero dashboard totals and an empty historical register without inventing a duration", async () => {
+    vi.spyOn(reportingApi, "dashboard").mockResolvedValue({
+      ...dashboard,
+      activeIssueCount: 0,
+      openCount: 0,
+      inProgressCount: 0,
+      resolvedCount: 0,
+      duplicateCount: 0,
+      unassignedOpenCount: 0,
+      overdueOpenCount: 0,
+      resolutionCount: 0,
+      averageResolutionSeconds: null,
+      openByAssignee: [],
+      resolutionByAssignee: [],
+      openByType: { QUESTION: 0, BUG: 0, DOCUMENTATION: 0, FEATURE: 0 },
+      openByPriority: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
+    });
+    show(<DashboardPage />);
+    await screen.findByText("Nessuna risoluzione.");
+    expect(document.querySelectorAll("dt")).toHaveLength(9);
+    expect(screen.getByText("Nessuna risoluzione")).toBeInTheDocument();
+    expect(screen.queryByText("0,0 ore")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("table")).toHaveLength(4);
   });
   it("keeps the global handled union and shows partial historical data with null samples", async () => {
     vi.spyOn(reportingApi, "monthly").mockResolvedValue(monthly);
@@ -157,10 +191,58 @@ describe("report presentation", () => {
     expect(within(handled!).getByText("5")).toBeInTheDocument();
     expect(screen.getByText("Nessuna risoluzione")).toBeInTheDocument();
     expect(screen.getByText("Aperte alla rilevazione")).toBeInTheDocument();
+    expect(document.querySelectorAll("dt")).toHaveLength(10);
+    const groups = [
+      ["Attività del periodo", 4],
+      ["Esiti e rielaborazione", 4],
+      ["Situazione al limite temporale", 2],
+    ] as const;
+    for (const [name, count] of groups) {
+      const group = screen.getByRole("region", { name });
+      expect(group.querySelectorAll("dt")).toHaveLength(count);
+    }
+    const tableRegion = screen.getByRole("region", { name: "Attività mensile per utente" });
+    expect(tableRegion).toHaveAttribute("tabindex", "0");
+    expect(tableRegion).toHaveAccessibleDescription("Scorri la tabella per consultare tutte le colonne.");
+    expect(within(tableRegion).getAllByRole("columnheader")).toHaveLength(7);
+    expect(within(tableRegion).getByRole("columnheader", { name: "Issue risolte" })).toBeInTheDocument();
     expect(reportingApi.monthly).toHaveBeenCalledWith(
       "2026-02",
       expect.any(AbortSignal),
     );
+  });
+  it("keeps report totals and all columns when no account existed in the chosen historical month", async () => {
+    vi.spyOn(reportingApi, "monthly").mockResolvedValue({
+      ...monthly,
+      partial: false,
+      perUser: [],
+      totals: { ...monthly.totals, averageResolutionSeconds: null },
+    });
+    show(<ReportsPage />, "/admin/reports?month=2026-02");
+    await screen.findByText("Nessun account era presente in questo periodo.");
+    expect(document.querySelectorAll("dt")).toHaveLength(10);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(7);
+    expect(screen.getByText("Aperte al termine")).toBeInTheDocument();
+    expect(screen.getByText("Nessuna risoluzione")).toBeInTheDocument();
+    expect(screen.queryByText("Mese corrente: dati parziali fino al momento della rilevazione.")).not.toBeInTheDocument();
+  });
+  it("identifies previous-month data until the next monthly request has completed", async () => {
+    let finish: ((report: MonthlyReport) => void) | undefined;
+    vi.spyOn(reportingApi, "monthly")
+      .mockResolvedValueOnce(monthly)
+      .mockImplementationOnce(() => new Promise<MonthlyReport>((resolve) => { finish = resolve; }));
+    show(<ReportsPage />, "/admin/reports?month=2026-02");
+    await screen.findByRole("heading", { name: "febbraio 2026" });
+    const user = userEvent.setup();
+    await user.clear(screen.getByLabelText("Mese del report", { exact: false }));
+    await user.type(screen.getByLabelText("Mese del report", { exact: false }), "2026-01");
+    await user.click(screen.getByRole("button", { name: "Mostra report" }));
+    await screen.findByText(/Sono ancora visibili i dati del mese precedente/);
+    expect(screen.getByRole("heading", { name: "febbraio 2026" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "gennaio 2026" })).not.toBeInTheDocument();
+    finish?.({ ...monthly, month: "2026-01", partial: false });
+    await screen.findByRole("heading", { name: "gennaio 2026" });
+    expect(screen.queryByText(/Sono ancora visibili i dati del mese precedente/)).not.toBeInTheDocument();
   });
   it("reports invalid URL state without making a report request", async () => {
     const request = vi.spyOn(reportingApi, "monthly");

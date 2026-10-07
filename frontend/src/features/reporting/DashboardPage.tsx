@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { IconRefresh } from "@tabler/icons-react";
 import { ErrorAlert } from "../../components/Alert";
 import { Button } from "../../components/Button";
 import { LoadingState } from "../../components/LoadingState";
@@ -7,7 +8,7 @@ import { dateTime, roleNames } from "../users/adminPresentation";
 import { priorityNames, typeNames } from "../issues/issuePresentation";
 import { reportingApi } from "./reportingApi";
 import { Metrics, number, resolutionTime } from "./reportPresentation";
-import "../users/admin.css";
+import "./reporting.css";
 export function DashboardPage() {
   const snapshot = useQuery({
       queryKey: ["reporting", "dashboard"],
@@ -15,19 +16,17 @@ export function DashboardPage() {
     }),
     data = snapshot.data;
   return (
-    <section>
-      <div className="admin-heading">
+    <section className="reporting-page">
+      <div className="reporting-heading">
         <div>
           <h1 tabIndex={-1}>Dashboard</h1>
-          <p className="muted">
-            Carico e stato attuale del progetto. Le issue archiviate sono
-            escluse.
-          </p>
+          <p className="muted">Situazione corrente del progetto</p>
         </div>
         <Button
           busy={snapshot.isFetching}
           onClick={() => void snapshot.refetch()}
         >
+          <IconRefresh size={20} stroke={2} aria-hidden="true" />
           Aggiorna dashboard
         </Button>
       </div>
@@ -36,18 +35,14 @@ export function DashboardPage() {
         <LoadingState />
       ) : (
         data && (
-          <div aria-busy={snapshot.isFetching}>
-            <p>
+          <div aria-busy={snapshot.isFetching} className="reporting-content">
+            <p className="reporting-context">
               {snapshot.isFetching ? "Aggiornamento in corso. " : ""}Rilevata il{" "}
               <time dateTime={data.asOf}>{dateTime(data.asOf)}</time> ·{" "}
               {data.timezone}
             </p>
             <Metrics
               items={[
-                {
-                  label: "Issue non archiviate",
-                  value: number(data.activeIssueCount),
-                },
                 {
                   label: "Aperte",
                   value: (
@@ -64,8 +59,6 @@ export function DashboardPage() {
                     </Link>
                   ),
                 },
-                { label: "Risolte", value: number(data.resolvedCount) },
-                { label: "Duplicate", value: number(data.duplicateCount) },
                 {
                   label: "Aperte senza responsabile",
                   value: (
@@ -82,102 +75,117 @@ export function DashboardPage() {
                     </Link>
                   ),
                 },
+              ]}
+            />
+            <div className="reporting-workload">
+              <div className="reporting-register">
+                <table
+                  className="reporting-table reporting-table--responsive reporting-table--load"
+                  role="table"
+                >
+                  <caption>Carico corrente</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Nome</th>
+                      <th scope="col">Ruolo</th>
+                      <th scope="col">Issue aperte</th>
+                      <th scope="col">Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.openByAssignee.map((row) => (
+                      <tr key={row.user?.id ?? "unassigned"}>
+                        <th scope="row">
+                          {row.user?.displayName ?? "Senza responsabile"}
+                        </th>
+                        <td data-label="Ruolo">
+                          {row.user ? roleNames[row.user.role] : "—"}
+                        </td>
+                        <td data-label="Issue aperte">{number(row.openCount)}</td>
+                        <td className="reporting-row-action">
+                          <Link
+                            to={`/issues?assignedTo=${row.user?.id ?? "unassigned"}&status=TODO&status=IN_PROGRESS`}
+                            aria-label={`Apri elenco di ${row.user?.displayName ?? "issue senza responsabile"}`}
+                          >
+                            Apri elenco
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="reporting-breakdowns">
+                <div className="reporting-register">
+                  <table className="reporting-table reporting-table--breakdown">
+                    <caption>Aperte per tipo</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Issue aperte</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(typeNames).map(([type, label]) => (
+                        <tr key={type}>
+                          <th scope="row">{label}</th>
+                          <td>
+                            {number(
+                              data.openByType[
+                                type as keyof typeof data.openByType
+                              ],
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="reporting-register">
+                  <table className="reporting-table reporting-table--breakdown">
+                    <caption>Aperte per priorità</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Priorità</th>
+                        <th scope="col">Issue aperte</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(priorityNames).map(([priority, label]) => (
+                        <tr key={priority}>
+                          <th scope="row">{label}</th>
+                          <td>
+                            {number(
+                              data.openByPriority[
+                                priority as keyof typeof data.openByPriority
+                              ],
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <Metrics
+              columns={5}
+              items={[
+                { label: "Issue non archiviate", value: number(data.activeIssueCount) },
+                { label: "Risolte", value: number(data.resolvedCount) },
+                { label: "Duplicate", value: number(data.duplicateCount) },
                 {
                   label: "Tempo medio del ciclo",
                   value: resolutionTime(data.averageResolutionSeconds),
                 },
-                {
-                  label: "Cicli conclusi",
-                  value: number(data.resolutionCount),
-                },
+                { label: "Cicli conclusi", value: number(data.resolutionCount) },
               ]}
             />
-            <div className="panel admin-table-wrap">
-              <table className="admin-table">
-                <caption>Carico corrente</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col">Ruolo</th>
-                    <th scope="col">Issue aperte</th>
-                    <th scope="col">Azioni</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.openByAssignee.map((row) => (
-                    <tr key={row.user?.id ?? "unassigned"}>
-                      <th scope="row">
-                        {row.user?.displayName ?? "Senza responsabile"}
-                      </th>
-                      <td>{row.user ? roleNames[row.user.role] : "—"}</td>
-                      <td>{number(row.openCount)}</td>
-                      <td>
-                        <Link
-                          to={`/issues?assignedTo=${row.user?.id ?? "unassigned"}&status=TODO&status=IN_PROGRESS`}
-                          aria-label={`Apri elenco di ${row.user?.displayName ?? "issue senza responsabile"}`}
-                        >
-                          Apri elenco
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="admin-columns admin-section">
-              <div className="panel">
-                <table className="admin-table">
-                  <caption>Aperte per tipo</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Tipo</th>
-                      <th scope="col">Issue aperte</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(typeNames).map(([type, label]) => (
-                      <tr key={type}>
-                        <th scope="row">{label}</th>
-                        <td>
-                          {number(
-                            data.openByType[
-                              type as keyof typeof data.openByType
-                            ],
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="panel">
-                <table className="admin-table">
-                  <caption>Aperte per priorità</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Priorità</th>
-                      <th scope="col">Issue aperte</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(priorityNames).map(([priority, label]) => (
-                      <tr key={priority}>
-                        <th scope="row">{label}</th>
-                        <td>
-                          {number(
-                            data.openByPriority[
-                              priority as keyof typeof data.openByPriority
-                            ],
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div className="panel admin-table-wrap admin-section">
-              <table className="admin-table">
+            <div className="reporting-register">
+              <table
+                className="reporting-table reporting-table--responsive"
+                role="table"
+              >
                 <caption>Risoluzioni per assegnatario storico</caption>
                 <thead>
                   <tr>
@@ -193,17 +201,21 @@ export function DashboardPage() {
                         {row.user.displayName}
                         {!row.user.active && " · Inattivo"}
                       </th>
-                      <td>{number(row.resolutionCount)}</td>
-                      <td>{resolutionTime(row.averageResolutionSeconds)}</td>
+                      <td data-label="Cicli conclusi">
+                        {number(row.resolutionCount)}
+                      </td>
+                      <td data-label="Tempo medio">
+                        {resolutionTime(row.averageResolutionSeconds)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {data.resolutionByAssignee.length === 0 && (
-                <p>Nessuna risoluzione.</p>
+                <p className="reporting-empty">Nessuna risoluzione.</p>
               )}
             </div>
-            <details className="panel admin-definition">
+            <details className="reporting-definition">
               <summary>Come si calcolano le metriche</summary>
               <p>
                 Aperte: stati Da fare e In corso, escluse le issue archiviate.

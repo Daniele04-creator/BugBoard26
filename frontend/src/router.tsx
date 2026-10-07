@@ -6,6 +6,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useEffect } from "react";
+import { IconFileSearch } from "@tabler/icons-react";
 import { AppShell } from "./components/AppShell";
 import { RequireSession } from "./features/auth/RequireSession";
 import { RequireRole } from "./features/auth/RequireRole";
@@ -53,10 +54,13 @@ function RouteFocus() {
 }
 function NotFound() {
   return (
-    <section>
+    <section className="route-error">
+      <IconFileSearch size={48} stroke={2} aria-hidden="true" />
       <h1 tabIndex={-1}>Pagina non trovata</h1>
       <p>Il percorso richiesto non esiste.</p>
-      <Link to="/issues">Torna alle issue</Link>
+      <Link className="button" to="/issues">
+        Torna alle issue
+      </Link>
     </section>
   );
 }

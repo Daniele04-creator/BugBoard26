@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { InputHTMLAttributes } from "react";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
+import "./auth.css";
 export function PasswordField({
   label,
   ...props
@@ -24,7 +26,7 @@ export function PasswordField({
         aria-label={`${visible ? "Nascondi" : "Mostra"} ${label.toLowerCase()}`}
         onClick={() => setVisible((v) => !v)}
       >
-        {visible ? "Nascondi" : "Mostra"}
+        {visible ? <IconEyeOff size={20} stroke={2} aria-hidden="true" /> : <IconEye size={20} stroke={2} aria-hidden="true" />}
       </Button>
     </div>
   );

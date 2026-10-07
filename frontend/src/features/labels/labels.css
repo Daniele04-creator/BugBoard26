@@ -1,0 +1,184 @@
+.labels-description {
+  margin-top: 24px;
+}
+
+.labels-heading h1 {
+  margin-bottom: 0;
+}
+
+.admin-label-filters {
+  grid-template-columns: minmax(0,1fr) minmax(0,280px) auto;
+}
+
+.admin-labels-table th:nth-child(1) {
+  width: 37.5%;
+}
+
+.admin-labels-table th:nth-child(2) {
+  width: 16.7%;
+}
+
+.admin-labels-table th:nth-child(3) {
+  width: 13.9%;
+}
+
+.admin-labels-table th:nth-child(4) {
+  width: 31.9%;
+}
+
+.label-create-disclosure {
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.label-create-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.label-create-heading h2, .label-create-heading p {
+  margin: 0;
+}
+
+.label-create-heading p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.label-create-fields {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 180px auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.label-create-fields .field {
+  margin: 0;
+}
+
+.label-create-fields > .actions {
+  padding-top: 26px;
+}
+
+.admin-label-editor {
+  padding: 16px;
+  max-width: 760px;
+}
+
+.admin-label-editor h2 {
+  overflow-wrap: anywhere;
+}
+
+.label-editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 20px;
+}
+
+.label-editor-fields .field {
+  margin: 0;
+}
+
+.admin-label-editor > .actions {
+  margin-top: 24px;
+}
+
+.labels-page .admin-card .actions {
+  margin-top: 12px;
+}
+
+@media (max-width:1023px) {
+  .admin-label-filters {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  }
+  .admin-label-filters > .actions {
+    grid-column: 1/-1;
+    padding-top: 0;
+  }
+  .label-create-fields {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  }
+  .label-create-fields > .actions {
+    grid-column: 1/-1;
+    padding-top: 0;
+  }
+}
+
+@media (max-width:767px) {
+  .label-editor-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width:639px) {
+  .labels-heading {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 8px;
+  }
+  .labels-heading > .button {
+    width: auto;
+  }
+.labels-description {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .admin-label-filters {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .label-create-heading {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .label-create-fields {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .label-create-fields > .actions {
+    flex-wrap: wrap;
+  }
+  .label-create-fields > .actions .button {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width:339px) {
+  .labels-heading {
+    grid-template-columns: 1fr;
+  }
+  .labels-heading > .button {
+    width: 100%;
+  }
+}
+
+.label-conflict-values {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 16px;
+  margin-block: 24px;
+}
+
+.label-conflict-values dt {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.label-conflict-values dd {
+  margin: 0;
+  padding: 12px;
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width:639px) {
+  .label-conflict-values {
+    grid-template-columns: 1fr;
+  }
+}

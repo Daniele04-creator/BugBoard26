@@ -8,6 +8,8 @@ import { Button } from "../../components/Button";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { LoadingState } from "../../components/LoadingState";
 import { ApiError } from "../../api/ApiClient";
+import { AuthLayout } from "../../components/AuthLayout";
+import "./auth.css";
 export function validatePassword(
   password: string,
   confirmation: string,
@@ -73,7 +75,7 @@ export function PasswordChangeForm({
     }
   }
   return (
-    <form onSubmit={(e) => void submit(e)}>
+    <form className={`password-change-form${mandatory ? " password-change-mandatory" : ""}`} onSubmit={(e) => void submit(e)}>
       <p className="muted">* Campo obbligatorio.</p>
       {Object.keys(fields).length > 0 && (
         <Alert focus focusKey={fields}>
@@ -106,10 +108,10 @@ export function PasswordChangeForm({
         error={fields.confirmation}
         required
       />
-      <p>
+      <Alert variant="info">
         Il cambio password chiude tutte le tue sessioni. Dovrai accedere di
         nuovo.
-      </p>
+      </Alert>
       <div className="actions">
         <Button type="submit" variant="primary" busy={busy}>
           Salva password
@@ -137,13 +139,10 @@ export function ChangePasswordPage() {
   if (!auth.user) return <Navigate to="/login" replace />;
   if (!auth.user.mustChangePassword) return <Navigate to="/profile" replace />;
   return (
-    <main className="auth-layout">
-      <div className="auth-brand">BugBoard26</div>
-      <section className="panel auth-panel">
-        <h1 tabIndex={-1}>Cambia la password iniziale</h1>
-        <p>Per accedere alle issue scegli una nuova password.</p>
-        <PasswordChangeForm mandatory />
-      </section>
-    </main>
+    <AuthLayout>
+      <h1 tabIndex={-1}>Cambia la password iniziale</h1>
+      <p>Per accedere alle issue scegli una nuova password.</p>
+      <PasswordChangeForm mandatory />
+    </AuthLayout>
   );
 }

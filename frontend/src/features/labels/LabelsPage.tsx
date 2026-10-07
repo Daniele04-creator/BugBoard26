@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -24,6 +24,8 @@ import {
 import { labelApi } from "./labelApi";
 import { UnsavedChanges } from "../issues/UnsavedChanges";
 import "../users/admin.css";
+import "./labels.css";
+import { IconPlus, IconPencil, IconBan, IconRotate } from "@tabler/icons-react";
 const colors: Record<LabelColor, string> = {
   gray: "Grigio",
   blue: "Blu",
@@ -67,7 +69,7 @@ function Filters({
     [error, setError] = useState<string | undefined>();
   return (
     <form
-      className="panel admin-filters"
+      className="admin-filters admin-label-filters"
       onSubmit={(event) => {
         event.preventDefault();
         const invalid = normalizedName(q, 0, 100);
@@ -92,7 +94,7 @@ function Filters({
         <option value="false">Inattive</option>
       </SelectField>
       <div className="actions">
-        <Button type="submit" variant="primary">
+        <Button type="submit">
           Applica filtri
         </Button>
         <Button onClick={() => apply("", "all")}>Pulisci filtri</Button>
@@ -101,6 +103,11 @@ function Filters({
   );
 }
 export function LabelsPage() {
+  const [createOpen, setCreateOpen] = useState(false);
+  const [discardCreate, setDiscardCreate] = useState(false);
+  useEffect(() => {
+    if (createOpen) document.getElementById("new-label-name")?.focus();
+  }, [createOpen]);
   const mobile = useMobileCards();
   const cache = useQueryClient(),
     [params, setParams] = useSearchParams(),
@@ -127,6 +134,9 @@ export function LabelsPage() {
     [newField, setNewField] = useState<string | undefined>(),
     [success, setSuccess] = useState("");
   const [toggle, setToggle] = useState<Label | null>(null),
+    [toggleDesiredActive, setToggleDesiredActive] = useState(false),
+    [conflictTarget, setConflictTarget] = useState<Label | null>(null),
+    [conflictIsToggle, setConflictIsToggle] = useState(false),
     [latest, setLatest] = useState<Label | null>(null),
     [conflict, setConflict] = useState(false),
     [conflictError, setConflictError] = useState<unknown>(null),
@@ -219,6 +229,8 @@ export function LabelsPage() {
           : fieldErrors(failure).name,
       );
       if (failure instanceof ApiError && failure.code === "VERSION_CONFLICT") {
+        setConflictTarget(target);
+        setConflictIsToggle(isToggle);
         setToggle(null);
         setConflict(true);
         await refreshConflict(target);
@@ -237,7 +249,7 @@ export function LabelsPage() {
   }
   const editor = editing && (
     <form
-      className="panel admin-label-editor"
+      className="admin-label-editor"
       onSubmit={(event) => {
         event.preventDefault();
         void update(editing, editing.active);
@@ -252,15 +264,17 @@ export function LabelsPage() {
           <a href="#edit-label-name">{nameError}</a>
         </Alert>
       )}
-      <TextField
-        id="edit-label-name"
-        label="Nome etichetta"
-        required
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        error={nameError}
-      />
-      <ColorField value={color} onChange={setColor} />
+      <div className="label-editor-fields">
+        <TextField
+          id="edit-label-name"
+          label="Nome etichetta"
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          error={nameError}
+        />
+        <ColorField value={color} onChange={setColor} />
+      </div>
       <div className="actions">
         <Button
           type="submit"
@@ -284,62 +298,87 @@ export function LabelsPage() {
           onClick={() => edit(label)}
           aria-label={`Modifica etichetta ${label.name}`}
         >
+          <IconPencil size={20} stroke={2} aria-hidden="true" />
           Modifica
         </Button>
         <Button
           disabled={busy}
           onClick={() => {
             setToggle(label);
+            setToggleDesiredActive(!label.active);
             setError(null);
           }}
           aria-label={`${label.active ? "Disattiva" : "Riattiva"} etichetta ${label.name}`}
         >
+          {label.active ? <IconBan size={20} stroke={2} aria-hidden="true" /> : <IconRotate size={20} stroke={2} aria-hidden="true" />}
           {label.active ? "Disattiva" : "Riattiva"}
         </Button>
       </div>
     );
   }
   return (
-    <section>
+    <section className="labels-page">
       <UnsavedChanges
         dirty={Boolean(
           newName ||
-            (editing && (name !== editing.name || color !== editing.color)),
+          (editing && (name !== editing.name || color !== editing.color)),
         )}
       />
-      <h1 tabIndex={-1}>Etichette</h1>
-      <p className="muted">
-        Il catalogo del progetto. Le etichette disattivate restano sulle issue
-        già associate.
-      </p>
+      <header className="admin-heading labels-heading">
+        <div>
+          <h1 tabIndex={-1}>Etichette</h1>
+
+        </div>
+        <Button
+          variant={createOpen || editing ? "secondary" : "primary"}
+          aria-expanded={createOpen}
+          aria-controls="label-create-disclosure"
+          disabled={busy}
+          onClick={() => setCreateOpen((open) => !open)}
+        ><IconPlus size={20} stroke={2} aria-hidden="true" />Nuova etichetta</Button>
+      </header>
       {success && <Alert variant="success">{success}</Alert>}
-      <form
-        className="panel admin-form"
+      {filters.valid && <Filters
+        key={params.toString()}
+        query={filters.q}
+        active={filters.active}
+        apply={apply}
+      />}
+      {createOpen && <form
+        id="label-create-disclosure"
+        className="panel label-create-disclosure"
         onSubmit={(event) => void create(event)}
         noValidate
       >
-        <h2>Nuova etichetta</h2>
-        <p>* Campo obbligatorio.</p>
+        <div className="label-create-heading"><h2>Nuova etichetta</h2><p>* Campo obbligatorio.</p></div>
         <ErrorAlert error={newError} focus />
         {newField && !newError && (
           <Alert focus focusKey={newField}>
             <a href="#new-label-name">{newField}</a>
           </Alert>
         )}
-        <TextField
-          id="new-label-name"
-          label="Nome nuova etichetta"
-          required
-          value={newName}
-          onChange={(event) => setNewName(event.target.value)}
-          error={newField}
-          hint="Da 1 a 32 caratteri."
-        />
-        <ColorField value={newColor} onChange={setNewColor} />
-        <Button type="submit" variant="primary" busy={busy}>
-          Crea etichetta
-        </Button>
-      </form>
+        <div className="label-create-fields">
+          <TextField
+            id="new-label-name"
+            label="Nome nuova etichetta"
+            required
+            value={newName}
+            onChange={(event) => setNewName(event.target.value)}
+            error={newField}
+            hint="Da 1 a 32 caratteri."
+          />
+          <ColorField value={newColor} onChange={setNewColor} />
+          <div className="actions">
+            <Button type="submit" variant={editing ? "secondary" : "primary"} busy={busy}>
+              Crea etichetta
+            </Button>
+            <Button disabled={busy} onClick={() => {
+              if (newName) setDiscardCreate(true);
+              else setCreateOpen(false);
+            }}>Annulla</Button>
+          </div>
+        </div>
+      </form>}
       {!filters.valid ? (
         <Alert>
           Filtri non validi.{" "}
@@ -349,37 +388,24 @@ export function LabelsPage() {
         </Alert>
       ) : (
         <>
-          <div className="admin-section">
-            <Filters
-              key={params.toString()}
-              query={filters.q}
-              active={filters.active}
-              apply={apply}
-            />
-          </div>
           <ErrorAlert error={list.error} />
           {list.isPending ? (
             <LoadingState />
           ) : (
             list.data && (
               <div aria-busy={list.isFetching}>
-                <p role="status">
-                  {list.isFetching ? "Aggiornamento in corso. " : ""}
-                  {list.data.totalElements} etichette
-                  {list.isPlaceholderData &&
-                    " · risultati dei filtri precedenti"}
-                </p>
+
                 {list.data.items.length === 0 ? (
                   <p className="panel">
-                    Nessuna etichetta corrisponde ai filtri. Puoi crearne una
-                    con il form sopra.
+                    Nessuna etichetta corrisponde ai filtri. Usa Nuova etichetta
+                    per aggiungerne una al catalogo.
                   </p>
                 ) : (
                   <>
                     {!mobile && (
-                      <div className="panel admin-desktop-list admin-table-wrap">
-                        <table className="admin-table">
-                          <caption>Catalogo etichette</caption>
+                      <div className="admin-register admin-table-wrap">
+                        <table className="admin-table admin-labels-table">
+                          <caption className="visually-hidden">Catalogo etichette</caption>
                           <thead>
                             <tr>
                               <th scope="col">Nome</th>
@@ -401,7 +427,7 @@ export function LabelsPage() {
                                   </th>
                                   <td>{colors[label.color]}</td>
                                   <td>
-                                    {label.active ? "Attiva" : "Inattiva"}
+                                    <span className={`badge badge-${label.active ? "green" : "gray"}`}>{label.active ? "Attiva" : "Inattiva"}</span>
                                   </td>
                                   <td>{actions(label)}</td>
                                 </tr>
@@ -417,9 +443,9 @@ export function LabelsPage() {
                       </div>
                     )}
                     {mobile && (
-                      <div className="admin-cards">
+                      <div className="admin-register admin-cards">
                         {list.data.items.map((label) => (
-                          <article key={label.id} className="panel admin-card">
+                          <article key={label.id} className="admin-card">
                             <h2>
                               <span className={`badge badge-${label.color}`}>
                                 {label.name}
@@ -440,6 +466,12 @@ export function LabelsPage() {
                 {editing &&
                   !list.data.items.some((label) => label.id === editing.id) &&
                   editor}
+                <p className="admin-results-status" role="status">
+                  {list.isFetching ? "Aggiornamento in corso. " : ""}
+                  {list.data.totalElements} etichette
+                  {list.isPlaceholderData &&
+                    " · risultati dei filtri precedenti"}
+                </p>
                 <Pagination
                   page={list.data.page}
                   size={list.data.size}
@@ -453,9 +485,14 @@ export function LabelsPage() {
           )}
         </>
       )}
+      <p className="muted labels-description">
+            Il catalogo del progetto. Le etichette disattivate restano sulle issue
+            già associate.
+          </p>
       <Dialog
+        className="admin-compact-dialog"
         open={Boolean(toggle)}
-        title={toggle?.active ? "Disattiva etichetta" : "Riattiva etichetta"}
+        title={toggleDesiredActive ? "Riattiva etichetta" : "Disattiva etichetta"}
         sensitive
         busy={busy}
         onClose={() => setToggle(null)}
@@ -465,27 +502,26 @@ export function LabelsPage() {
               Annulla
             </Button>
             <Button
-              variant="primary"
+              variant={toggleDesiredActive ? "primary" : "danger"}
               busy={busy}
               onClick={() =>
-                toggle && void update(toggle, !toggle.active, true)
+                toggle && void update(toggle, toggleDesiredActive, true)
               }
             >
-              {toggle?.active
-                ? "Conferma disattivazione"
-                : "Conferma riattivazione"}
+              {toggleDesiredActive ? "Conferma riattivazione" : "Conferma disattivazione"}
             </Button>
           </>
         }
       >
         <ErrorAlert error={error} />
         <p>
-          {toggle?.active
-            ? `Le associazioni di ${toggle.name} già presenti restano. L'etichetta non sarà disponibile per nuove associazioni.`
+          {!toggleDesiredActive
+            ? `Le associazioni di ${toggle?.name} già presenti restano. L'etichetta non sarà disponibile per nuove associazioni.`
             : `${toggle?.name} tornerà disponibile per le nuove associazioni.`}
         </p>
       </Dialog>
       <Dialog
+        className="admin-conflict-dialog"
         open={conflict}
         title="Etichetta aggiornata da un altro utente"
         sensitive
@@ -498,13 +534,18 @@ export function LabelsPage() {
           <LoadingState />
         ) : latest ? (
           <>
+            <dl className="label-conflict-values">
+              <div><dt>La tua bozza</dt><dd>{conflictIsToggle ? conflictTarget?.name : name}, {colors[conflictIsToggle ? (conflictTarget?.color ?? color) : color]}, {(conflictIsToggle ? toggleDesiredActive : editing?.active) ? "attiva" : "inattiva"}.</dd></div>
+              <div><dt>Valore attuale</dt><dd>{latest.name}, {colors[latest.color]}, {latest.active ? "attiva" : "inattiva"}.</dd></div>
+            </dl>
             <p>
               Dati correnti: {latest.name}, {colors[latest.color]},{" "}
               {latest.active ? "attiva" : "inattiva"}.
             </p>
             <Button
               onClick={() => {
-                setEditing(latest);
+                if (conflictIsToggle) setToggle(latest);
+                else setEditing(latest);
                 setConflict(false);
                 setError(null);
               }}
@@ -512,6 +553,7 @@ export function LabelsPage() {
               Mantieni la bozza e usa la versione corrente
             </Button>
             <Button
+              variant="danger"
               onClick={() => {
                 edit(latest);
                 setConflict(false);
@@ -521,7 +563,7 @@ export function LabelsPage() {
             </Button>
           </>
         ) : (
-          <Button onClick={() => editing && void refreshConflict(editing)}>
+          <Button onClick={() => conflictTarget && void refreshConflict(conflictTarget)}>
             Riprova caricamento
           </Button>
         )}
@@ -529,6 +571,24 @@ export function LabelsPage() {
           Torna alla bozza
         </Button>
       </Dialog>
+      <Dialog
+        className="admin-compact-dialog"
+        open={discardCreate}
+        title="Lasciare la bozza?"
+        sensitive
+        onClose={() => setDiscardCreate(false)}
+        footer={<>
+          <Button data-cancel onClick={() => setDiscardCreate(false)}>Continua a scrivere</Button>
+          <Button variant="danger" onClick={() => {
+            setNewName("");
+            setNewColor("blue");
+            setNewError(null);
+            setNewField(undefined);
+            setCreateOpen(false);
+            setDiscardCreate(false);
+          }}>Scarta bozza</Button>
+        </>}
+      ><p>Il nome dell'etichetta non è stato salvato. Scartare la bozza e chiudere la creazione?</p></Dialog>
     </section>
   );
 }

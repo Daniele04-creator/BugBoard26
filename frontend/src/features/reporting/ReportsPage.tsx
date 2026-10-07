@@ -6,6 +6,7 @@ import { Button } from "../../components/Button";
 import { TextField } from "../../components/TextField";
 import { SelectField } from "../../components/SelectField";
 import { LoadingState } from "../../components/LoadingState";
+import { Avatar } from "../../components/Avatar";
 import { dateTime, roleNames } from "../users/adminPresentation";
 import { reportingApi } from "./reportingApi";
 import {
@@ -16,7 +17,7 @@ import {
   resolutionTime,
   validMonth,
 } from "./reportPresentation";
-import "../users/admin.css";
+import "./reporting.css";
 function MonthFilter({
   month,
   current,
@@ -37,7 +38,7 @@ function MonthFilter({
     })();
   return (
     <form
-      className="panel admin-form"
+      className="reporting-filter"
       onSubmit={(event) => {
         event.preventDefault();
         if (!validMonth(draft, current)) {
@@ -61,7 +62,7 @@ function MonthFilter({
           error={error}
         />
       ) : (
-        <div className="admin-columns">
+        <div className="reporting-month-fallback">
           <SelectField
             label="Mese"
             value={draft.slice(5)}
@@ -117,12 +118,16 @@ export function ReportsPage() {
     }),
     data = report.data;
   return (
-    <section>
-      <h1 tabIndex={-1}>Report mensili</h1>
-      <p className="muted">
-        Attività e risoluzioni ricostruite dalla cronologia, comprese le issue
-        oggi archiviate.
-      </p>
+    <section className="reporting-page">
+      <div className="reporting-heading">
+        <div>
+          <h1 tabIndex={-1}>Report mensili</h1>
+          <p className="muted">
+            Attività e risoluzioni ricostruite dalla cronologia, comprese le issue
+            oggi archiviate.
+          </p>
+        </div>
+      </div>
       {!valid ? (
         <Alert>
           Mese non valido. Scegli un mese da gennaio 2000 al corrente.{" "}
@@ -143,88 +148,124 @@ export function ReportsPage() {
             <LoadingState />
           ) : (
             data && (
-              <div aria-busy={report.isFetching} className="admin-section">
-                <h2>{monthName(data.month)}</h2>
-                <p>
-                  {report.isFetching ? "Aggiornamento in corso. " : ""}
-                  {report.isPlaceholderData &&
-                    "Sono ancora visibili i dati del mese precedente. "}
-                  Periodo da {dateTime(data.periodStart)} incluso a{" "}
-                  {dateTime(data.periodEnd)} escluso · {data.timezone}.
-                </p>
-                <p>
-                  Rilevato il{" "}
-                  <time dateTime={data.asOf}>{dateTime(data.asOf)}</time>.
-                </p>
-                {data.partial && (
-                  <Alert variant="info">
-                    Mese corrente: dati parziali fino al momento della
-                    rilevazione.
-                  </Alert>
-                )}
-                <Metrics
-                  items={[
-                    {
-                      label: "Create",
-                      value: number(data.totals.createdCount),
-                    },
-                    {
-                      label: "Gestite",
-                      value: number(data.totals.handledIssueCount),
-                    },
-                    {
-                      label: "Cicli risolti",
-                      value: number(data.totals.resolvedCycleCount),
-                    },
-                    {
-                      label: "Issue risolte",
-                      value: number(data.totals.resolvedIssueCount),
-                    },
-                    {
-                      label: "Duplicate",
-                      value: number(data.totals.duplicatedCount),
-                    },
-                    {
-                      label: "Riaperte",
-                      value: number(data.totals.reopenedCount),
-                    },
-                    {
-                      label: "Duplicazioni annullate",
-                      value: number(data.totals.duplicateUndoneCount),
-                    },
-                    {
-                      label: "Tempo medio del ciclo",
-                      value: resolutionTime(
-                        data.totals.averageResolutionSeconds,
-                      ),
-                    },
-                    {
-                      label: data.partial
-                        ? "Aperte alla rilevazione"
-                        : "Aperte al termine",
-                      value: number(data.totals.openAtPeriodEnd),
-                    },
-                    {
-                      label: data.partial
-                        ? "Senza responsabile alla rilevazione"
-                        : "Senza responsabile al termine",
-                      value: number(data.unassignedOpenAtPeriodEnd),
-                    },
-                  ]}
-                />
-                <p className="muted" id="report-table-scroll">
-                  Scorri per altre colonne quando la tabella supera lo spazio
-                  disponibile.
+              <div aria-busy={report.isFetching} className="reporting-content">
+                <div className="reporting-period">
+                  <div>
+                    <h2>{monthName(data.month)}</h2>
+                    <p className="reporting-context">
+                      {report.isFetching ? "Aggiornamento in corso. " : ""}
+                      {report.isPlaceholderData &&
+                        "Sono ancora visibili i dati del mese precedente. "}
+                      Periodo da {dateTime(data.periodStart)} incluso a{" "}
+                      {dateTime(data.periodEnd)} escluso · {data.timezone}.
+                    </p>
+                    <p className="reporting-context">
+                      Rilevato il{" "}
+                      <time dateTime={data.asOf}>{dateTime(data.asOf)}</time>.
+                    </p>
+                  </div>
+                  {data.partial && (
+                    <Alert variant="info">
+                      Mese corrente: dati parziali fino al momento della
+                      rilevazione.
+                    </Alert>
+                  )}
+                </div>
+                <section
+                  className="reporting-metric-group"
+                  aria-labelledby="report-activity-heading"
+                >
+                  <h2 id="report-activity-heading">Attività del periodo</h2>
+                  <Metrics
+                    items={[
+                      {
+                        label: "Create",
+                        value: number(data.totals.createdCount),
+                      },
+                      {
+                        label: "Gestite",
+                        value: number(data.totals.handledIssueCount),
+                      },
+                      {
+                        label: "Cicli risolti",
+                        value: number(data.totals.resolvedCycleCount),
+                      },
+                      {
+                        label: "Issue risolte",
+                        value: number(data.totals.resolvedIssueCount),
+                      },
+                    ]}
+                  />
+                </section>
+                <section
+                  className="reporting-metric-group"
+                  aria-labelledby="report-outcomes-heading"
+                >
+                  <h2 id="report-outcomes-heading">Esiti e rielaborazione</h2>
+                  <Metrics
+                    items={[
+                      {
+                        label: "Duplicate",
+                        value: number(data.totals.duplicatedCount),
+                      },
+                      {
+                        label: "Riaperte",
+                        value: number(data.totals.reopenedCount),
+                      },
+                      {
+                        label: "Duplicazioni annullate",
+                        value: number(data.totals.duplicateUndoneCount),
+                      },
+                      {
+                        label: "Tempo medio del ciclo",
+                        value: resolutionTime(
+                          data.totals.averageResolutionSeconds,
+                        ),
+                      },
+                    ]}
+                  />
+                </section>
+                <section
+                  className="reporting-metric-group"
+                  aria-labelledby="report-end-heading"
+                >
+                  <h2 id="report-end-heading">Situazione al limite temporale</h2>
+                  <Metrics
+                    columns={2}
+                    items={[
+                      {
+                        label: data.partial
+                          ? "Aperte alla rilevazione"
+                          : "Aperte al termine",
+                        value: number(data.totals.openAtPeriodEnd),
+                      },
+                      {
+                        label: data.partial
+                          ? "Senza responsabile alla rilevazione"
+                          : "Senza responsabile al termine",
+                        value: number(data.unassignedOpenAtPeriodEnd),
+                      },
+                    ]}
+                  />
+                </section>
+                <p className="reporting-scroll-hint" id="report-table-scroll">
+                  Scorri la tabella per consultare tutte le colonne.
                 </p>
                 <div
-                  className="panel admin-table-wrap"
+                  className="reporting-register reporting-table-scroll"
                   role="region"
                   aria-label="Attività mensile per utente"
                   aria-describedby="report-table-scroll"
                   tabIndex={0}
                 >
-                  <table className="admin-table">
+                  <table className="reporting-table reporting-table--monthly">
                     <caption>Attività per utente</caption>
+                    <colgroup>
+                      <col className="reporting-col-user" />
+                      <col span={4} className="reporting-col-count" />
+                      <col className="reporting-col-time" />
+                      <col className="reporting-col-open" />
+                    </colgroup>
                     <thead>
                       <tr>
                         {[
@@ -248,10 +289,19 @@ export function ReportsPage() {
                       {data.perUser.map((row) => (
                         <tr key={row.user.id}>
                           <th scope="row">
-                            {row.user.displayName}
-                            <div className="muted">
-                              {roleNames[row.user.role]}
-                              {!row.user.active && " · Inattivo"}
+                            <div className="reporting-user">
+                              <Avatar
+                                name={row.user.displayName}
+                                id={row.user.id}
+                                size={32}
+                              />
+                              <div>
+                                {row.user.displayName}
+                                <div className="muted">
+                                  {roleNames[row.user.role]}
+                                  {!row.user.active && " · Inattivo"}
+                                </div>
+                              </div>
                             </div>
                           </th>
                           <td>{number(row.createdCount)}</td>
@@ -267,10 +317,10 @@ export function ReportsPage() {
                     </tbody>
                   </table>
                   {data.perUser.length === 0 && (
-                    <p>Nessun account era presente in questo periodo.</p>
+                    <p className="reporting-empty">Nessun account era presente in questo periodo.</p>
                   )}
                 </div>
-                <details className="panel admin-definition">
+                <details className="reporting-definition">
                   <summary>Definizioni e criteri di attribuzione</summary>
                   <p>
                     Il periodo parte dal primo giorno alle 00:00 in Europe/Rome

@@ -18,6 +18,7 @@ import { SelectField } from "../../components/SelectField";
 import { PasswordField } from "../auth/PasswordField";
 import { UnsavedChanges } from "../issues/UnsavedChanges";
 import "./admin.css";
+import { IconArrowLeft } from "@tabler/icons-react";
 
 export function UserCreatePage() {
   const cache = useQueryClient();
@@ -83,7 +84,7 @@ export function UserCreatePage() {
     );
   return (
     <section className="admin-form">
-      <Link to="/admin/users">Torna agli utenti</Link>
+      <Link className="admin-back" to="/admin/users"><IconArrowLeft size={20} stroke={2} aria-hidden="true" />Torna agli utenti</Link>
       <h1 tabIndex={-1}>Nuovo utente</h1>
       <p>
         * Campo obbligatorio. Il primo accesso richiederà il cambio della
@@ -92,7 +93,7 @@ export function UserCreatePage() {
       <UnsavedChanges
         dirty={Boolean(name || email || password || role !== "MEMBER")}
       />
-      <form className="panel" onSubmit={submit} noValidate>
+      <form className="panel admin-editor-form" onSubmit={submit} noValidate>
         {Object.keys(fields).length > 0 && (
           <Alert focus focusKey={fields}>
             <strong>Controlla i campi indicati.</strong>
@@ -106,7 +107,7 @@ export function UserCreatePage() {
           </Alert>
         )}
         <ErrorAlert error={error} />
-        <fieldset disabled={busy}>
+        <fieldset className="admin-form-grid" disabled={busy}>
           <TextField
             id="new-user-displayName"
             label="Nome"
@@ -150,7 +151,7 @@ export function UserCreatePage() {
             error={fields.password}
             hint="12–128 caratteri. La password non viene troncata."
           />
-          <div className="actions">
+          <div className="actions admin-form-actions">
             <Button type="submit" variant="primary" busy={busy}>
               Crea utente
             </Button>

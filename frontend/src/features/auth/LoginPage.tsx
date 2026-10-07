@@ -8,6 +8,8 @@ import { Button } from "../../components/Button";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { ApiError } from "../../api/ApiClient";
 import { LoadingState } from "../../components/LoadingState";
+import { AuthLayout } from "../../components/AuthLayout";
+import "./auth.css";
 export function safeReturnTo(value: unknown, role: string): string {
   if (
     typeof value !== "string" ||
@@ -66,13 +68,13 @@ export function LoginPage() {
           auth.user.mustChangePassword
             ? "/change-password"
             : safeReturnTo(
-                (
-                  location.state as {
-                    returnTo?: unknown;
-                  } | null
-                )?.returnTo,
-                auth.user.role,
-              )
+              (
+                location.state as {
+                  returnTo?: unknown;
+                } | null
+              )?.returnTo,
+              auth.user.role,
+            )
         }
         replace
       />
@@ -89,13 +91,13 @@ export function LoginPage() {
         user.mustChangePassword
           ? "/change-password"
           : safeReturnTo(
-              (
-                location.state as {
-                  returnTo?: unknown;
-                } | null
-              )?.returnTo,
-              user.role,
-            ),
+            (
+              location.state as {
+                returnTo?: unknown;
+              } | null
+            )?.returnTo,
+            user.role,
+          ),
         { replace: true },
       );
     } catch (e) {
@@ -114,57 +116,54 @@ export function LoginPage() {
     }
   }
   return (
-    <main className="auth-layout">
-      <div className="auth-brand">BugBoard26</div>
-      <section className="panel auth-panel">
-        <h1 tabIndex={-1}>Accedi al progetto</h1>
-        {auth.sessionExpired && (
-          <Alert variant="warning">
-            La sessione è terminata. Accedi di nuovo.
-          </Alert>
-        )}
-        {(auth.passwordChanged ||
-          (
-            location.state as {
-              passwordChanged?: boolean;
-            } | null
-          )?.passwordChanged) && (
+    <AuthLayout>
+      <h1 tabIndex={-1}>Accedi al progetto</h1>
+      {auth.sessionExpired && (
+        <Alert variant="warning">
+          La sessione è terminata. Accedi di nuovo.
+        </Alert>
+      )}
+      {(auth.passwordChanged ||
+        (
+          location.state as {
+            passwordChanged?: boolean;
+          } | null
+        )?.passwordChanged) && (
           <Alert variant="success">
             Password modificata. Accedi con la nuova password.
           </Alert>
         )}
-        <ErrorAlert error={error} focus />
-        {remaining > 0 && (
-          <p>Troppi tentativi. Riprova tra {remaining} secondi.</p>
-        )}
-        <form onSubmit={(e) => void submit(e)}>
-          <p className="muted">* Campo obbligatorio.</p>
-          <TextField
-            label="Email"
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <PasswordField
-            label="Password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            busy={busy}
-            disabled={retryAt > 0}
-          >
-            Accedi
-          </Button>
-        </form>
-        <p className="muted">Gli account sono creati dall'amministratore.</p>
-      </section>
-    </main>
+      <ErrorAlert error={error} focus />
+      {remaining > 0 && (
+        <p>Troppi tentativi. Riprova tra {remaining} secondi.</p>
+      )}
+      <form className="auth-form" onSubmit={(e) => void submit(e)}>
+        <p className="muted">* Campo obbligatorio.</p>
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="username"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <PasswordField
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          busy={busy}
+          disabled={retryAt > 0}
+        >
+          Accedi
+        </Button>
+      </form>
+      <p className="muted auth-note">Gli account sono creati dall'amministratore.</p>
+    </AuthLayout>
   );
 }

@@ -36,13 +36,15 @@ export function monthName(month: string) {
 }
 export function Metrics({
   items,
+  columns = 4,
 }: {
   items: { label: string; value: ReactNode }[];
+  columns?: 2 | 4 | 5;
 }) {
   return (
-    <dl className="admin-metrics">
+    <dl className={`reporting-metrics reporting-metrics--${columns}`}>
       {items.map((item) => (
-        <div key={item.label} className="panel admin-metric">
+        <div key={item.label} className="reporting-metric">
           <dt>{item.label}</dt>
           <dd>{item.value}</dd>
         </div>

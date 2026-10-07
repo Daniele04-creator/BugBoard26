@@ -23,6 +23,7 @@ import { PasswordField } from "../auth/PasswordField";
 import { useAuth } from "../auth/AuthProvider";
 import { UnsavedChanges } from "../issues/UnsavedChanges";
 import "./admin.css";
+import { IconArrowLeft, IconKey } from "@tabler/icons-react";
 
 function Comparison({
   latest,
@@ -49,18 +50,18 @@ function Comparison({
         <tbody>
           <tr>
             <th scope="row">Nome</th>
-            <td>{name}</td>
-            <td>{latest.displayName}</td>
+            <td data-label="La tua bozza">{name}</td>
+            <td data-label="Valore attuale">{latest.displayName}</td>
           </tr>
           <tr>
             <th scope="row">Ruolo</th>
-            <td>{roleNames[role]}</td>
-            <td>{roleNames[latest.role]}</td>
+            <td data-label="La tua bozza">{roleNames[role]}</td>
+            <td data-label="Valore attuale">{roleNames[latest.role]}</td>
           </tr>
           <tr>
             <th scope="row">Stato</th>
-            <td>{active ? "Attivo" : "Inattivo"}</td>
-            <td>{latest.active ? "Attivo" : "Inattivo"}</td>
+            <td data-label="La tua bozza">{active ? "Attivo" : "Inattivo"}</td>
+            <td data-label="Valore attuale">{latest.active ? "Attivo" : "Inattivo"}</td>
           </tr>
         </tbody>
       </table>
@@ -232,7 +233,10 @@ function Editor({ initial }: { initial: UserAdmin }) {
     <>
       <UnsavedChanges dirty={dirty && !signedOut} />
       <div className="admin-form">
-        <h1 tabIndex={-1}>Gestisci {base.displayName}</h1>
+        <header className="admin-account-heading">
+          <h1 tabIndex={-1}>Gestisci utente</h1>
+          <p className="muted">{base.displayName}</p>
+        </header>
         {success && <Alert variant="success">{success}</Alert>}
         <ErrorAlert error={error} focus />
         {error instanceof ApiError &&
@@ -254,16 +258,13 @@ function Editor({ initial }: { initial: UserAdmin }) {
           </Alert>
         )}
         <dl className="admin-account-meta panel">
-          <dt>Email</dt>
-          <dd>{base.email}</dd>
-          <dt>Cambio password</dt>
-          <dd>{base.mustChangePassword ? "Richiesto" : "Completato"}</dd>
-          <dt>Creato il</dt>
-          <dd>{dateTime(base.createdAt)}</dd>
-          <dt>Aggiornato il</dt>
-          <dd>{dateTime(base.updatedAt)}</dd>
+          <div><dt>Email</dt><dd>{base.email}</dd></div>
+          <div><dt>Cambio password</dt><dd>{base.mustChangePassword ? "Richiesto" : "Completato"}</dd></div>
+          <div><dt>Creato il</dt><dd>{dateTime(base.createdAt)}</dd></div>
+          <div><dt>Aggiornato il</dt><dd>{dateTime(base.updatedAt)}</dd></div>
         </dl>
-        <form className="panel" onSubmit={submit} noValidate>
+        <form className="panel admin-editor-form" onSubmit={submit} noValidate>
+          <h2>Informazioni utente</h2>
           <p>* Campo obbligatorio.</p>
           {Object.keys(fields).length > 0 && (
             <Alert focus focusKey={fields}>
@@ -272,15 +273,17 @@ function Editor({ initial }: { initial: UserAdmin }) {
               </a>
             </Alert>
           )}
-          <fieldset disabled={busy || blocked}>
-            <TextField
-              id="edit-user-name"
-              label="Nome"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              error={fields.displayName}
-            />
+          <fieldset className="admin-form-grid admin-account-edit-grid" disabled={busy || blocked}>
+            <div className="admin-full-field">
+              <TextField
+                id="edit-user-name"
+                label="Nome"
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                error={fields.displayName}
+              />
+            </div>
             <SelectField
               label="Ruolo"
               required
@@ -294,7 +297,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
                 </option>
               ))}
             </SelectField>
-            <label className="admin-checkbox">
+            <label className="admin-checkbox admin-account-active">
               <input
                 type="checkbox"
                 checked={active}
@@ -302,7 +305,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
               />
               Account attivo
             </label>
-            <div className="actions">
+            <div className="actions admin-form-actions">
               <Button
                 variant="primary"
                 type="submit"
@@ -318,7 +321,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
           </fieldset>
         </form>
         <section className="panel admin-section">
-          <h2>Password</h2>
+          <h2>Password di accesso</h2>
           {own ? (
             <p>
               Per la tua password usa il{" "}
@@ -340,6 +343,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
                   setResetConflicted(false);
                 }}
               >
+                <IconKey size={20} stroke={2} aria-hidden="true" />
                 Imposta password temporanea
               </Button>
               {dirty && (
@@ -352,6 +356,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
         </section>
       </div>
       <Dialog
+        className="admin-compact-dialog"
         open={confirm}
         title="Conferma modifica dell'accesso"
         sensitive
@@ -362,12 +367,18 @@ function Editor({ initial }: { initial: UserAdmin }) {
             <Button data-cancel onClick={() => setConfirm(false)}>
               Annulla
             </Button>
-            <Button variant="primary" busy={busy} onClick={() => void save()}>
+            <Button variant={active ? "primary" : "danger"} busy={busy} onClick={() => void save()}>
               Conferma e salva
             </Button>
           </>
         }
       >
+        <dl className="admin-access-comparison">
+          <div><dt>Ruolo attuale</dt><dd>{roleNames[base.role]}</dd></div>
+          <div><dt>Nuovo ruolo</dt><dd>{roleNames[role]}</dd></div>
+          <div><dt>Stato attuale</dt><dd>{base.active ? "Attivo" : "Inattivo"}</dd></div>
+          <div><dt>Nuovo stato</dt><dd>{active ? "Attivo" : "Inattivo"}</dd></div>
+        </dl>
         <p>
           La modifica di ruolo o stato terminerà tutte le sessioni di{" "}
           {base.displayName}.{own && " Dovrai accedere di nuovo."}
@@ -378,6 +389,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
         </p>
       </Dialog>
       <Dialog
+        className="admin-conflict-dialog"
         open={conflict}
         title="Account aggiornato da un altro utente"
         sensitive
@@ -413,6 +425,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
         <p>Dopo il confronto il salvataggio richiede una nuova conferma.</p>
       </Dialog>
       <Dialog
+        className="admin-compact-dialog"
         open={resetOpen}
         title={`Password temporanea per ${base.displayName}`}
         sensitive
@@ -516,7 +529,7 @@ export function UserEditPage() {
   });
   return (
     <section>
-      <Link to="/admin/users">Torna agli utenti</Link>
+      <Link className="admin-back" to="/admin/users"><IconArrowLeft size={20} stroke={2} aria-hidden="true" />Torna agli utenti</Link>
       {!valid ? (
         <>
           <h1 tabIndex={-1}>Utente non trovato</h1>

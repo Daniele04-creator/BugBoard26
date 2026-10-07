@@ -7,6 +7,7 @@ import {
   normalizedName,
   parseAdminFilters,
   roleNames,
+  useMobileCards,
 } from "./adminPresentation";
 import type { AdminFilters } from "./adminPresentation";
 import type { UserAdmin, UserRole } from "../../api/types";
@@ -17,6 +18,8 @@ import { Pagination } from "../../components/Pagination";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import "./admin.css";
+import { Avatar } from "../../components/Avatar";
+import { IconPlus, IconArrowRight } from "@tabler/icons-react";
 
 function Filters({
   filters,
@@ -42,7 +45,7 @@ function Filters({
     apply(query);
   }
   return (
-    <form className="panel admin-filters" onSubmit={submit}>
+    <form className="admin-filters admin-user-filters" onSubmit={submit}>
       <TextField
         label="Cerca nome o email"
         value={q}
@@ -71,7 +74,7 @@ function Filters({
         <option value="false">Inattivo</option>
       </SelectField>
       <div className="actions">
-        <Button type="submit" variant="primary">
+        <Button type="submit">
           Applica filtri
         </Button>
         <Button onClick={() => apply(new URLSearchParams())}>
@@ -83,25 +86,26 @@ function Filters({
 }
 function AccountCard({ user }: { user: UserAdmin }) {
   return (
-    <article className="panel admin-card">
-      <h2>{user.displayName}</h2>
+    <article className="admin-card">
+      <h2 className="admin-person"><Avatar name={user.displayName} id={user.id} />{user.displayName}</h2>
       <dl>
         <dt>Email</dt>
         <dd>{user.email}</dd>
         <dt>Ruolo</dt>
         <dd>{roleNames[user.role]}</dd>
         <dt>Stato</dt>
-        <dd>{user.active ? "Attivo" : "Inattivo"}</dd>
+        <dd><span className={`badge badge-${user.active ? "green" : "gray"}`}>{user.active ? "Attivo" : "Inattivo"}</span></dd>
         <dt>Cambio password</dt>
-        <dd>{user.mustChangePassword ? "Richiesto" : "Completato"}</dd>
+        <dd><span className={`badge badge-${user.mustChangePassword ? "amber" : "green"}`}>{user.mustChangePassword ? "Richiesto" : "Completato"}</span></dd>
       </dl>
-      <Link className="button" to={`/admin/users/${user.id}/edit`}>
-        Gestisci {user.displayName}
+      <Link className="button button-secondary" aria-label={`Gestisci ${user.displayName}`} to={`/admin/users/${user.id}/edit`}>
+        Gestisci <IconArrowRight size={20} stroke={2} aria-hidden="true" />
       </Link>
     </article>
   );
 }
 export function UsersPage() {
+  const mobile = useMobileCards();
   const [params, setParams] = useSearchParams(),
     filters = parseAdminFilters(params);
   const query = new URLSearchParams(params);
@@ -125,13 +129,14 @@ export function UsersPage() {
     setParams(next);
   }
   return (
-    <section>
+    <section className="users-page">
       <div className="admin-heading">
         <div>
           <h1 tabIndex={-1}>Utenti</h1>
           <p className="muted">Account, ruoli e accesso al progetto.</p>
         </div>
         <Link className="button button-primary" to="/admin/users/new">
+          <IconPlus size={20} stroke={2} aria-hidden="true" />
           Nuovo utente
         </Link>
       </div>
@@ -155,12 +160,7 @@ export function UsersPage() {
           ) : (
             snapshot.data && (
               <div aria-busy={snapshot.isFetching}>
-                <p role="status">
-                  {snapshot.isFetching ? "Aggiornamento in corso. " : ""}
-                  {snapshot.data.data.totalElements} risultati
-                  {snapshot.isPlaceholderData &&
-                    " · risultati dei filtri precedenti"}
-                </p>
+
                 {snapshot.data.data.items.length === 0 ? (
                   <div className="panel">
                     <p>Nessun utente corrisponde ai filtri.</p>
@@ -170,9 +170,9 @@ export function UsersPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="panel admin-desktop-list admin-table-wrap">
-                      <table className="admin-table">
-                        <caption>Account del progetto</caption>
+                    {!mobile && <div className="admin-register admin-table-wrap">
+                      <table className="admin-table admin-users-table">
+                        <caption className="visually-hidden">Account del progetto</caption>
                         <thead>
                           <tr>
                             {[
@@ -192,32 +192,38 @@ export function UsersPage() {
                         <tbody>
                           {snapshot.data.data.items.map((user) => (
                             <tr key={user.id}>
-                              <th scope="row">{user.displayName}</th>
+                              <th scope="row"><span className="admin-person"><Avatar name={user.displayName} id={user.id} />{user.displayName}</span></th>
                               <td>{user.email}</td>
                               <td>{roleNames[user.role as UserRole]}</td>
-                              <td>{user.active ? "Attivo" : "Inattivo"}</td>
+                              <td><span className={`badge badge-${user.active ? "green" : "gray"}`}>{user.active ? "Attivo" : "Inattivo"}</span></td>
                               <td>
-                                {user.mustChangePassword
+                                <span className={`badge badge-${user.mustChangePassword ? "amber" : "green"}`}>{user.mustChangePassword
                                   ? "Richiesto"
-                                  : "Completato"}
+                                  : "Completato"}</span>
                               </td>
                               <td>
-                                <Link to={`/admin/users/${user.id}/edit`}>
-                                  Gestisci {user.displayName}
+                                <Link aria-label={`Gestisci ${user.displayName}`} to={`/admin/users/${user.id}/edit`}>
+                                  Gestisci
                                 </Link>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                    </div>
-                    <div className="admin-cards">
+                    </div>}
+                    {mobile && <div className="admin-register admin-cards">
                       {snapshot.data.data.items.map((user) => (
                         <AccountCard key={user.id} user={user} />
                       ))}
-                    </div>
+                    </div>}
                   </>
                 )}
+                <p className="admin-results-status" role="status">
+                  {snapshot.isFetching ? "Aggiornamento in corso. " : ""}
+                  {snapshot.data.data.totalElements} risultati
+                  {snapshot.isPlaceholderData &&
+                    " · risultati dei filtri precedenti"}
+                </p>
                 <Pagination
                   page={snapshot.data.data.page}
                   size={snapshot.data.data.size}

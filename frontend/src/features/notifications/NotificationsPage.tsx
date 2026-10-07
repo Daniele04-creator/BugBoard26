@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { IconCheck } from "@tabler/icons-react";
 import { api } from "../../api/ApiClient";
 import type { Notification, Page } from "../../api/types";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { Button } from "../../components/Button";
 import { Pagination } from "../../components/Pagination";
+import { EmptyState } from "../../components/EmptyState";
+import { LoadingState } from "../../components/LoadingState";
 import { dateTime } from "../issues/issuePresentation";
-import "../issues/styles.css";
+import "./styles.css";
 export function NotificationsPage() {
   const [params, setParams] = useSearchParams();
   const cache = useQueryClient();
@@ -70,8 +73,13 @@ export function NotificationsPage() {
     setParams(next);
   }
   return (
-    <section>
-      <h1 tabIndex={-1}>Notifiche</h1>
+    <section className="notifications-page" aria-labelledby="notifications-title">
+      <header className="notifications-heading">
+        <h1 id="notifications-title" tabIndex={-1}>
+          Notifiche
+        </h1>
+        <p>Resta aggiornato sulle attività del progetto.</p>
+      </header>
       {!valid ? (
         <>
           <Alert>Filtri delle notifiche non validi.</Alert>
@@ -79,8 +87,8 @@ export function NotificationsPage() {
         </>
       ) : (
         <>
-          <div className="issue-list-toolbar">
-            <label className="check-option">
+          <div className="notifications-toolbar">
+            <label className="notifications-filter">
               <input
                 type="checkbox"
                 checked={params.get("unreadOnly") === "true"}
@@ -88,7 +96,8 @@ export function NotificationsPage() {
               />
               Solo non lette
             </label>
-            <Button busy={busy} onClick={() => void mark()}>
+            <Button variant="secondary" busy={busy} onClick={() => void mark()}>
+              <IconCheck size={20} stroke={2} aria-hidden="true" />
               Segna tutte come lette
             </Button>
           </div>
@@ -96,64 +105,87 @@ export function NotificationsPage() {
           {message && <Alert variant="success">{message}</Alert>}
           <ErrorAlert error={query.error} />
           {query.isPending ? (
-            <p role="status">Caricamento notifiche…</p>
+            <LoadingState label="Caricamento notifiche…" />
           ) : (
             query.data && (
               <>
-                <ul className="notification-list">
-                  {query.data.items.map((notification) => (
-                    <li
-                      key={notification.id}
-                      className={
-                        notification.readAt ? "" : "notification-unread"
-                      }
-                    >
-                      <p>
-                        {notification.readAt ? "Letta" : "Non letta"} ·{" "}
-                        <time
-                          dateTime={notification.createdAt}
-                          title={notification.createdAt}
-                        >
-                          {dateTime(notification.createdAt)}
-                        </time>
-                      </p>
-                      <h2>
-                        {notification.type === "ASSIGNED"
-                          ? "Ti è stata assegnata"
-                          : "È stata risolta"}{" "}
-                        BB-{notification.issue.number} —{" "}
-                        {notification.issue.title}
-                      </h2>
-                      <div className="actions">
-                        <Link
-                          to={`/issues/${notification.issue.id}`}
-                          onClick={(event) => {
-                            if (!notification.readAt) {
-                              event.preventDefault();
-                              void mark(notification.id, notification.issue.id);
-                            }
-                          }}
-                        >
-                          Apri
-                        </Link>
-                        {!notification.readAt && (
-                          <Button
-                            disabled={busy}
-                            onClick={() => void mark(notification.id)}
+                {query.data.items.length > 0 && (
+                  <ul
+                    className="notifications-register"
+                    aria-label="Registro delle notifiche"
+                  >
+                    {query.data.items.map((notification) => (
+                      <li
+                        key={notification.id}
+                        className={
+                          notification.readAt
+                            ? "notifications-row"
+                            : "notifications-row notifications-row-unread"
+                        }
+                      >
+                        <p className="notifications-read-state">
+                          <span
+                            className="notifications-state-dot"
+                            aria-hidden="true"
+                          />
+                          {notification.readAt ? "Letta" : "Non letta"}
+                        </p>
+                        <div className="notifications-content">
+                          <h2>
+                            {notification.type === "ASSIGNED"
+                              ? "Ti è stata assegnata"
+                              : "È stata risolta"}{" "}
+                            <span className="notifications-issue-number">
+                              BB-{notification.issue.number}
+                            </span>
+                            {" — "}
+                            <span className="notifications-issue-title">
+                              {notification.issue.title}
+                            </span>
+                          </h2>
+                          <time
+                            dateTime={notification.createdAt}
+                            title={notification.createdAt}
                           >
-                            Segna come letta
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                            {dateTime(notification.createdAt)}
+                          </time>
+                        </div>
+                        <div className="notifications-actions">
+                          <Link
+                            className="button button-link"
+                            to={`/issues/${notification.issue.id}`}
+                            onClick={(event) => {
+                              if (!notification.readAt) {
+                                event.preventDefault();
+                                void mark(notification.id, notification.issue.id);
+                              }
+                            }}
+                          >
+                            Apri
+                          </Link>
+                          {!notification.readAt && (
+                            <Button
+                              variant="secondary"
+                              disabled={busy}
+                              onClick={() => void mark(notification.id)}
+                            >
+                              <IconCheck size={20} stroke={2} aria-hidden="true" />
+                              Segna come letta
+                            </Button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {query.data.totalElements === 0 && (
-                  <p>
-                    {params.get("unreadOnly") === "true"
-                      ? "Non hai notifiche non lette."
-                      : "Non hai notifiche."}
-                  </p>
+                  <EmptyState
+                    title={
+                      params.get("unreadOnly") === "true"
+                        ? "Non hai notifiche non lette."
+                        : "Non hai notifiche."
+                    }
+                  />
                 )}
                 <Pagination
                   {...query.data}

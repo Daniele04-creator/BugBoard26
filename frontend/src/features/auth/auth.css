@@ -1,0 +1,130 @@
+.auth-form > .button-primary {
+  width: 100%;
+}
+
+.auth-note {
+  margin-top: 24px;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.password-field {
+  position: relative;
+  min-width: 0;
+}
+
+.password-field .field input {
+  padding-right: 52px;
+}
+
+.password-field .password-toggle {
+  position: absolute;
+  top: 26px;
+  right: 1px;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.password-field .password-toggle:hover {
+  background: var(--color-surface-subtle);
+}
+
+.password-change-form .alert {
+  margin-block: 20px;
+}
+
+.password-change-mandatory .actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.profile-heading {
+  margin-bottom: 24px;
+}
+
+.profile-heading h1 {
+  margin-bottom: 8px;
+}
+
+.profile-heading p {
+  overflow-wrap: anywhere;
+}
+
+.profile-sections {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+
+.profile-section {
+  padding: 24px;
+  min-width: 0;
+}
+
+.profile-section h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.profile-section form {
+  max-width: 480px;
+}
+
+.profile-section .actions {
+  margin-top: 24px;
+}
+
+.profile-conflict-dialog {
+  max-width: 680px;
+}
+
+.profile-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-block: 24px;
+}
+
+.profile-comparison div {
+  min-width: 0;
+}
+
+.profile-comparison dt {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.profile-comparison dd {
+  margin: 0;
+  padding: 12px;
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1024px) {
+  .profile-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .profile-section {
+    padding: 16px;
+  }
+  .profile-comparison {
+    grid-template-columns: 1fr;
+  }
+  .profile-section .actions > .button {
+    width: 100%;
+  }
+}

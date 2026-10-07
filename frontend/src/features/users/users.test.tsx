@@ -103,7 +103,8 @@ describe("administrator accounts", () => {
       .spyOn(userApi, "update")
       .mockResolvedValue({ ...member, role: "VIEWER", version: 1 });
     show(`/admin/users/${member.id}/edit`);
-    await screen.findByRole("heading", { name: "Gestisci Member" });
+    await screen.findByLabelText(/^Nome/);
+    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
     expect(userApi.get).toHaveBeenCalledWith(
       member.id,
       expect.any(AbortSignal),
@@ -146,7 +147,8 @@ describe("administrator accounts", () => {
         version: 2,
       });
     show(`/admin/users/${member.id}/edit`);
-    await screen.findByRole("heading", { name: "Gestisci Member" });
+    await screen.findByLabelText(/^Nome/);
+    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
     const input = screen.getByLabelText(/^Nome/);
     await userEvent.setup().clear(input);
     await userEvent.setup().type(input, "My draft");
@@ -177,7 +179,8 @@ describe("administrator accounts", () => {
   it("never offers an administrative temporary password for the current account", async () => {
     vi.spyOn(userApi, "get").mockResolvedValue(admin);
     show(`/admin/users/${admin.id}/edit`);
-    await screen.findByRole("heading", { name: "Gestisci Admin" });
+    await screen.findByLabelText(/^Nome/);
+    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Imposta password temporanea" }),
     ).not.toBeInTheDocument();
@@ -191,7 +194,8 @@ describe("administrator accounts", () => {
       .mockRejectedValueOnce(new Error("Read unavailable"));
     const reset = vi.spyOn(userApi, "reset").mockResolvedValue();
     show(`/admin/users/${member.id}/edit`);
-    await screen.findByRole("heading", { name: "Gestisci Member" });
+    await screen.findByLabelText(/^Nome/);
+    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
     await userEvent
       .setup()
       .click(
