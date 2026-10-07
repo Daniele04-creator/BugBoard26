@@ -1,3 +1,4 @@
+import { Avatar } from "../../components/Avatar";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -274,7 +275,10 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
       </>
     );
   return (
-    <section aria-label="Discussione e cronologia">
+    <section
+      className="panel issue-discussion"
+      aria-label="Discussione e cronologia"
+    >
       <UnsavedChanges
         dirty={!!auth.user && (!!body || uncertain)}
         onDiscard={() => {
@@ -343,13 +347,20 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
                   <ul className="comment-list">
                     {comments.data.items.map((comment) => (
                       <li key={comment.id}>
-                        <strong>{userName(comment.author)}</strong> ·{" "}
-                        <time
-                          dateTime={comment.createdAt}
-                          title={comment.createdAt}
-                        >
-                          {dateTime(comment.createdAt)}
-                        </time>
+                        <div className="comment-heading">
+                          <Avatar
+                            name={comment.author.displayName}
+                            id={comment.author.id}
+                            size={32}
+                          />
+                          <strong>{userName(comment.author)}</strong>
+                          <time
+                            dateTime={comment.createdAt}
+                            title={comment.createdAt}
+                          >
+                            {dateTime(comment.createdAt)}
+                          </time>
+                        </div>
                         <p className="comment-body">{comment.body}</p>
                       </li>
                     ))}
@@ -370,6 +381,7 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
             )}
             {issue.permissions.canComment && (
               <form
+                className="issue-comment-form"
                 onSubmit={(event) => {
                   event.preventDefault();
                   void send();
@@ -415,7 +427,7 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
               </form>
             )}
             {!issue.permissions.canComment && body && (
-              <div className="panel">
+              <div className="issue-preserved-comment">
                 <Alert variant="warning">
                   Non è più possibile inviare un commento su questa issue. La
                   bozza è conservata e può essere copiata.

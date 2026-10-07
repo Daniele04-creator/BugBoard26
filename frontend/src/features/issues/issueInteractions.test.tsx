@@ -163,20 +163,24 @@ describe("issue commands and drafts", () => {
         onReload={vi.fn()}
       />,
     );
-    const current = await screen.findByRole("radio", { name: /Luca · MEMBER/ });
+    const current = await screen.findByRole("radio", {
+      name: /Luca · Membro del team/,
+    });
     expect(current).toBeChecked();
     expect(
       screen.getByRole("radio", { name: "Nessuna assegnazione" }),
     ).not.toBeChecked();
     await userEvent.click(
-      await screen.findByRole("radio", { name: /Anna · MEMBER · dddddddd/ }),
+      await screen.findByRole("radio", {
+        name: /Anna · Membro del team · dddddddd/,
+      }),
     );
     await userEvent.click(screen.getByRole("button", { name: "Successiva" }));
     await waitFor(() =>
       expect(screen.getByText(/Pagina 2 di 2/)).toBeInTheDocument(),
     );
     expect(
-      screen.getByRole("radio", { name: /Anna · MEMBER · dddddddd/ }),
+      screen.getByRole("radio", { name: /Anna · Membro del team · dddddddd/ }),
     ).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Conferma assegnazione" }),
@@ -207,7 +211,9 @@ describe("issue commands and drafts", () => {
     );
     await screen.findByText(/Carico non disponibile\. Puoi scegliere/);
     await userEvent.click(
-      await screen.findByRole("radio", { name: /Luca · MEMBER · cccccccc/ }),
+      await screen.findByRole("radio", {
+        name: /Luca · Membro del team · cccccccc/,
+      }),
     );
     const submit = screen.getByRole("button", {
       name: "Conferma assegnazione",
@@ -265,7 +271,7 @@ describe("issue commands and drafts", () => {
         onReload={vi.fn()}
       />,
     );
-    await screen.findByRole("radio", { name: /Luca · MEMBER/ });
+    await screen.findByRole("radio", { name: /Luca · Membro del team/ });
     await userEvent.click(
       screen.getByRole("button", { name: "Conferma assegnazione" }),
     );

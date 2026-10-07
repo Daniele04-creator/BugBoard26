@@ -1,3 +1,15 @@
+import {
+  IconArrowLeft,
+  IconPencil,
+  IconPhoto,
+  IconUserPlus,
+  IconCalendar,
+  IconSwitchHorizontal,
+  IconCopy,
+  IconCopyOff,
+  IconArchive,
+  IconRestore,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +28,7 @@ import {
   userName,
 } from "./issuePresentation";
 import { IssueBadges } from "./IssueBadges";
+import { IssuePerson } from "./IssuePerson";
 import { IssueCommandDialog } from "./IssueCommandDialog";
 import type { IssueCommand } from "./IssueCommandDialog";
 import { IssueDiscussion } from "./IssueDiscussion";
@@ -94,18 +107,24 @@ export function IssueDetailPage() {
   const data = issue.data;
   const p = data.permissions;
   return (
-    <section>
-      <Link to={back} state={{ restoreScrollY: state?.scrollY }}>
+    <section className="issue-detail-page">
+      <Link
+        className="issue-back-link"
+        to={back}
+        state={{ restoreScrollY: state?.scrollY }}
+      >
+        <IconArrowLeft size={20} stroke={2} aria-hidden="true" />
         Torna {back.startsWith("/archive") ? "all’archivio" : "all’elenco"}
       </Link>
       <div className="issue-heading">
         <div>
-          <p className="muted">BB-{data.number}</p>
+          <p className="issue-number">BB-{data.number}</p>
           <h1 tabIndex={-1}>{data.title}</h1>
           <IssueBadges issue={data} />
         </div>
         {p.canEdit && (
           <Link className="button" to={`/issues/${issueId}/edit`}>
+            <IconPencil size={20} stroke={2} aria-hidden="true" />
             Modifica
           </Link>
         )}
@@ -139,25 +158,17 @@ export function IssueDetailPage() {
         </Alert>
       )}
       <div className="issue-detail-grid">
-        <div>
-          <article className="panel">
-            <h2>Descrizione</h2>
-            <p className="issue-description">{data.description}</p>
-            {data.image && (
-              <Button onClick={() => setImageOpen(true)}>
-                Apri immagine · {data.image.originalName}
-              </Button>
-            )}
-          </article>
-          <IssueDiscussion key={issueId} issue={data} />
-        </div>
         <aside className="panel issue-meta">
           <h2>Metadati</h2>
           <dl>
             <dt>Reporter</dt>
-            <dd>{userName(data.reporter)}</dd>
+            <dd>
+              <IssuePerson user={data.reporter} />
+            </dd>
             <dt>Responsabile</dt>
-            <dd>{userName(data.assignee)}</dd>
+            <dd>
+              <IssuePerson user={data.assignee} />
+            </dd>
             <dt>Scadenza</dt>
             <dd>
               {dateOnly(data.dueDate)}
@@ -186,40 +197,67 @@ export function IssueDetailPage() {
           <div className="actions">
             {p.canAssign && (
               <Button onClick={() => setCommand("assignment")}>
+                <IconUserPlus size={20} stroke={2} aria-hidden="true" />
                 {data.assignee ? "Riassegna" : "Assegna"}
               </Button>
             )}
             {p.canSetDeadline && (
-              <Button onClick={() => setCommand("deadline")}>Scadenza</Button>
+              <Button onClick={() => setCommand("deadline")}>
+                <IconCalendar size={20} stroke={2} aria-hidden="true" />
+                Scadenza
+              </Button>
             )}
             {p.canChangeState && (
               <Button onClick={() => setCommand("state")}>
+                <IconSwitchHorizontal size={20} stroke={2} aria-hidden="true" />
                 {data.status === "RESOLVED" ? "Riapri" : "Cambia stato"}
               </Button>
             )}
             {p.canDuplicate && (
               <Button onClick={() => setCommand("duplicate")}>
+                <IconCopy size={20} stroke={2} aria-hidden="true" />
                 Segna duplicato
               </Button>
             )}
             {p.canUndoDuplicate && (
               <Button onClick={() => setCommand("undo")}>
+                <IconCopyOff size={20} stroke={2} aria-hidden="true" />
                 Annulla duplicazione
               </Button>
             )}
             {p.canArchive && (
-              <Button onClick={() => setCommand("archive")}>Archivia</Button>
+              <Button onClick={() => setCommand("archive")}>
+                <IconArchive size={20} stroke={2} aria-hidden="true" />
+                Archivia
+              </Button>
             )}
             {p.canRestore && (
-              <Button onClick={() => setCommand("restore")}>Ripristina</Button>
+              <Button onClick={() => setCommand("restore")}>
+                <IconRestore size={20} stroke={2} aria-hidden="true" />
+                Ripristina
+              </Button>
             )}
             {p.canEdit && (
               <Button onClick={() => setCommand("image")}>
+                <IconPhoto size={20} stroke={2} aria-hidden="true" />
                 Gestisci immagine
               </Button>
             )}
           </div>
         </aside>
+        <div className="issue-detail-main">
+          <article className="panel issue-description-panel">
+            <h2>Descrizione</h2>
+            <p className="issue-description">{data.description}</p>
+            {data.image && (
+              <Button onClick={() => setImageOpen(true)}>
+                <IconPhoto size={20} stroke={2} aria-hidden="true" />
+                Apri immagine · {data.image.originalName}
+              </Button>
+            )}
+          </article>
+          <IssueDiscussion key={issueId} issue={data} />
+        </div>
       </div>
       {command && (
         <IssueCommandDialog

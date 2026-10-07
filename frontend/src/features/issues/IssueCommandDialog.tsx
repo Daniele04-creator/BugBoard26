@@ -1,3 +1,5 @@
+import { IconSearch, IconRefresh } from "@tabler/icons-react";
+import { Avatar } from "../../components/Avatar";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -13,11 +15,13 @@ import {
   dateTime,
   normalized,
   codePoints,
-  statusNames,
   todayRome,
   userName,
 } from "./issuePresentation";
 import { ImagePicker } from "./ImagePicker";
+import { roleNames } from "../users/adminPresentation";
+import { IssueStatusBadge } from "./IssueBadges";
+import { IssuePerson } from "./IssuePerson";
 export type IssueCommand =
   | "assignment"
   | "state"
@@ -238,14 +242,19 @@ export function IssueCommandDialog({
     <Dialog
       open
       title={`${titles[command]} BB-${issue.number}`}
-      className={`command-dialog ${command === "assignment" ? "assignment-dialog" : ""}`}
+      className={`command-dialog issue-command-${command}`}
       onClose={onClose}
       busy={busy}
       sensitive={["archive", "restore", "undo"].includes(command)}
       footer={
         <>
           <Button
-            variant="primary"
+            variant={
+              ["archive", "undo"].includes(command) ||
+              (command === "image" && removeImage)
+                ? "danger"
+                : "primary"
+            }
             busy={busy}
             disabled={disabled}
             onClick={() => void save()}
@@ -296,7 +305,10 @@ export function IssueCommandDialog({
       )}
       {command === "assignment" && (
         <>
-          <p>Responsabile attuale: {userName(issue.assignee)}</p>
+          <div className="issue-command-summary">
+            <span>Responsabile attuale:</span>
+            <IssuePerson user={issue.assignee} />
+          </div>
           <p>
             Un solo responsabile. I suggerimenti confrontano le issue aperte,
             escludendo questa issue.
@@ -320,6 +332,7 @@ export function IssueCommandDialog({
             <label htmlFor="candidate-search">Cerca utenti per nome</label>
             <input
               id="candidate-search"
+              disabled={busy}
               value={candidateDraft}
               onChange={(event) => setCandidateDraft(event.target.value)}
               aria-invalid={!!candidateSearchError}
@@ -327,7 +340,10 @@ export function IssueCommandDialog({
                 candidateSearchError ? "candidate-search-error" : undefined
               }
             />
-            <Button type="submit">Cerca utenti</Button>
+            <Button type="submit" disabled={busy}>
+              <IconSearch size={20} stroke={2} aria-hidden="true" />
+              Cerca utenti
+            </Button>
             {candidateSearchError && (
               <p
                 id="candidate-search-error"
@@ -345,9 +361,11 @@ export function IssueCommandDialog({
           )}
           <div className="actions">
             <Button
+              disabled={busy}
               onClick={() => void suggestions.refetch()}
               busy={suggestions.isFetching}
             >
+              <IconRefresh size={20} stroke={2} aria-hidden="true" />
               Aggiorna carichi
             </Button>
             {ranked && (
@@ -368,6 +386,7 @@ export function IssueCommandDialog({
             <label className="assignment-option">
               <input
                 type="radio"
+                disabled={busy}
                 name="assignee"
                 value=""
                 checked={!selection}
@@ -382,6 +401,7 @@ export function IssueCommandDialog({
               <label className="assignment-option" key={user.id}>
                 <input
                   type="radio"
+                  disabled={busy}
                   name="assignee"
                   value={user.id}
                   checked={selection === user.id}
@@ -390,8 +410,10 @@ export function IssueCommandDialog({
                     setSelectedUser(user);
                   }}
                 />
+                <Avatar name={user.displayName} id={user.id} size={32} />
                 <span>
-                  {userName(user)} · {user.role} · {user.id.slice(0, 8)}
+                  {userName(user)} · {roleNames[user.role]} ·{" "}
+                  {user.id.slice(0, 8)}
                   <small>
                     {rankedById.has(user.id)
                       ? `${rankedById.get(user.id)!.openIssueCount} issue aperte · ${rankedById.get(user.id)!.reason}`
@@ -400,6 +422,15 @@ export function IssueCommandDialog({
                   {rankedById.get(user.id)?.rank === 1 && (
                     <small>Suggerito per il carico minore</small>
                   )}
+                  {user.id === issue.assignee?.id && (
+                    <small>Responsabile attuale</small>
+                  )}
+                  {!candidateRows.some(
+                    (candidate) => candidate.id === user.id,
+                  ) &&
+                    user.id === selection && (
+                      <small>Selezione conservata fuori pagina</small>
+                    )}
                 </span>
               </label>
             ))}
@@ -442,14 +473,21 @@ export function IssueCommandDialog({
       )}
       {command === "state" && (
         <>
-          <p>Stato corrente: {statusNames[issue.status]}</p>
-          <p>Responsabile del lavoro: {userName(issue.assignee)}</p>
+          <div className="issue-command-summary">
+            <span>Stato corrente:</span>
+            <IssueStatusBadge status={issue.status} />
+          </div>
+          <div className="issue-command-summary">
+            <span>Responsabile del lavoro:</span>
+            <IssuePerson user={issue.assignee} />
+          </div>
           <fieldset>
             <legend>Nuovo stato</legend>
             {issue.permissions.allowedStateTargets.map((status) => (
               <label className="check-option" key={status}>
                 <input
                   type="radio"
+                  disabled={busy}
                   name="status"
                   checked={selection === status}
                   onChange={() => {
@@ -457,7 +495,7 @@ export function IssueCommandDialog({
                     setError(null);
                   }}
                 />
-                {statusNames[status]}
+                <IssueStatusBadge status={status} />
               </label>
             ))}
           </fieldset>
@@ -487,13 +525,14 @@ export function IssueCommandDialog({
             min={todayRome()}
             max="2100-12-31"
             value={dueDate}
-            disabled={removeDate}
+            disabled={removeDate || busy}
             onChange={(e) => setDueDate(e.target.value)}
           />
           <p className="field-hint">Da oggi al 31/12/2100.</p>
           <label className="check-option">
             <input
               type="checkbox"
+              disabled={busy}
               checked={removeDate}
               onChange={(e) => setRemoveDate(e.target.checked)}
             />
@@ -504,6 +543,7 @@ export function IssueCommandDialog({
       {command === "duplicate" && (
         <>
           <form
+            className="assignment-search duplicate-search"
             onSubmit={(e) => {
               e.preventDefault();
               setSearch(searchDraft.trim());
@@ -516,17 +556,21 @@ export function IssueCommandDialog({
             </label>
             <input
               id="duplicate-search"
+              disabled={busy}
               value={searchDraft}
               onChange={(e) => setSearchDraft(e.target.value)}
               maxLength={100}
             />
-            <Button type="submit">Cerca canonica</Button>
+            <Button type="submit" disabled={busy}>
+              <IconSearch size={20} stroke={2} aria-hidden="true" />
+              Cerca canonica
+            </Button>
           </form>
           <ErrorAlert error={targets.error} />
           {targets.isFetching && <p role="status">Ricerca in corso…</p>}
           {targets.data && (
             <>
-              <fieldset>
+              <fieldset className="duplicate-targets">
                 <legend>Scegli issue canonica</legend>
                 {targets.data.items
                   .filter((target) => target.id !== issue.id)
@@ -534,18 +578,26 @@ export function IssueCommandDialog({
                     <label className="check-option" key={target.id}>
                       <input
                         type="radio"
+                        disabled={busy}
                         name="target"
                         checked={selection === target.id}
                         onChange={() => setSelection(target.id)}
                       />
-                      BB-{target.number} · {target.title} ·{" "}
-                      {statusNames[target.status]}
+                      <span>
+                        BB-{target.number} · {target.title}
+                      </span>
+                      <IssueStatusBadge status={target.status} />
                     </label>
                   ))}
               </fieldset>
               <Pagination {...targets.data} onPageChange={setPage} />
             </>
           )}
+          {targets.data &&
+            targets.data.items.filter((target) => target.id !== issue.id)
+              .length === 0 && (
+              <p>Nessuna issue canonica corrisponde alla ricerca.</p>
+            )}
           <p>
             Questa issue sarà chiusa come Duplicata. Non verrà inviata una
             notifica di risoluzione.
@@ -553,23 +605,44 @@ export function IssueCommandDialog({
         </>
       )}
       {command === "archive" && (
-        <p>
-          Non apparirà nelle liste e nel carico corrente. Stato, commenti e
-          cronologia saranno conservati.
-        </p>
+        <>
+          <p>
+            <strong>{issue.title}</strong>
+          </p>
+          <p>
+            Non apparirà nelle liste e nel carico corrente. Stato, commenti e
+            cronologia saranno conservati.
+          </p>
+        </>
       )}
       {command === "restore" && (
-        <p>
-          L’issue tornerà nell’elenco corrente. Se il responsabile è inattivo, è
-          un utente in sola lettura o deve ancora completare il cambio password,
-          verrà rimosso e lo stato sarà Da fare.
-        </p>
+        <>
+          <p>
+            <strong>{issue.title}</strong>
+          </p>
+          <p>
+            L’issue tornerà nell’elenco corrente. Se l’issue è aperta e il
+            responsabile è inattivo, è un utente in sola lettura o deve ancora
+            completare il cambio password, verrà rimosso e lo stato sarà Da
+            fare.
+          </p>
+        </>
       )}
       {command === "undo" && (
-        <p>
-          Il collegamento alla canonica sarà rimosso. Stato futuro: Da fare, con
-          un nuovo ciclo. Il responsabile sarà mantenuto solo se ancora idoneo.
-        </p>
+        <>
+          <p>
+            Canonica attuale:{" "}
+            {issue.duplicateOf
+              ? `BB-${issue.duplicateOf.number} · ${issue.duplicateOf.title}`
+              : "Non disponibile"}
+            .
+          </p>
+          <p>
+            Il collegamento alla canonica sarà rimosso. Stato futuro: Da fare,
+            con un nuovo ciclo. Il responsabile sarà mantenuto solo se ancora
+            idoneo.
+          </p>
+        </>
       )}
       {command === "image" && (
         <>

@@ -1,3 +1,4 @@
+import { IconArrowLeft, IconInfoCircle } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -206,7 +207,14 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
       (label) => !label.active && fields.labelIds.includes(label.id),
     ) ?? [];
   return (
-    <div className="form-layout">
+    <div className="form-layout issue-editor">
+      <Link
+        className="issue-back-link"
+        to={issue ? `/issues/${issue.id}` : "/issues"}
+      >
+        <IconArrowLeft size={20} stroke={2} aria-hidden="true" />
+        {issue ? "Torna al dettaglio" : "Torna all’elenco"}
+      </Link>
       <h1 tabIndex={-1}>
         {issue ? `Modifica issue BB-${issue.number}` : "Nuova issue"}
       </h1>
@@ -280,11 +288,25 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
           </p>
           {current && (
             <>
-              <p>
-                Dati correnti: <strong>{current.title}</strong> ·{" "}
-                {priorityNames[current.priority]} · versione {current.version}
-              </p>
-              <p className="issue-description">{current.description}</p>
+              <div className="issue-conflict-comparison">
+                <section>
+                  <h3>Bozza</h3>
+                  <p>
+                    <strong>{fields.title}</strong> ·{" "}
+                    {priorityNames[fields.priority]} · versione {version}
+                  </p>
+                  <p className="issue-description">{fields.description}</p>
+                </section>
+                <section>
+                  <h3>Dati correnti</h3>
+                  <p>
+                    <strong>{current.title}</strong> ·{" "}
+                    {priorityNames[current.priority]} · versione{" "}
+                    {current.version}
+                  </p>
+                  <p className="issue-description">{current.description}</p>
+                </section>
+              </div>
               <Button
                 onClick={() => {
                   setVersion(current.version);
@@ -308,8 +330,11 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
           </Button>
         </Alert>
       )}
-      <form className="panel" onSubmit={(event) => void save(event)}>
-        <p>* Campo obbligatorio</p>
+      <form
+        className="panel issue-editor-form"
+        onSubmit={(event) => void save(event)}
+      >
+        <p className="issue-required-hint">* Campo obbligatorio</p>
         <div className="field">
           <label htmlFor="issue-title">Titolo *</label>
           <input
@@ -423,10 +448,13 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
               onChange={setFile}
               disabled={busy || uncertain}
             />
-            <p>L’issue nascerà Da fare e senza assegnatario.</p>
+            <p className="issue-create-note">
+              <IconInfoCircle size={20} stroke={2} aria-hidden="true" />
+              L’issue nascerà Da fare e senza assegnatario.
+            </p>
           </>
         )}
-        <div className="actions">
+        <div className="actions issue-editor-actions">
           <Button
             type="submit"
             variant="primary"

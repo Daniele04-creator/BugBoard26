@@ -1,3 +1,10 @@
+import {
+  IconPlus,
+  IconSearch,
+  IconFilter,
+  IconDownload,
+  IconArrowRight,
+} from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
@@ -5,7 +12,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { IssueSummary } from "../../api/types";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { Button } from "../../components/Button";
-import { Pagination } from "../../components/Pagination";
+import { IssueListPagination } from "./IssueListPagination";
 import { LoadingState } from "../../components/LoadingState";
 import { useAuth } from "../auth/AuthProvider";
 import { getDirectory, getLabels, issueApi } from "./issueApi";
@@ -20,7 +27,13 @@ import {
   typeNames,
   userName,
 } from "./issuePresentation";
-import { IssueBadges } from "./IssueBadges";
+import {
+  IssueTypeIcon,
+  IssueStatusBadge,
+  IssuePriorityBadge,
+  IssueLabels,
+} from "./IssueBadges";
+import { IssuePerson } from "./IssuePerson";
 import "./styles.css";
 const sortNames = {
   createdAt: "Creazione",
@@ -39,9 +52,7 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<unknown>(null);
   const [exportSuccess, setExportSuccess] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(
-    () => window.innerWidth >= 640,
-  );
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const query = params.toString();
   const restoredPosition = useRef<string | null>(null);
   const completedQuery = useRef(query);
@@ -167,11 +178,13 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
       setExporting(false);
     }
   }
-  function issueLink(issue: IssueSummary) {
+  function issueLink(issue: IssueSummary, compact = false) {
     return (
       <Link
         to={`/issues/${issue.id}`}
         data-issue-id={issue.id}
+        className="issue-title-link"
+        aria-label={`BB-${issue.number} · ${issue.title}`}
         onClick={() => {
           setMemoryDraft(
             `list-focus:${location.pathname + location.search}`,
@@ -187,31 +200,41 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
           scrollY: window.scrollY,
         }}
       >
-        BB-{issue.number} · {issue.title}
+        <span className="issue-number">BB-{issue.number}</span>
+        <IssueTypeIcon type={issue.type} />
+        <span className="issue-title-copy">
+          <span className="issue-title-text">{issue.title}</span>
+          {compact && (
+            <span className="issue-row-subtitle">
+              <span>{typeNames[issue.type]}</span>
+              <IssueLabels issue={issue} />
+            </span>
+          )}
+        </span>
       </Link>
     );
   }
   const scopeParams = new URLSearchParams(params);
   scopeParams.delete("page");
   return (
-    <section>
+    <section className="issue-list-page">
       <div className="issue-heading">
         <div>
           <h1 tabIndex={-1}>{archived ? "Archivio" : "Issue"}</h1>
-          {archived && (
-            <p>Le issue archiviate restano consultabili in sola lettura.</p>
-          )}
         </div>
         {!archived && user?.role !== "VIEWER" && (
           <Link className="button button-primary" to="/issues/new">
+            <IconPlus size={20} stroke={2} aria-hidden="true" />
             Nuova issue
           </Link>
         )}
       </div>
       <Link
+        className="issue-scope-link"
         to={`${archived ? "/issues" : "/archive"}${scopeParams.size ? "?" + scopeParams : ""}`}
       >
         {archived ? "Passa alle issue correnti" : "Passa all’archivio"}
+        <IconArrowRight size={20} stroke={2} aria-hidden="true" />
       </Link>
       {parsed.error ? (
         <>
@@ -220,32 +243,101 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
         </>
       ) : (
         <>
-          <form className="panel" onSubmit={apply}>
-            <div className="filter-search">
-              <label htmlFor="issue-search">
-                Cerca nel titolo o nella descrizione
-                <input
-                  id="issue-search"
-                  value={draftParams.get("q") ?? ""}
-                  onChange={(e) => setFilter("q", e.target.value)}
-                />
+          <form className="issue-filter-form" onSubmit={apply}>
+            <div className="issue-list-toolbar">
+              <div className="filter-search">
+                <label htmlFor="issue-search">
+                  Cerca nel titolo o nella descrizione
+                  <input
+                    id="issue-search"
+                    value={draftParams.get("q") ?? ""}
+                    onChange={(e) => setFilter("q", e.target.value)}
+                  />
+                </label>
+                <Button
+                  type="submit"
+                  className="issue-search-submit"
+                  aria-label="Cerca"
+                >
+                  <IconSearch size={20} stroke={2} aria-hidden="true" />
+                </Button>
+              </div>
+              <Button
+                className="issue-filter-toggle"
+                aria-label="Filtri"
+                aria-describedby="issue-active-filter-count"
+                aria-expanded={filtersOpen}
+                aria-controls="issue-filter-fields"
+                onClick={() => setFiltersOpen((value) => !value)}
+              >
+                <IconFilter size={20} stroke={2} aria-hidden="true" />
+                Filtri
+                <span className="issue-filter-count" aria-hidden="true">
+                  {
+                    Array.from(params.keys()).filter(
+                      (key) => !["q", "page", "size", "sort"].includes(key),
+                    ).length
+                  }
+                </span>
+                <span
+                  id="issue-active-filter-count"
+                  className="visually-hidden"
+                >
+                  {
+                    Array.from(params.keys()).filter(
+                      (key) => !["q", "page", "size", "sort"].includes(key),
+                    ).length
+                  }{" "}
+                  filtri attivi
+                </span>
+              </Button>
+              <label className="issue-sort-field">
+                Ordina
+                <select
+                  value={parsed.value?.sort.split(",")[0]}
+                  onChange={(e) =>
+                    changeParam(
+                      "sort",
+                      `${e.target.value},${parsed.value?.sort.split(",")[1]}`,
+                    )
+                  }
+                >
+                  {Object.entries(sortNames).map(([value, text]) => (
+                    <option key={value} value={value}>
+                      {text}
+                    </option>
+                  ))}
+                </select>
               </label>
-              <Button type="submit">Cerca</Button>
+              <label className="issue-direction-field">
+                Direzione
+                <select
+                  value={parsed.value?.sort.split(",")[1]}
+                  onChange={(e) =>
+                    changeParam(
+                      "sort",
+                      `${parsed.value?.sort.split(",")[0]},${e.target.value}`,
+                    )
+                  }
+                >
+                  <option value="desc">Decrescente</option>
+                  <option value="asc">Crescente</option>
+                </select>
+              </label>
+              <Button
+                className="issue-export"
+                busy={exporting}
+                onClick={() => void exportCsv()}
+              >
+                <IconDownload size={20} stroke={2} aria-hidden="true" />
+                Esporta CSV
+              </Button>
             </div>
-            <Button
-              aria-expanded={filtersOpen}
-              aria-controls="issue-filter-fields"
-              onClick={() => setFiltersOpen((value) => !value)}
+            <div
+              id="issue-filter-fields"
+              className="issue-filter-fields"
+              hidden={!filtersOpen}
             >
-              Filtri ·{" "}
-              {
-                Array.from(params.keys()).filter(
-                  (key) => !["q", "page", "size", "sort"].includes(key),
-                ).length
-              }{" "}
-              attivi
-            </Button>
-            <div id="issue-filter-fields" hidden={!filtersOpen}>
               <div className="filter-grid">
                 {Object.entries({
                   type: typeNames,
@@ -272,7 +364,7 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
                     ))}
                   </fieldset>
                 ))}
-                <fieldset>
+                <fieldset className="issue-filter-labels">
                   <legend>Etichette</legend>
                   <ErrorAlert error={labels.error} />
                   {labels.data?.map((label) => (
@@ -348,47 +440,6 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
               </div>
             </div>
           </form>
-          <div className="issue-list-toolbar">
-            {list.data && (
-              <span role="status">{list.data.totalElements} risultati</span>
-            )}
-            <label>
-              Ordina
-              <select
-                value={parsed.value?.sort.split(",")[0]}
-                onChange={(e) =>
-                  changeParam(
-                    "sort",
-                    `${e.target.value},${parsed.value?.sort.split(",")[1]}`,
-                  )
-                }
-              >
-                {Object.entries(sortNames).map(([value, text]) => (
-                  <option key={value} value={value}>
-                    {text}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Direzione
-              <select
-                value={parsed.value?.sort.split(",")[1]}
-                onChange={(e) =>
-                  changeParam(
-                    "sort",
-                    `${parsed.value?.sort.split(",")[0]},${e.target.value}`,
-                  )
-                }
-              >
-                <option value="desc">Decrescente</option>
-                <option value="asc">Crescente</option>
-              </select>
-            </label>
-            <Button busy={exporting} onClick={() => void exportCsv()}>
-              Esporta CSV
-            </Button>
-          </div>
           <ErrorAlert error={exportError} />
           {exportSuccess && <Alert variant="success">{exportSuccess}</Alert>}
           {list.isFetching && list.data && (
@@ -452,105 +503,113 @@ export function IssueListPage({ archived = false }: { archived?: boolean }) {
                   </div>
                 ) : (
                   <>
-                    <table className="issue-table">
-                      <caption className="visually-hidden">
-                        {archived ? "Issue archiviate" : "Issue correnti"}
-                      </caption>
-                      <thead>
-                        <tr>
-                          <th scope="col">Numero e titolo</th>
-                          <th scope="col">Stato / priorità</th>
-                          <th scope="col">Responsabile</th>
-                          <th scope="col" className="tablet-hidden">
-                            Scadenza
-                          </th>
-                          <th scope="col" className="tablet-hidden">
-                            Creata il
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {list.data.items.map((issue) => (
-                          <tr key={issue.id}>
-                            <td className="title-cell">
-                              {issueLink(issue)}
-                              <small>
-                                {typeNames[issue.type]}
-                                {issue.archived &&
-                                  ` · Archiviata il ${dateTime(issue.archivedAt!)} da ${userName(issue.archivedBy)}`}
-                              </small>
-                              <div className="badge-group">
-                                {issue.labels.map((label) => (
-                                  <span
-                                    key={label.id}
-                                    className={`badge badge-${label.color.toLowerCase()}`}
-                                  >
-                                    {label.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              {statusNames[issue.status]}
-                              <br />
-                              {priorityNames[issue.priority]}
-                            </td>
-                            <td>{userName(issue.assignee)}</td>
-                            <td className="tablet-hidden">
-                              {dateOnly(issue.dueDate)}
-                              {!issue.archived &&
-                                ["TODO", "IN_PROGRESS"].includes(
-                                  issue.status,
-                                ) &&
-                                issue.dueDate &&
-                                issue.dueDate < todayRome() && (
-                                  <span className="overdue-text">
-                                    {" "}
-                                    · Scaduta
-                                  </span>
-                                )}
-                            </td>
-                            <td className="tablet-hidden">
-                              {dateTime(issue.createdAt)}
-                            </td>
+                    <div className="issue-table-wrapper">
+                      <table className="issue-table">
+                        <caption className="visually-hidden">
+                          {archived ? "Issue archiviate" : "Issue correnti"}
+                        </caption>
+                        <colgroup>
+                          <col />
+                          <col className="issue-status-column" />
+                          <col className="issue-priority-column" />
+                          <col className="issue-assignee-column" />
+                          <col className="issue-deadline-column" />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th scope="col">Issue</th>
+                            <th scope="col">Stato</th>
+                            <th scope="col">Priorità</th>
+                            <th scope="col">Responsabile</th>
+                            <th scope="col">Scadenza</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    <div className="issue-cards">
+                        </thead>
+                        <tbody>
+                          {list.data.items.map((issue) => (
+                            <tr key={issue.id}>
+                              <td className="title-cell">
+                                {issueLink(issue, true)}
+                                {issue.archived && (
+                                  <small>
+                                    Archiviata il {dateTime(issue.archivedAt!)}{" "}
+                                    da {userName(issue.archivedBy)}
+                                  </small>
+                                )}
+                              </td>
+                              <td>
+                                <IssueStatusBadge status={issue.status} />
+                              </td>
+                              <td>
+                                <IssuePriorityBadge priority={issue.priority} />
+                              </td>
+                              <td>
+                                <IssuePerson user={issue.assignee} />
+                              </td>
+                              <td>
+                                <span>{dateOnly(issue.dueDate)}</span>
+                                {!issue.archived &&
+                                  ["TODO", "IN_PROGRESS"].includes(
+                                    issue.status,
+                                  ) &&
+                                  issue.dueDate &&
+                                  issue.dueDate < todayRome() && (
+                                    <span className="overdue-text">
+                                      Scaduta
+                                    </span>
+                                  )}
+                                <small>
+                                  Creata:{" "}
+                                  {dateTime(issue.createdAt).split(" ")[0]}
+                                </small>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="issue-register">
                       {list.data.items.map((issue) => (
-                        <article key={issue.id} className="panel issue-card">
+                        <article key={issue.id} className="issue-record">
                           <h2>{issueLink(issue)}</h2>
-                          <IssueBadges issue={issue} />
-                          <p>
-                            Assegnata a {userName(issue.assignee)}
-                            <br />
-                            Scadenza: {dateOnly(issue.dueDate)}
-                          </p>
-                          {!issue.archived &&
-                            ["TODO", "IN_PROGRESS"].includes(issue.status) &&
-                            issue.dueDate &&
-                            issue.dueDate < todayRome() && (
-                              <p className="overdue-text">
-                                Scaduta il {dateOnly(issue.dueDate)}
-                              </p>
-                            )}
+                          <span className="issue-record-type">
+                            {typeNames[issue.type]}
+                          </span>
+                          <div className="badge-group">
+                            <IssueStatusBadge status={issue.status} />
+                            <IssuePriorityBadge priority={issue.priority} />
+                          </div>
+                          <IssueLabels issue={issue} />
+                          <IssuePerson user={issue.assignee} />
+                          <div className="issue-record-dates">
+                            <span>Scadenza: {dateOnly(issue.dueDate)}</span>
+                            {!issue.archived &&
+                              ["TODO", "IN_PROGRESS"].includes(issue.status) &&
+                              issue.dueDate &&
+                              issue.dueDate < todayRome() && (
+                                <span className="overdue-text">Scaduta</span>
+                              )}
+                            <small>
+                              Creata: {dateTime(issue.createdAt).split(" ")[0]}
+                            </small>
+                          </div>
                           {issue.archived && (
-                            <p>
+                            <small>
                               Archiviata il {dateTime(issue.archivedAt!)} da{" "}
                               {userName(issue.archivedBy)}
-                            </p>
+                            </small>
                           )}
                         </article>
                       ))}
                     </div>
                   </>
                 )}
-                <Pagination
-                  {...list.data}
-                  onPageChange={(page) => changeParam("page", String(page))}
-                  onSizeChange={(size) => changeParam("size", String(size))}
-                />
+                <div className="issue-list-pagination">
+                  <IssueListPagination
+                    {...list.data}
+                    onPageChange={(page) => changeParam("page", String(page))}
+                    onSizeChange={(size) => changeParam("size", String(size))}
+                  />
+                </div>
               </>
             )
           )}

@@ -25,6 +25,7 @@ export function UnsavedChanges({
     <Dialog
       open={blocker.state === "blocked"}
       title="Lasciare la bozza?"
+      className="issue-discard-dialog"
       sensitive
       onClose={() => blocker.reset?.()}
       footer={
