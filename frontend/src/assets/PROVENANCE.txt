@@ -1,0 +1,20 @@
+BugBoard26 local UI assets
+
+InterVariable.woff2
+Source: https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2
+Release: Inter 4.1, official rsms/inter tag v4.1.
+Retrieved: 2026-10-07. Original bytes, no font conversion or subsetting.
+License: SIL Open Font License 1.1, included in fonts/OFL.txt.
+SHA256: 693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3
+
+bugboard-mark.png
+Source: product-specific ImageGen asset approved in the redesign mockup gate.
+Original: output/documentation/redesign-2026-10-07/assets/bugboard-mark.png.
+Copied unchanged; transparent local PNG, also used as favicon.
+SHA256: 9fabb834e4d3d7e040d653646c6426bafc21d2bfb560378ba833224281cfb542
+
+Tabler icons
+Package: @tabler/icons-react, exact version 3.49.0.
+Source: https://registry.npmjs.org/@tabler/icons-react/3.49.0
+Only named standard icons imported; no custom SVG drawing or remote icon font.
+License: MIT, included in licenses/tabler-MIT.txt.

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "./Button";
+import { IconX } from "@tabler/icons-react";
 export interface DialogProps {
   open: boolean;
   title: string;
@@ -96,11 +97,12 @@ export function Dialog({
         <Button
           data-cancel
           data-dialog-close
+          className="dialog-close"
           disabled={busy}
           onClick={onClose}
           aria-label={`Chiudi ${title}`}
         >
-          Chiudi
+          <IconX size={20} stroke={2} aria-hidden="true" />
         </Button>
       </div>
       <div className="dialog-body">{children}</div>

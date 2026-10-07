@@ -1,6 +1,7 @@
 # Private planning sources stay on this machine.
 /README.md
 /docs/
+/design-qa.md
 
 # Build, dependencies, runtime evidence, and private configuration.
 **/target/

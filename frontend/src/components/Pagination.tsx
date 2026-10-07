@@ -1,4 +1,5 @@
 import { Button } from "./Button";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 export function Pagination({
   page,
   totalPages,
@@ -20,12 +21,17 @@ export function Pagination({
         disabled={page === 0 || totalPages === 0}
         onClick={() => onPageChange(page - 1)}
       >
+        <IconChevronLeft size={20} stroke={2} aria-hidden="true" />
         Precedente
       </Button>
-      <span>
-        {totalPages === 0
-          ? "0 risultati"
-          : `Pagina ${page + 1} di ${totalPages}`}{" "}
+      <span className="pagination-summary">
+        {totalPages === 0 ? (
+          "0 risultati"
+        ) : (
+          <span className="pagination-current" aria-current="page">
+            Pagina {page + 1} di {totalPages}
+          </span>
+        )}{" "}
         · {totalElements} risultati
       </span>
       <Button
@@ -33,6 +39,7 @@ export function Pagination({
         onClick={() => onPageChange(page + 1)}
       >
         Successiva
+        <IconChevronRight size={20} stroke={2} aria-hidden="true" />
       </Button>
       {onSizeChange && (
         <label>

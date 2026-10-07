@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import {
   QueryClient,
   QueryClientProvider,
@@ -9,20 +9,60 @@ import { MemoryRouter } from "react-router-dom";
 import { api, ApiError, NetworkError } from "../api/ApiClient";
 import { AppShell } from "./AppShell";
 
-vi.mock("../features/auth/AuthProvider", () => ({
-  useAuth: () => ({
-    user: { id: "admin", displayName: "Administrator", role: "ADMIN" },
-    logout: async () => {},
-  }),
+const auth = vi.hoisted(() => ({
+  user: {
+    id: "00000000-0000-0000-0000-000000000001",
+    displayName: "Administrator",
+    role: "ADMIN" as "ADMIN" | "MEMBER" | "VIEWER",
+  },
+  logout: async () => {},
 }));
+vi.mock("../features/auth/AuthProvider", () => ({ useAuth: () => auth }));
 let client: QueryClient;
 beforeEach(() => {
+  auth.user.role = "ADMIN";
   vi.useFakeTimers();
   focusManager.setFocused(true);
   client = new QueryClient({
     defaultOptions: {
       queries: { retry: false, staleTime: 15_000, gcTime: Infinity },
     },
+  });
+});
+describe("role-aware shell presentation", () => {
+  it("keeps profile and logout visible with the Italian role and real notification count", async () => {
+    vi.spyOn(api, "get").mockResolvedValue({ count: 7 });
+    const { container } = renderShell();
+    await advance(0);
+    const sidebar = within(container.querySelector(".sidebar")!);
+    expect(sidebar.getByText("Amministratore")).toBeInTheDocument();
+    expect(
+      sidebar.getByRole("link", { name: "Il tuo profilo" }),
+    ).toHaveAttribute("href", "/profile");
+    expect(sidebar.getByRole("button", { name: "Esci" })).toBeInTheDocument();
+    expect(
+      sidebar.queryByRole("button", { name: /profilo/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Notifiche, 7 non lette" }),
+    ).toHaveAttribute("href", "/notifications");
+  });
+  it("preserves viewer navigation restrictions and the read-only explanation", async () => {
+    auth.user.role = "VIEWER";
+    vi.spyOn(api, "get").mockResolvedValue({ count: 0 });
+    renderShell();
+    await advance(0);
+    expect(screen.getByText("Lettore esterno")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Utenti" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Assegnate a me" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Sola lettura: puoi consultare/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Esci" })).toBeInTheDocument();
   });
 });
 afterEach(() => {

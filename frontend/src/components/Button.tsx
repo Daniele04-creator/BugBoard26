@@ -21,7 +21,12 @@ export function Button({
       className={`button button-${variant} ${className}`}
     >
       {children}
-      {busy && <span className="busy-label"> · Invio…</span>}
+      {busy && (
+        <>
+          <span className="busy-indicator" aria-hidden="true" />
+          <span className="sr-only">Invio…</span>
+        </>
+      )}
     </button>
   );
 }

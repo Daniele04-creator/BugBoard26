@@ -12,12 +12,27 @@ import { useAuth } from "../features/auth/AuthProvider";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 import { ErrorAlert } from "./Alert";
+import { Avatar } from "./Avatar";
+import { roleNames } from "../features/users/adminPresentation";
+import mark from "../assets/brand/bugboard-mark.png";
+import {
+  IconArchive,
+  IconBell,
+  IconChartBar,
+  IconChevronRight,
+  IconFileText,
+  IconListDetails,
+  IconLogout,
+  IconMenu2,
+  IconTag,
+  IconUser,
+  IconUsers,
+} from "@tabler/icons-react";
 export function AppShell() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawer, setDrawer] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const notificationFailures = useRef(0);
@@ -47,21 +62,13 @@ export function AppShell() {
   });
   useEffect(() => {
     setDrawer(false);
-    setProfileOpen(false);
   }, [location.pathname, location.search]);
-  useEffect(() => {
-    if (!profileOpen) return;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProfileOpen(false);
-    };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
-  }, [profileOpen]);
   const myIssues =
     location.pathname === "/issues" &&
     new URLSearchParams(location.search).get("assignedTo") === "me";
   const navigation = (
     <>
+      <div className="nav-heading">Lavoro</div>
       <Link
         to="/issues"
         className={
@@ -75,6 +82,7 @@ export function AppShell() {
             : undefined
         }
       >
+        <IconListDetails size={24} stroke={2} aria-hidden="true" />
         Issue
       </Link>
       {auth.user?.role !== "VIEWER" && (
@@ -83,17 +91,33 @@ export function AppShell() {
           className={myIssues ? "active" : undefined}
           aria-current={myIssues ? "page" : undefined}
         >
+          <IconUser size={24} stroke={2} aria-hidden="true" />
           Assegnate a me
         </Link>
       )}
-      <NavLink to="/archive">Archivio</NavLink>
+      <NavLink to="/archive">
+        <IconArchive size={24} stroke={2} aria-hidden="true" />
+        Archivio
+      </NavLink>
       {auth.user?.role === "ADMIN" && (
         <>
           <div className="nav-heading">Amministrazione</div>
-          <NavLink to="/admin/dashboard">Dashboard</NavLink>
-          <NavLink to="/admin/users">Utenti</NavLink>
-          <NavLink to="/admin/labels">Etichette</NavLink>
-          <NavLink to="/admin/reports">Report</NavLink>
+          <NavLink to="/admin/dashboard">
+            <IconChartBar size={24} stroke={2} aria-hidden="true" />
+            Dashboard
+          </NavLink>
+          <NavLink to="/admin/users">
+            <IconUsers size={24} stroke={2} aria-hidden="true" />
+            Utenti
+          </NavLink>
+          <NavLink to="/admin/labels">
+            <IconTag size={24} stroke={2} aria-hidden="true" />
+            Etichette
+          </NavLink>
+          <NavLink to="/admin/reports">
+            <IconFileText size={24} stroke={2} aria-hidden="true" />
+            Report
+          </NavLink>
         </>
       )}
     </>
@@ -111,51 +135,67 @@ export function AppShell() {
       setLogoutBusy(false);
     }
   }
+  const account = auth.user && (
+    <div className="sidebar-account">
+      <Link to="/profile" className="account-link" aria-label="Il tuo profilo">
+        <Avatar name={auth.user.displayName} id={auth.user.id} size={36} />
+        <span className="account-identity">
+          <span className="account-name">{auth.user.displayName}</span>
+          <span className="account-role">{roleNames[auth.user.role]}</span>
+        </span>
+        <IconChevronRight size={20} stroke={2} aria-hidden="true" />
+      </Link>
+      <Button
+        className="sidebar-logout"
+        busy={logoutBusy}
+        onClick={() => void logout()}
+      >
+        <IconLogout size={24} stroke={2} aria-hidden="true" />
+        Esci
+      </Button>
+    </div>
+  );
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
         Salta al contenuto
       </a>
       <header className="app-header">
-        <Link className="brand" to="/issues">
-          BugBoard26
-        </Link>
         <Button
           className="drawer-toggle"
           onClick={() => setDrawer(true)}
           aria-expanded={drawer}
+          aria-label="Menu"
         >
-          Menu
+          <IconMenu2 size={20} stroke={2} aria-hidden="true" />
         </Button>
-        <Link className="notifications-link" to="/notifications">
-          Notifiche
+        <Link className="brand mobile-brand" to="/issues">
+          <img src={mark} width={28} height={28} alt="" />
+          BugBoard26
+        </Link>
+        <Link
+          className="notifications-link"
+          to="/notifications"
+          aria-label={
+            unread.data
+              ? `Notifiche, ${unread.data.count} non lette`
+              : "Notifiche"
+          }
+        >
+          <IconBell size={24} stroke={2} aria-hidden="true" />
+          <span className="notifications-text">Notifiche</span>
           {unread.data && unread.data.count > 0 && (
             <span className="count-badge">{unread.data.count}</span>
           )}
         </Link>
-        <div className="profile-disclosure">
-          <Button
-            aria-expanded={profileOpen}
-            aria-controls="profile-links"
-            onClick={() => setProfileOpen((v) => !v)}
-          >
-            {auth.user?.displayName} · {auth.user?.role}
-          </Button>
-          {profileOpen && (
-            <div id="profile-links" className="profile-links">
-              <Link to="/profile">Il tuo profilo</Link>
-              <Button busy={logoutBusy} onClick={() => void logout()}>
-                Esci
-              </Button>
-            </div>
-          )}
-        </div>
       </header>
       <aside className="sidebar">
+        <Link className="brand sidebar-brand" to="/issues">
+          <img src={mark} width={32} height={32} alt="" />
+          BugBoard26
+        </Link>
         <nav aria-label="Navigazione principale">{navigation}</nav>
-        {auth.user?.role === "VIEWER" && (
-          <p className="badge badge-gray">Sola lettura</p>
-        )}
+        {account}
       </aside>
       <main id="main-content" className="main-content">
         <ErrorAlert error={error} />
@@ -172,19 +212,8 @@ export function AppShell() {
         onClose={() => setDrawer(false)}
         className="navigation-drawer"
       >
-        <p>
-          {auth.user?.displayName} · {auth.user?.role}
-        </p>
-        <nav aria-label="Navigazione mobile">
-          {navigation}
-          <Link to="/profile">Il tuo profilo</Link>
-          <Button busy={logoutBusy} onClick={() => void logout()}>
-            Esci
-          </Button>
-        </nav>
-        {auth.user?.role === "VIEWER" && (
-          <p className="badge badge-gray">Sola lettura</p>
-        )}
+        <nav aria-label="Navigazione mobile">{navigation}</nav>
+        {account}
       </Dialog>
     </div>
   );

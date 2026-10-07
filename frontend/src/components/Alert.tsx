@@ -1,6 +1,11 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { ApiError } from "../api/ApiClient";
+import {
+  IconAlertCircle,
+  IconCheck,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 export function Alert({
   children,
   variant = "error",
@@ -23,7 +28,29 @@ export function Alert({
       className={`alert alert-${variant}`}
       role={variant === "error" ? "alert" : "status"}
     >
-      {children}
+      {variant === "success" ? (
+        <IconCheck
+          className="alert-icon"
+          size={20}
+          stroke={2}
+          aria-hidden="true"
+        />
+      ) : variant === "info" ? (
+        <IconInfoCircle
+          className="alert-icon"
+          size={20}
+          stroke={2}
+          aria-hidden="true"
+        />
+      ) : (
+        <IconAlertCircle
+          className="alert-icon"
+          size={20}
+          stroke={2}
+          aria-hidden="true"
+        />
+      )}
+      <div className="alert-content">{children}</div>
     </div>
   );
 }
