@@ -1485,402 +1485,137 @@
 <p>Elenco e archivio serializzano <code>q</code>, <code>type</code>, <code>status</code>, <code>priority</code>, <code>labelId</code>, <code>assignedTo</code>, <code>reporterId</code>, <code>overdue</code>, <code>page</code>, <code>size</code>, <code>sort</code>. <code>type/status/priority/labelId</code> sono parametri ripetibili, senza sintassi JSON o liste separate da virgola. UUID/enum sono validati. <code>sort</code> è una coppia <code>campo,direzione</code>, ad esempio <code>createdAt,desc</code>; <code>page</code> è zero-based. Valori di default omessi nell'URL: page=0, size=20, sort=createdAt,desc. <code>archived</code> viene imposto dalla route e inviato all'API, non modificato dall'utente: false su <code>/issues</code>, true su <code>/archive</code>. Passaggio fra le due liste conserva ricerca/filtri/ordine, azzera pagina e cambia solo l'ambito. Valori invalidi mostrano errore con “Ripristina vista”; non sono reinterpretati silenziosamente.</p>
 <p>Scorciatoia “Assegnate a me”: <code>/issues?assignedTo=me</code>, solo ADMIN/MEMBER. “Senza assegnazione”: <code>/issues?assignedTo=unassigned</code>. Filtri di carico dalla dashboard aggiungono <code>assignedTo=UUID</code> e gli stati aperti. Ricerca Invio e “Applica filtri” azzerano pagina; cambio sort/size azzera pagina; cambio pagina mantiene tutto. “Pulisci filtri” torna a default della route. Il dettaglio usa <code>tab=comments|history</code>, default comments omesso; <code>commentsPage</code> e <code>historyPage</code> zero-based possono conservarne la pagina. <code>tab</code> non sposta il focus senza intervento dell'utente. Report: <code>/admin/reports?month=YYYY-MM</code>, default mese corrente Europe/Rome; query prima di2000-01/futura/invalida segnala errore. Admin utenti: query <code>q</code> (nome/email, massimo100), <code>role</code>, <code>active</code>, <code>page</code>, <code>size</code>, con stesso default paginazione. Notifiche: <code>unreadOnly=true</code> per solo non lette, <code>page</code>, <code>size</code>.</p>
 <p>Bozze, password, commenti e dati del dialog non compaiono nell'URL. Il ritorno al precedente elenco conserva query e posizione tramite history state in memoria; accesso diretto al dettaglio usa “Tutte le issue” o “Archivio” secondo flag. La navigazione browser avanti/indietro ripristina il filtro confermato, non campi filtro ancora non applicati.</p>
-<h2 id="04-interfaccia-ui-02-sistema-visivo-deciso">UI-02. Sistema visivo deciso</h2>
-<p>Palette chiara, contenuti su fondo neutro, blu riservato all'azione primaria e ai link. Nessun gradiente, illustrazione generativa, servizio font remoto o elemento decorativo che sottragga spazio alle issue. Si usa lo stack <code>Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif</code>: Inter solo se già installato sul dispositivo; non viene scaricato né distribuito come dipendenza. I CSS futuri devono usare i token seguenti, senza valori casuali per singole schermate.</p>
-<table>
-<thead>
-<tr>
-<th>Token CSS futuro</th>
-<th>Valore e uso</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>--color-bg</code></td>
-<td><code>#F6F8FC</code>, fondo applicazione</td>
-</tr>
-<tr>
-<td><code>--color-surface</code> / <code>--color-surface-subtle</code></td>
-<td><code>#FFFFFF</code> / <code>#EEF2F7</code>, pannelli e riga neutra</td>
-</tr>
-<tr>
-<td><code>--color-text</code> / <code>--color-text-muted</code></td>
-<td><code>#17243B</code> / <code>#526078</code>, testo e metadati</td>
-</tr>
-<tr>
-<td><code>--color-border</code> / <code>--color-control-border</code></td>
-<td><code>#D7DFEA</code> / <code>#738198</code>, separatori / contorni dei controlli</td>
-</tr>
-<tr>
-<td><code>--color-primary</code> / <code>--color-primary-hover</code></td>
-<td><code>#174DB5</code> / <code>#113B8C</code>, azione primaria con testo bianco</td>
-</tr>
-<tr>
-<td><code>--color-primary-subtle</code></td>
-<td><code>#EAF0FF</code>, selezione e info con testo primary</td>
-</tr>
-<tr>
-<td><code>--color-focus</code></td>
-<td><code>#174DB5</code>, contorno focus 3px con offset 2px; su pulsante blu contorno text</td>
-</tr>
-<tr>
-<td><code>--color-danger</code> / <code>--color-danger-subtle</code></td>
-<td><code>#B42318</code> / <code>#FEECE9</code>, errore/azione distruttiva</td>
-</tr>
-<tr>
-<td><code>--color-success</code> / <code>--color-success-subtle</code></td>
-<td><code>#146C43</code> / <code>#E8F5ED</code>, esito risolto/salvato</td>
-</tr>
-<tr>
-<td><code>--color-warning</code> / <code>--color-warning-subtle</code></td>
-<td><code>#805600</code> / <code>#FFF3D6</code>, scadenza e attenzione</td>
-</tr>
-<tr>
-<td><code>--color-purple</code> / <code>--color-purple-subtle</code></td>
-<td><code>#6536A4</code> / <code>#F1EAFE</code>, duplicato/etichetta purple</td>
-</tr>
-<tr>
-<td><code>--space-1</code> … <code>--space-8</code></td>
-<td><code>4, 8, 12, 16, 20, 24, 32, 48px</code> rispettivamente</td>
-</tr>
-<tr>
-<td><code>--radius-control</code> / <code>--radius-panel</code></td>
-<td><code>6px</code> / <code>10px</code>; badge <code>4px</code>; nessuna pillola per pulsanti</td>
-</tr>
-<tr>
-<td><code>--shadow-dialog</code></td>
-<td><code>0 16px 48px rgb(23 36 59 / 20%)</code>; pannelli senza ombra</td>
-</tr>
-<tr>
-<td><code>--font-body</code></td>
-<td>stack sopra, 16px, line-height 1.5, weight 400</td>
-</tr>
-<tr>
-<td><code>--font-small</code></td>
-<td>14px, line-height 1.5, weight 400</td>
-</tr>
-<tr>
-<td><code>--font-title</code></td>
-<td>28px, line-height 1.25, weight 650; mobile 24px</td>
-</tr>
-<tr>
-<td><code>--font-section</code></td>
-<td>20px, line-height 1.35, weight 600</td>
-</tr>
-<tr>
-<td><code>--font-label</code></td>
-<td>14px, line-height 1.5, weight 600</td>
-</tr>
-<tr>
-<td><code>--control-height</code></td>
-<td>44px minimo; padding orizzontale 12px; textarea altezza iniziale 160px</td>
-</tr>
-<tr>
-<td><code>--content-max</code> / <code>--form-max</code></td>
-<td>1280px / 760px, centrati nello spazio principale</td>
-</tr>
-<tr>
-<td><code>--header-height</code> / <code>--sidebar-width</code></td>
-<td>64px / 216px desktop</td>
-</tr>
-<tr>
-<td><code>--z-header</code> / <code>--z-backdrop</code> / <code>--z-dialog</code> / <code>--z-toast</code></td>
-<td>20 / 40 / 50 / 60</td>
-</tr>
-<tr>
-<td><code>--transition-fast</code></td>
-<td>120ms ease-out solo hover/opacity; con reduced-motion 0ms</td>
-</tr>
-</tbody>
-</table>
-<p>Etichette e badge sempre testo + colore: gray=(text-muted,surface-subtle), blue=(primary,primary-subtle), green=(success,success-subtle), amber=(warning,warning-subtle), red=(danger,danger-subtle), purple=(purple,purple-subtle). Tipi: Domanda / Bug / Documentazione / Funzionalità. Stati: Da fare / In corso / Risolta / Duplicata. Priorità: Bassa / Media / Alta / Critica. Stato archiviato è un banner separato, non quinto stato. Scaduta è testo “Scaduta il dd/MM/yyyy”, non solo un punto rosso.</p>
-<p>Pulsante primario pieno, secondario bianco con control-border, terziario link testuale sottolineato. Un solo primario per form/dialog. Icone SVG locali semplici 20px con label accessibile; icone decorative <code>aria-hidden</code>, nessuna libreria grafica necessaria. Numero e date usano cifre tabulari. I bordi deboli dei pannelli non veicolano informazioni; i controlli hanno contorno più scuro. Contrasto testo normale minimo 4.5:1, testo grande minimo 3:1, focus/controlli minimo 3:1: misurare tutte le coppie effettivamente renderizzate, inclusi hover/errori, nella verifica futura.</p>
-<h2 id="04-interfaccia-ui-03-struttura-e-responsive">UI-03. Struttura e responsive</h2>
-<p>Header: brand “BugBoard26” con link elenco, nome account/ruolo, link Notifiche con conteggio non lette e menu profilo/logout. Nessun profilo o notifica altrui. Sidebar: Issue, Assegnate a me (ADMIN/MEMBER), Archivio; ADMIN aggiunge Dashboard, Utenti, Etichette, Report. Il menu non duplica “Nuova issue”: l'azione è nel contenuto elenco. VIEWER vede badge “Sola lettura”. Link “Salta al contenuto” è il primo elemento focusabile.</p>
-<table>
-<thead>
-<tr>
-<th>Larghezza</th>
-<th>Layout vincolante</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1024px e oltre; verifica 1440px</td>
-<td>Sidebar 216px fissa nella griglia, header 64px; padding main 32px, max 1280px. Dettaglio griglia 2fr/1fr con gap24, metadati a destra; form max760. Lista tabella semantica.</td>
-</tr>
-<tr>
-<td>640–1023px; verifica 768px</td>
-<td>Header64, menu navigazione in drawer, main padding24; dettaglio una colonna; tabella conserva numero/titolo/stato/priorità/assegnatario, altri metadati nel dettaglio. Filtri griglia due colonne; dashboard 2 colonne.</td>
-</tr>
-<tr>
-<td>Sotto 640px; verifica 360px</td>
-<td>Header64 con brand, Menu, Notifiche; nome nel drawer. Padding16, una colonna, filtri collapsible con contatore. Lista con card semantiche anziché tabella; numero/titolo, stato/tipo/priorità, assegnatario/scadenza e link. Dialog quasi full screen, margine8, larghezza viewport-16, max-height viewport-16, body scrollabile e footer nella normale struttura.</td>
-</tr>
-</tbody>
-</table>
-<p>La tabella desktop e le card mobile rappresentano gli stessi risultati, totali e link; una sola variante è attiva nel DOM accessibile. Niente scroll orizzontale dell'intera pagina ai viewport target o zoom200%; testi lunghi vanno a capo con overflow-wrap, titoli non si tagliano senza accesso al contenuto completo. Tabelle metriche ampie possono usare un contenitore scrollabile con titolo accessibile e indicatore testuale “Scorri per altre colonne”; mai nascondere dati senza alternativa. Immagine <code>max-width:100%</code>, altezza auto, apertura in dialog con ingrandimento e nome file; nessun nuovo dominio o risorsa pubblica.</p>
-<h2 id="04-interfaccia-ui-04-mockup-schermate">UI-04. Mockup schermate</h2>
-<p>Rettangoli e parentesi sono notazione di rapida prototipazione testuale; non definiscono caratteri da visualizzare letteralmente. I dati sono esempi sintetici, non misure o account reali. Tutte le schermate autenticate usano lo shell sopra.</p>
-<h3 id="04-interfaccia-accesso-e-cambio-obbligatorio">Accesso e cambio obbligatorio</h3>
-<pre><code class="language-text">                  BugBoard26
-            Accedi al progetto
-  Email              [_____________________]
-  Password           [_________________][Mostra]
-  [                     Accedi                    ]
-  Gli account sono creati dall'amministratore.
-  Credenziali non valide. Controlla email e password.
-</code></pre>
-<pre><code class="language-text">  Cambia la password iniziale
-  Per accedere alle issue scegli una nuova password.
-  Password corrente [_____________________][Mostra]
-  Nuova password    [_____________________][Mostra]
-  Conferma          [_____________________][Mostra]
-  12–128 caratteri. La password non viene troncata.
-  [Salva password]                         [Esci]
-</code></pre>
-<p>Email con label visibile, autocomplete username; password login current-password; nuova/conferma new-password. “Mostra/Nascondi” è pulsante con stato e label, non invia il form. Incolla e password manager sono consentiti. Conferma password solo lato UI, non campo persistente. Errore credenziali uguale per tutti gli esiti d'accesso. Form limitato non mostra sidebar/dati progetto. Rate limit mostra “Troppi tentativi. Riprova tra n secondi”; nessun countdown annunciato ogni secondo.</p>
-<h3 id="04-interfaccia-elenco-corrente-e-archivio">Elenco corrente e archivio</h3>
-<pre><code class="language-text">  BugBoard26                         Notifiche 2   Marta · ADMIN
-  Issue         | Issue                           [Nuova issue]
-  Assegnate a me| [Cerca nel titolo o nella descrizione_____][Cerca]
-  Archivio      | Tipo [Tutti v] Stato [Tutti v] Priorità [Tutte v]
-  Dashboard     | Etichette [...] Assegnatario [...] Reporter [...]
-  Utenti        | Scadute [Qualsiasi v] [Applica filtri] [Pulisci]
-  Etichette     | 42 risultati        Ordina [Creazione v][Decrescente v]
-  Report        |                                  [Esporta CSV]
-                | Numero  Titolo              Stato     Priorità  Responsabile
-                | BB-42   Errore salvataggio   In corso Alta      Luca
-                | BB-41   Aggiorna guida       Da fare  Media     Nessuno
-                | [Precedente] Pagina 1 di 3 [Successiva] 20 per pagina [v]
-</code></pre>
-<pre><code class="language-text">  Archivio
-  Le issue archiviate restano consultabili in sola lettura.
-  [Cerca...] [Filtri] [Esporta CSV]
-  BB-12  Errore stampa  · Risolta · Archiviata il 05/10/2026 da Marta
-  BB-09  Guida API      · Da fare · Archiviata il 04/10/2026 da Marta
-  [Precedente] Pagina 1 di 1 [Successiva]
-</code></pre>
-<p>La lista usa link BB-n/titolo nello stesso elemento, non riga cliccabile senza semantica. Default colonne desktop: numero, titolo+tipo+etichette, stato, priorità, assegnatario, scadenza, creata il. Rimozione di colonne tablet segue UI-03. Filtri multiselezione nativi con gruppo di checkbox dentro disclosure, non combobox custom con keyboard non standard. Reporter/assegnatario selezione da riferimenti pubblici; email solo admin. Sort campo più verso scelti separatamente. Paginazione UI parte da1, API da0; totali zero mostrano “0 risultati”, non “Pagina 1 di 0”. Navigazione precedente/successiva disabilitata quando non applicabile. Export mostra progress/esito errore senza congelare filtri; nessun export automatico. Se si cambiano filtri durante export, nome riepilogo dell'export resta quello della richiesta iniziale.</p>
-<pre><code class="language-text">  BugBoard26          [Menu] [Notifiche 2]
-  Issue                         [Nuova issue]
-  [Cerca...                       ] [Cerca]
-  [Filtri · 2 attivi v] [Ordina v] [CSV]
-  42 risultati
-  +--------------------------------------+
-  | BB-42 · Bug                          |
-  | Errore salvataggio                   |
-  | In corso · Alta                      |
-  | Assegnata a Luca                     |
-  | Scadenza 07/10/2026                  |
-  +--------------------------------------+
-  [Precedente] 1 di 3 [Successiva]
-</code></pre>
-<h3 id="04-interfaccia-creazione-e-modifica-uc-0209">Creazione e modifica — UC-02/09</h3>
-<pre><code class="language-text">  Issue &gt; Nuova issue
-  Nuova issue
-  Titolo *              [Errore salvataggio________________] 20/160
-  Descrizione *         [Quando confermo il form...         ]
-                        [                                  ] 31/10000
-  Tipo *                [Bug v]       Priorità [Media v]
-  Etichette             [ ] frontend [ ] sicurezza [ ] urgente
-  Immagine opzionale    [Scegli PNG o JPEG] [Rimuovi selezione]
-                        anteprima screenshot.png · 820 KiB
-  Una sola immagine, massimo 5 MiB, 4096px per lato, 16M pixel.
-  L'issue nascerà Da fare e senza assegnatario.
-  [Crea issue]                                   [Annulla]
-</code></pre>
-<pre><code class="language-text">  BB-42 &gt; Modifica
-  Modifica issue BB-42
-  [stessi campi di creazione con valori correnti]
-  Immagine: screenshot.png [Torna al dettaglio per gestirla]
-  Gestione immagine separata dalla modifica campi.
-  Etichetta legacy · Inattiva [Rimuovi]
-  [Salva modifiche]                               [Annulla]
-</code></pre>
-<p>Campi obbligatori indicati con asterisco spiegato da testo “* Campo obbligatorio”, mai solo placeholder. Contatori associati al campo, senza annunciare ogni carattere. La UI può controllare estensione, MIME dichiarato, bytes e dimensioni locali per feedback; il server decodifica e resta autorità. Preview locale tramite object URL revocato a sostituzione/uscita, non caricata a terzi. Etichette inattive già associate visibili e rimovibili, senza scelta per riaggiungerle. Non esistono campi reporter/stato/assignee/scadenza nel form. In modifica non esiste “Crea copia”. Un form immutato non genera scrittura superflua. Dopo la creazione atomica iniziale, gestione immagine è separata dalla modifica campi: nel dettaglio “Gestisci immagine” apre dialog con file attuale, anteprima nuova, “Sostituisci immagine” oppure “Rimuovi immagine” e conferma propria. Ogni comando usa la versione corrente e ha proprio esito; non inviare PATCH campi + PUT immagine come finto salvataggio unico. Se il secondo comando fallisce, il primo successo rimane e viene dichiarato.</p>
-<pre><code class="language-text">  + Gestisci immagine BB-42 --------------------------+
-  | Attuale: screenshot.png [Apri]                   |
-  | Nuova: [Scegli PNG/JPEG]                         |
-  | Anteprima: nuova.png · 820 KiB                   |
-  | [Sostituisci immagine] [Rimuovi immagine] [Chiudi] |
-  | Queste azioni salvano soltanto l'immagine.       |
-  +-------------------------------------------------+
-</code></pre>
-<p>Sostituzione è l'unico primario e richiede file scelto; rimozione apre conferma separata, non invia la sostituzione. Se non esiste immagine, testo “Nessuna immagine”, comando primario “Aggiungi immagine” e nessuna rimozione. Immagine valida con stesso contenuto e stesso nome non aggiunge versione/evento.</p>
-<h3 id="04-interfaccia-dettaglio-commenti-e-cronologia">Dettaglio, commenti e cronologia</h3>
-<pre><code class="language-text">  &lt; Torna all'elenco
-  BB-42 · Bug                                      [Modifica]
-  Errore salvataggio
-  [In corso] [Alta] [frontend]                 Metadati
-  Quando confermo il form appare un errore.     Reporter: Giulia
-  [screenshot.png · Apri immagine]              Responsabile: Luca
-                                              Scadenza: 07/10/2026
-  [Commenti] [Cronologia]                      Creata: 06/10/2026 10:00
-  Giulia · 06/10/2026 10:00                    Aggiornata: ...
-  Riproducibile con il browser ...              Ultima attività: ...
-  Commento [___________________________]       Comandi ADMIN
-           [                           ]       [Riassegna] [Scadenza]
-  [Invia commento]                             [Cambia stato]
-                                              [Segna duplicato] [Archivia]
-</code></pre>
-<pre><code class="language-text">  BB-42 · Cronologia
-  06/10/2026 10:00 · Giulia · Creazione
-      Stato: Da fare · Tipo: Bug · Priorità: Alta
-  06/10/2026 10:35 · Marta · Assegnazione modificata
-      Responsabile: Nessuno → Luca
-  06/10/2026 11:04 · Luca · Stato modificato
-      Stato: In corso → Risolta
-      Risoluzione attribuita a Luca
-  [Precedente] Pagina 1 di 1 [Successiva]
-</code></pre>
-<p>Commenti ordine dal meno al più recente, pagine20 e controlli; ingresso default ultima pagina per vedere il lavoro recente. Dopo proprio invio caricare pagina contenente il nuovo commento e annunciare successo senza spostare il focus dal form. Cronologia ordine dal meno al più recente con ordinamento server <code>occurredAt,eventSequence</code>, pagine20, default prima pagina dalla creazione; mostra tutti i campi dell'evento, non solo titolo. Istanze data <code>dd/MM/yyyy HH:mm</code>, timezone Rome, tooltip/titolo dell'istante con offset; date-only <code>dd/MM/yyyy</code>. Nomi disattivati con testo “Account non attivo”; nessuna email per MEMBER/VIEWER.</p>
-<p>Banner archivio: “Issue archiviata: i dati restano consultabili. Non sono consentite modifiche.” Seguono “Archiviata il dd/MM/yyyy HH:mm da Nome” da archivedAt/archivedBy; ADMIN vede solo “Ripristina”. Il nome usa UserRef e non email. Banner duplicato: “Duplicata di BB-n — titolo”, link canonica; ADMIN vede “Annulla duplicazione” e “Archivia”; tutti leggono vecchi commenti/audit, nessun nuovo commento. Target archiviato è comunque raggiungibile e identificato. In RESOLVED restano commenti e modifica consentiti ai ruoli ammessi, mentre assegnazione/scadenza richiedono riapertura.</p>
-<h3 id="04-interfaccia-assegnazione-e-suggerimento-uc-0414">Assegnazione e suggerimento — UC-04/14</h3>
-<pre><code class="language-text">  + Assegna BB-42 -------------------------------------+
-  | Responsabile attuale: Nessuno                      |
-  | Candidati e carico aperto (BB-42 esclusa)           |
-  | ( ) Nessuno                                       |
-  | (x) Luca · MEMBER · 2 issue  [Carico minore]        |
-  | ( ) Marta · ADMIN · 3 issue                        |
-  | ( ) Giulia · MEMBER · 5 issue                      |
-  | Rilevato alle 10:30. [Aggiorna carichi]             |
-  | Il suggerimento non assegna automaticamente.       |
-  | Luca riceverà una notifica nell'app.               |
-  | [Assegna]                              [Annulla]   |
-  +---------------------------------------------------+
-</code></pre>
-<p>Dialog max-width640; candidati ordinati per suggerimento se disponibile, nome/ruolo/carico senza email (UserRef non la contiene). Radio iniziale responsabile corrente; se null “Nessuno”, senza preselezionare automaticamente il primo suggerito. Nomi identici distinti da ruolo e primi8 caratteri UUID. Carico non caricato: “Carico non disponibile” e candidati manuali validi da <code>/admin/assignment-candidates</code>, retry separato. Non trasformare fallimento suggerimento in assenza candidati. Lista lunga scrollabile, campo ricerca nome con query q e paginazione candidati; il suggerimento ricalcola il carico tramite endpoint della issue. Riassegnazione IN_PROGRESS mostra “Lo stato tornerà Da fare; il ciclo corrente continua”. Rimozione non promette notifica. Conferma invariata produce messaggio “Assegnazione già presente”. Il compito admin di assegnare da dettaglio richiede al massimo3 azioni quando candidato visibile: aprire dialog, scegliere, confermare; ricerca/pagine aggiungono azioni quando necessarie.</p>
-<h3 id="04-interfaccia-cambio-stato-e-risoluzione-uc-06">Cambio stato e risoluzione — UC-06</h3>
-<pre><code class="language-text">  + Cambia stato BB-42 -------------------------------+
-  | Stato corrente: In corso                         |
-  | Nuovo stato: ( ) Da fare   (x) Risolta            |
-  | Responsabile del lavoro: Luca                    |
-  | Giulia, reporter, riceverà una notifica nell'app. |
-  | La risoluzione verrà registrata nella cronologia. |
-  | [Segna come risolta]                  [Annulla]   |
-  +--------------------------------------------------+
-</code></pre>
-<p>Dialog max560. Le opzioni sono esclusivamente gli enum ricevuti dal server in <code>permissions.allowedStateTargets</code>; lista senza stato corrente o DUPLICATE, con label italiane. <code>canChangeState</code> equivale a lista non vuota. Il frontend non ricostruisce le transizioni da stato/ruolo/UserRef, che non espone mustChangePassword. RESOLVED con TODO ammesso usa comando “Riapri” con spiegazione del nuovo ciclo e dei cicli già conservati. Dialog riapertura mostra “Stato futuro: Da fare” e “Il responsabile resterà assegnato solo se ancora idoneo; altrimenti l'issue sarà senza responsabile”. Il server riverifica eleggibilità (ADMIN/MEMBER attivo con cambio password completato) al comando; risposta mostra assignee conservato oppure null, un solo evento per tutti i cambiamenti. Questa riapertura è consentita anche quando l'assegnatario storico è stato disattivato o reso VIEWER. Se il server non offre avvio/risoluzione, la UI non li propone; ADMIN può usare assegnazione se canAssign, senza dedurre dati privati del candidato. Scadenza passata non cambia localmente le opzioni. Nessuna nota obbligatoria aggiunta al dominio; commento separato facoltativo prima/dopo la risoluzione.</p>
-<p>Il dettaglio viene riletto dopo ogni comando, dopo reset account noto alla UI, tornando al dettaglio e quando il tab riacquista focus. La risposta aggiorna capability e allowedStateTargets. Se una selezione nel dialog non è più ammessa, la UI la segnala come non disponibile e disabilita conferma finché l'utente sceglie un'opzione corrente; nessuna sostituzione o invio automatico. Esempio verificabile: ADMIN legge IN_PROGRESS con assegnatario cui è stata appena resettata la password; server può permettere TODO e vietare RESOLVED, anche se UserRef resta active=true e role=MEMBER. Il controllo backend si ripete comunque al salvataggio.</p>
-<pre><code class="language-text">  + Riapri BB-42 ----------------------------------------+
-  | Stato futuro: Da fare                                |
-  | Si avvierà un nuovo ciclo; i precedenti restano.     |
-  | Responsabile storico: Luca                          |
-  | Sarà conservato solo se ancora idoneo.               |
-  | Altrimenti l'issue sarà senza responsabile.          |
-  | [Riapri issue]                           [Annulla]   |
-  +-----------------------------------------------------+
-</code></pre>
-<h3 id="04-interfaccia-scadenza-duplicazione-archiviazione">Scadenza, duplicazione, archiviazione</h3>
-<pre><code class="language-text">  + Scadenza BB-42 -----------------------+
-  | Attuale: Non impostata                |
-  | Data [gg/mm/aaaa]                     |
-  | Da oggi al 31/12/2100.                |
-  | [ ] Rimuovi scadenza                  |
-  | [Salva scadenza]          [Annulla]    |
-  +--------------------------------------+
-
-  + Segna BB-42 come duplicata -----------------------+
-  | Cerca canonica [Titolo o descrizione_______]      |
-  | (x) BB-37 · Errore salvataggio · In corso          |
-  | Questa issue sarà chiusa come Duplicata.          |
-  | Non verrà inviata una notifica di risoluzione.    |
-  | [Segna duplicato]                    [Annulla]    |
-  +-------------------------------------------------+
-
-  + Archivia BB-42 ----------------------------------+
-  | Non apparirà nelle liste e nel carico corrente.  |
-  | Stato, commenti e cronologia saranno conservati. |
-  | [Archivia]                           [Annulla]    |
-  +-------------------------------------------------+
-</code></pre>
-<p>Data input nativo type date, label/help, rendering locale del browser; valore inviato ISO date. “Rimuovi” checkbox separa esplicitamente null dal campo vuoto invalido; se attiva il date input è disabilitato. Duplication search default risultato vuoto; Invio cerca, massimo100 caratteri nel titolo/descrizione. Query <code>/issues</code> con archived=false e stati TODO/IN_PROGRESS/RESOLVED, omettendo localmente la source dai candidati. Nessun lookup per numero non previsto dall'API. Lista paginata e selezione radio con preview target; filtro UI non sostituisce controllo server. Non prevedere selezione automatica del primo risultato. Conferma assente finché target non scelto. Restore e undo duplicate dialog mostrano stato futuro e possibili effetti sull'assegnatario; invarianti sempre riverificate dal server. Ripristino di issue aperta spiega: “Se il responsabile è inattivo, è un utente in sola lettura o deve ancora completare il cambio password, verrà rimosso e lo stato sarà Da fare”; nessuna prova di eleggibilità dedotta dalla sola UserRef, che non contiene mustChangePassword. Risposta server governa il dettaglio dopo comando. Archive non usa rosso come cancellazione: azione primaria blu e testo esplicito, dato che è reversibile.</p>
-<h3 id="04-interfaccia-notifiche-e-profilo">Notifiche e profilo</h3>
-<pre><code class="language-text">  Notifiche                     [Solo non lette: no v]
-  Non letta · 06/10/2026 10:35
-  Ti è stata assegnata BB-42 — Errore salvataggio [Apri]
-  [Segna come letta]
-  Letta · 06/10/2026 09:00
-  BB-41 — Aggiorna guida è stata risolta [Apri]
-  [Precedente] 1 di 1 [Successiva]
-</code></pre>
-<pre><code class="language-text">  Il mio profilo
-  Email: luca@example.test · Ruolo: MEMBER
-  Nome visualizzato [Luca__________________]
-  [Salva nome]
-  Cambia password
-  Password corrente [________________][Mostra]
-  Nuova password    [________________][Mostra]
-  Conferma          [________________][Mostra]
-  [Salva password]
-</code></pre>
-<p>Aprire notifica la marca letta mediante comando idempotente, poi naviga al dettaglio; se mark read fallisce, dettaglio può comunque aprirsi e il conteggio resta quello del server. “Segna tutte come lette” usa il comando read-all e aggiorna conteggio/lista, senza cancellare. Nessun toggle verso “non letta” o cancellazione inventato. Conteggio aggiornato al login, dopo mutazioni rilevanti, tornando al tab quando di nuovo visibile e ogni30s soltanto con sessione/tab visibile; una sola richiesta in volo, nessun WebSocket. Pagina ordina notifiche più recenti prima. Nome e password sono due form indipendenti; email/ruolo del profilo non editabili. Cambio password riuscito invalida tutte le sessioni e apre login con “Password aggiornata. Accedi di nuovo”; non memorizza password nei dati applicativi.</p>
-<h3 id="04-interfaccia-gestione-utenti">Gestione utenti</h3>
-<pre><code class="language-text">  Utenti                                            [Nuovo utente]
-  [Cerca nome/email_______] Ruolo [Tutti v] Stato [Tutti v] [Applica]
-  Nome     Email                  Ruolo   Stato    Cambio password
-  Marta    marta@example.test     ADMIN   Attivo   Completato [Gestisci]
-  Luca     luca@example.test      MEMBER  Attivo   Richiesto [Gestisci]
-  Paolo    paolo@example.test     VIEWER  Attivo   Completato [Gestisci]
-  [Precedente] 1 di 1 [Successiva]
-</code></pre>
-<pre><code class="language-text">  Nuovo utente
-  Nome *               [___________________]
-  Email *              [___________________]
-  Ruolo *              [Membro del team v]
-  Password temporanea* [___________________][Mostra]
-  L'account sarà attivo e dovrà cambiare la password al primo accesso.
-  [Crea utente]                                   [Annulla]
-</code></pre>
-<pre><code class="language-text">  Gestisci Luca
-  Email: luca@example.test
-  Nome [Luca____________] Ruolo [MEMBER v] Stato [Attivo v]
-  [Salva account]                                    [Annulla]
-  Reset credenziali
-  Nuova password temporanea [________________][Mostra]
-  [Imposta password temporanea]
-  Il reset chiude le sessioni di Luca e impone il cambio al prossimo accesso.
-</code></pre>
-<p>Ruoli select con descrizioni: ADMIN “Gestione completa delle azioni valide”; MEMBER “Crea/commenta, modifica il lavoro assegnato”; VIEWER “Legge issue e commenti, senza modifiche”. Nessun pulsante elimina utenti. Stato è Attivo/Inattivo. Salvataggio che modifica ruolo/stato apre conferma spiegando invalidazione sessioni; reset sempre confermato. Proprio reset non amministrativo: proprio utente usa cambio password in profilo, pagina gestione non propone password temporanea per sé. Proprio ruolo/stato cambiati validamente chiudono la sessione. Blocco ultimo admin o assegnazioni aperte mostra motivo restituito dal server e, nel secondo caso, link all'elenco assegnato; nessuna riassegnazione implicita.</p>
-<p>Accesso iniziale/refresh a <code>/admin/users/:userId/edit</code> esegue GET <code>/admin/users/{id}</code>: stato loading, poi UserAdmin/versione, o404/403. Nessun requisito di avere visitato prima l'elenco e nessuna ricerca nelle sole righe della pagina precedente. Un409 di versione su modifica/reset conserva la bozza e ricarica lo stesso endpoint singolo per confronto e nuova conferma. Successo PATCH usa la risposta corrente. Reset204 chiude il dialog e azzera il campo password, poi GET singolo aggiorna mustChangePassword/versione. Se quel GET fallisce, messaggio “Password temporanea impostata. Non è stato possibile aggiornare i dati dell'account”; salvataggi bloccati fino al ricaricamento riuscito, nessuna seconda chiamata reset implicita. Il successo già acquisito non viene presentato come fallimento del reset.</p>
-<h3 id="04-interfaccia-catalogo-etichette">Catalogo etichette</h3>
-<pre><code class="language-text">  Etichette
-  Nuova: Nome [________________] Colore [Blu v] [Crea etichetta]
-  Nome       Colore  Stato     Azioni
-  frontend   Blu     Attiva    [Modifica] [Disattiva]
-  urgente    Rosso   Attiva    [Modifica] [Disattiva]
-  legacy     Grigio  Inattiva  [Modifica] [Riattiva]
-  Editor riga: Nome [frontend___] Colore [Blu v] [Salva] [Annulla]
-</code></pre>
-<p>Catalogo ordinato per nome normalizzato/UUID, pagine20 con precedente/successiva e filtro nome q/stato active=true|false|all (default all nell'amministrazione). Query della route conserva q/active/page/size; frontend richiede esplicitamente all al catalogo API che per default restituisce solo attive. Disattivazione dialog spiega che associazioni esistenti restano; nessuna cancellazione. Riattiva usa PATCH active=true sulla versione corrente, con conferma e ripristino fra le nuove opzioni di selezione. Colore select contiene solo sei valori DOM-07 con nome italiano e swatch decorativo. Nome duplicato conserva editor aperto ed evidenzia campo; aggiornamento catalogo non modifica la cronologia pregressa.</p>
-<h3 id="04-interfaccia-dashboard-e-report">Dashboard e report</h3>
-<pre><code class="language-text">  Dashboard                           Rilevata 06/10/2026 11:00 [Aggiorna]
-  [Issue aperte 12] [In corso 5] [Scadute 2] [Tempo medio 16,0 ore]
-  Carico corrente
-  Utente      Ruolo     Issue aperte   Azione
-  Luca        MEMBER         3         [Apri elenco]
-  Giulia      MEMBER         3         [Apri elenco]
-  Nessuno     —              6         [Apri elenco]
-  Risoluzioni
-  Utente      Cicli conclusi   Tempo medio
-  Luca              3          14,0 ore
-  Giulia            0          Nessuna risoluzione
-  Sono escluse le issue archiviate. [Come si calcolano le metriche v]
-</code></pre>
-<pre><code class="language-text">  Report mensili
-  Mese [Ottobre 2026 v] [Mostra report]
-  Ottobre 2026 · dal 01/10/2026 al 01/11/2026 escluso · Europe/Rome
-  Generato 06/10/2026 11:00. Mese corrente: dati parziali fino ad ora.
-  [Create 9] [Gestite 14] [Risoluzioni 6] [Tempo medio 16,0 ore]
-  Utente    Create  Gestite  Risoluzioni  Tempo medio  Aperte a fine periodo
-  Luca         2       5        3           14,0 ore           3
-  Giulia       7       9        3           18,0 ore           4
-  [Definizioni e criteri di attribuzione v]
-</code></pre>
-<p>Numeri qui solo esempi di layout; fixture e formule verificabili sono nel documento08. Nessuna media a partire dalle righe arrotondate. UI formatta valori server con locale it-IT (virgola decimale e un decimale per ore); media null è “Nessuna risoluzione”, zero è “0”. Report utenti inattivi conservati per storia. Dashboard e report usano card numeriche, tabelle e definizioni. Report mese corrente indica parzialità; limiti di mese e attribution non vengono ricalcolati nel browser. Input mese nativo type month con alternativa coppia select mese/anno se browser non lo supporta, da2000-01 al corrente; nessun mese futuro. Nessun export report aggiunto: RF-08 riguarda l'elenco issue.</p>
-<p>Contenuto completo della dashboard: card “Issue non archiviate” activeIssueCount, “Aperte” openCount, “In corso” inProgressCount, “Risolte” resolvedCount, “Duplicate” duplicateCount, “Aperte senza responsabile” unassignedOpenCount, “Scadute” overdueOpenCount, “Tempo medio del ciclo” averageResolutionSeconds e “Cicli conclusi” resolutionCount. Una tabella Carico mostra openByAssignee con esattamente Nome, Ruolo, Issue aperte, Apri elenco. Una tabella separata Risoluzioni mostra resolutionByAssignee con Nome, Cicli conclusi, Tempo medio, anche assegnatari storici non attivi. Tabelle compatte “Aperte per tipo” e “Aperte per priorità” mostrano tutte le categorie con zero. Il frontend non ricostruisce contatori non restituiti.</p>
-<p>Contenuto completo report: riepilogo “Create” createdCount, “Gestite” handledIssueCount, “Cicli risolti” resolvedCycleCount, “Issue risolte” resolvedIssueCount, “Duplicate” duplicatedCount, “Riaperte” reopenedCount, “Duplicazioni annullate” duplicateUndoneCount, “Tempo medio del ciclo” averageResolutionSeconds, “Aperte al termine” openAtPeriodEnd e “Senza responsabile al termine” unassignedOpenAtPeriodEnd. Tabella perUser con Nome/Ruolo, Create, Gestite, Cicli risolti, Issue risolte, Tempo medio, Aperte assegnate al termine. Nessuna riga totale calcolata sommando Gestite per persona: una stessa issue può essere gestita da più utenti. In mese corrente “al termine” diventa “al momento della rilevazione”. Definizioni spiegano campione, archiviazione e intervallo; niente contatori mancanti dietro tooltip.</p>
+<h2 id="04-interfaccia-ui-02-sistema-visivo-deciso">UI-02. Sistema visivo: Bacheca di sviluppo</h2>
+<p>Il contratto visivo è una bacheca di lavoro: sidebar midnight, workspace chiaro, azione primaria emerald, tipografia leggibile e dati in registri con separatori. La proposta 1 orienta struttura, colori e ritmo; le misure CSS canoniche prevalgono sulle imprecisioni illustrative. Il raster 1487×1058 rappresenta un target 1440×1024, senza promessa pixel per pixel; dati, date e contatori illustrativi non diventano dati del prodotto.</p>
+<p>Presentazione, palette e asset non cambiano route, API, enum, permessi, sessioni, CSRF, retry o dominio. Nessuna scorciatoia decorativa, selezione massiva, freccia di ordinamento senza comando o menu di azioni inesistenti. <code>frontend/src/styles/tokens.css</code> è il catalogo unico; gli stylesheet di feature definiscono soltanto layout specifici.</p>
+<table><thead><tr><th>Token CSS</th><th>Valore</th><th>Uso</th></tr></thead><tbody>
+<tr><td>--color-bg</td><td>#F7F9FC</td><td>Workspace e accesso</td></tr>
+<tr><td>--color-surface / --color-surface-subtle</td><td>#FFFFFF / #F1F4F8</td><td>Superfici, intestazioni e disabled</td></tr>
+<tr><td>--color-text / --color-text-muted</td><td>#152239 / #53637C</td><td>Testo e metadati</td></tr>
+<tr><td>--color-border / --color-control-border</td><td>#DDE5EE / #7B8DA5</td><td>Separatore decorativo / contorno necessario</td></tr>
+<tr><td>--color-primary / --color-primary-hover / --color-primary-pressed</td><td>#087F5B / #066649 / #05513A</td><td>Unica primary del contesto e link</td></tr>
+<tr><td>--color-primary-subtle / --color-focus</td><td>#E6F6F0 / #087F5B</td><td>Selezione reale / focus su chiaro</td></tr>
+<tr><td>--color-sidebar / --color-sidebar-hover / --color-sidebar-active</td><td>#152333 / #20364A / #1B4245</td><td>Sidebar, drawer e pagina attiva</td></tr>
+<tr><td>--color-sidebar-text / --color-sidebar-muted</td><td>#F5F8FC / #B8CBDD</td><td>Voci/nome / gruppi/ruolo</td></tr>
+<tr><td>--color-sidebar-selected-text / --color-brand-mint</td><td>#B6F6E4 / #51E5C2</td><td>Voce attiva / marchio e focus midnight</td></tr>
+<tr><td>--color-info / --color-info-subtle</td><td>#175CD3 / #EFF6FF</td><td>In corso e informazioni</td></tr>
+<tr><td>--color-success / --color-success-subtle</td><td>#067647 / #ECFDF3</td><td>Risolta, successi, priorità Bassa</td></tr>
+<tr><td>--color-warning / --color-warning-subtle</td><td>#946200 / #FFF7E6</td><td>Priorità Media e avvisi</td></tr>
+<tr><td>--color-danger / --color-danger-subtle</td><td>#B42318 / #FFF1ED</td><td>Errori, scaduta, Alta e conferme distruttive</td></tr>
+<tr><td>--color-critical / --color-critical-subtle</td><td>#9F1239 / #FEECEF</td><td>Priorità Critica</td></tr>
+<tr><td>--color-purple / --color-purple-subtle</td><td>#6941C6 / #F4F0FF</td><td>Duplicata, Domanda e label viola</td></tr>
+</tbody></table>
+<p>Contrasto sul DOM effettivamente renderizzato: testo normale ≥ 4,5:1, grande ≥ 3:1, icone informative/focus/contorni necessari ≥ 3:1, compresi hover/pressed/error/disabled e drawer. Il mint non è testo informativo su bianco; divider chiaro non identifica da solo un controllo. I calcoli sui token non sostituiscono la misura dell'implementazione.</p>
+<h3 id="04-interfaccia-tipografia-e-asset">Tipografia, iconografia e marchio locali</h3>
+<p>Inter 4.1: un solo roman variable <code>frontend/src/assets/fonts/InterVariable.woff2</code>, pesi 100–900, <code>@font-face</code> normal/<code>font-display:swap</code>; fallback system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif. Fonte <a href="https://github.com/rsms/inter/releases/tag/v4.1">Inter 4.1 ufficiale</a>, licenza <a href="https://github.com/rsms/inter/blob/master/LICENSE.txt">SIL OFL 1.1</a> in <code>frontend/src/assets/fonts/OFL.txt</code>. Distribuzione locale, senza CDN o installazione sul dispositivo. La tipografia editoriale PDF è separata da quella dell'app.</p>
+<table><thead><tr><th>Elemento</th><th>Dimensione/line-height</th><th>Peso/tracking</th></tr></thead><tbody>
+<tr><td>Wordmark desktop/mobile</td><td>24/32 / 20/28 px</td><td>700; -0,3/-0,2 px</td></tr>
+<tr><td>H1 desktop/tablet/mobile</td><td>36/44 / 32/40 / 28/36 px</td><td>700; -0,8/-0,6/-0,4 px</td></tr>
+<tr><td>Titolo accesso/dialog</td><td>24/32 px; dialog mobile 20/28</td><td>650; -0,3 px</td></tr>
+<tr><td>H2</td><td>20/28 px</td><td>600</td></tr>
+<tr><td>Corpo/titolo riga</td><td>16/24 px</td><td>400/500; titolo record responsive 600</td></tr>
+<tr><td>Navigazione/pulsanti</td><td>15/22 px</td><td>500; primary 600</td></tr>
+<tr><td>Label/intestazione/metadati</td><td>14/20 px</td><td>600/600/400</td></tr>
+<tr><td>Etichette/ruolo footer</td><td>12/18 px</td><td>500</td></tr>
+</tbody></table>
+<p>Solo BB-n usa <code>ui-monospace, Cascadia Mono, SFMono-Regular, Consolas, monospace</code>, 14/20 px, peso 500. Conteggi/date mantengono Inter con cifre tabulari; request ID sans-serif copiabile. Marchio PNG locale scelto dalla proposta, trasparente in <code>frontend/src/assets/brand/bugboard-mark.png</code>: ingombro 32 px desktop/28 mobile/36 auth, <code>alt=""</code> nel link con wordmark testuale BugBoard 26. Lo stesso PNG processato da Vite è favicon; <code>frontend/src/assets/PROVENANCE.txt</code> registra origine e licenze degli asset. Nessuna ricostruzione CSS/SVG custom o mockup usato come screenshot dentro l'app.</p>
+<p><a href="https://registry.npmjs.org/@tabler/icons-react/3.49.0"><code>@tabler/icons-react</code> 3.49.0</a>, versione esatta con licenza MIT, import nominati ESM, stroke 2/currentColor. Dimensioni 20 px base, 24 navigazione/tipo nelle righe, 16 badge. Una sola famiglia, senza import dinamico dell'intero catalogo o secondo kit UI. Icona con testo decorativa/nonfocusabile; comando a sola icona con nome italiano e target 44×44. Tabler offre il tratto compatto coerente con la bacheca; le alternative Phosphor/Lucide non giustificano mescolare famiglie.</p>
+<table><thead><tr><th>Dato</th><th>Testo/icona</th><th>Colori</th></tr></thead><tbody>
+<tr><td>TODO / IN_PROGRESS</td><td>Da fare·IconCircle / In corso·IconCircleDot</td><td>muted/subtle / info/info-subtle</td></tr>
+<tr><td>RESOLVED / DUPLICATE</td><td>Risolta·IconCircleCheck / Duplicata·IconCopy</td><td>success/subtle / purple/subtle</td></tr>
+<tr><td>LOW / MEDIUM</td><td>Bassa·IconChevronDown / Media·IconMinus</td><td>success / warning, fondo subtle</td></tr>
+<tr><td>HIGH / CRITICAL</td><td>Alta·IconChevronUp / Critica·IconChevronsUp</td><td>danger / critical, fondo subtle</td></tr>
+<tr><td>BUG / QUESTION / DOCUMENTATION / FEATURE</td><td>Bug·IconBug / Domanda·IconHelpCircle / Documentazione·IconFileText / Funzionalità·IconChartBarPopular</td><td>danger / purple / muted / primary su white</td></tr>
+</tbody></table>
+<p>Stato/priorità badge distinti testo+icona+colore, min 30 px, padding 4×10, gap 6, font 14/20 peso 500, raggio 999; pulsanti non capsule. Label enum gray/blue/green/amber/red/purple → neutro/info/success/warning/danger/purple, raggio 4, font 12/18, padding 2×6; tutte visibili con wrapping, nessun Altre N non realizzato. Archiviata è banner, non quinto stato. Giorno civile Europe/Rome: scaduta solo data&lt; oggi e issue aperta; oggi Scade oggi, futuro neutro, assenza Non impostata. Concluse non acquistano allarme retroattivo.</p>
+<h3 id="04-interfaccia-componenti-comuni">Componenti e stati comuni</h3>
+<p>Spazi 4/8/12/16/20/24/32/48 px, gap 6 per label-campo/badge; raggi controllo 8/pannello 12/label 4. Pannelli piatti bordo 1 px; dialog ombra <code>0 20px 64px rgb(21 34 57 / 20%)</code>, backdrop <code>rgb(21 34 57 / 42%)</code>. Controlli 44×44 e gap 8, label 14/20, gap 6, input/select padding 10×12, textarea 160 resize verticale; checkbox/radio 20 in label cliccabile 44.</p>
+<p>Primary unica del contesto attivo: Nuova issue, Salva/Crea, Conferma, Accedi o Salva password. Export/ricerca/refresh/navigazione secondari; conferma distruttiva danger pieno è unica primary del dialog, sfondo inerte. Secondary white/control-border, hover subtle/pressed #E6EBF2; disabled nativo subtle/muted senza opacity globale. Focus outline 3/offset 2: primary su chiaro, text sul pieno, mint su midnight. Busy mantiene il testo visibile e la stessa posizione/dimensione: indicatore CSS assoluto 12 px, aria-busy e annuncio Invio solo agli screen reader; disabilita nuove attivazioni senza successo anticipato. Tokens/global sono importati prima di App e degli stili delle feature, evitando che gli stili generali sovrascrivano toolbar e badge. Errori inline aria-invalid/describedby e riepilogo focusabile; loading non simula 0/Nessuno, skeleton neutri senza shimmer, dati precedenti dichiarati.</p>
+<p>Transizioni 120 ms ease-out solo opacity decorativa/pannelli non essenziali, mai interpolazione colore/focus; reduced-motion 0 ms. Dialog nativo max 680, width viewport−32/max-height 100 dvh−32; header 20×24, body 24, footer 16×24, gap 8 nel normale flusso scrollabile. Mobile margini 8, width/max-height viewport−16, padding 16, azioni impilate; eccezioni motivate nel catalogo. Durante mutazione busy anche Escape/Chiudi/Annulla bloccati; esito annunciato e focus al trigger. Nessun modal sovrapposto per conflitto.</p>
+<h2 id="04-interfaccia-ui-03-struttura-e-responsive">UI-03. Shell, struttura e responsive</h2>
+<table><thead><tr><th>Viewport</th><th>Shell/spazio utile</th></tr></thead><tbody>
+<tr><td>Desktop ≥ 1024; 1440×900</td><td>Sidebar 240, testata logo 64, topbar 64 solo workspace, mainpad 24/max 1440. Inizio x264/y88, interno 1152.</td></tr>
+<tr><td>Tablet 640–1023; 768×1024</td><td>Sidebar nel drawer, topbar 64/mainpad 24, interno 720; registro issue una colonna.</td></tr>
+<tr><td>Mobile&lt; 640; 360×800</td><td>Topbar 56/mainpad 16, interno 328, x16/y72; una colonna e scroll verticale ordinario.</td></tr>
+</tbody></table>
+<p>Sidebar sticky 100 dvh con nav scorrevole, padding 12/logo 24, voci min 48/gap 12/raggio 8. Lavoro: Issue, Assegnate a me ADMIN/MEMBER, Archivio; Amministrazione solo ADMIN: Dashboard, Utenti, Etichette, Report. Attiva aria-current=page/selected-text/active; distinguere Issue/Assegnate dalla query reale. VIEWER conserva banner Sola lettura; Salta al contenuto primo focusabile.</p>
+<p>Footer account: Profilo alto 64/avatar 36/nome completo/ruolo Amministratore, Membro del team, Lettore esterno; Esci 44 sempre visibile sotto. Sostituisce menu account e disclosure; nessun logout duplicato nelle pagine normali. Drawer stessi controlli. Topbar white/divider: Notifiche a destra e badge solo quando noto, niente data decorativa/brand duplicato desktop. Mobile Menu 44, brand flessibile, Notifiche 44 nominate con conteggio reale.</p>
+<p>D17 drawer midnight a sinistra, width 320/max viewport−16,100 dvh, raggio esterno 12; header 64 tablet/56 mobile, chiusura 44, stessi gruppi/footer. Inert/trap/Escape/ritorno focus/blocco scroll come Dialog. Auth senza shell/notifiche.</p>
+<p>Header titolo/descrizione gap 8/primary a destra con wrapping; header-toolbar 24, toolbar-registro 20, registro-paginazione 24, sezioni 24. Tabella issue da 1200 px; sotto 1200 un unico registro white con separatori, sempre una colonna anche 768. Nessuna card flottante o dato nascosto. Solo BB-n/titolo link; riga non button, una variante nel DOM accessibile.</p>
+<p>Tabella bordo 1/raggio 12, header 48, righe min 72/padding 12×16 crescenti con testo; soltanto le celle Stato/Priorità usano padding orizzontale 4 px e badge senza wrapping, conservando colonne 112/104 px e altezza 30 px. Record responsive padding 16/gap 12. Responsabile avatar 32/nome completo; iniziali massimo 2, colore neutro/green/purple da UUID senza significato ruolo/stato; Nessuno testuale. Risultati/totali/URL invariati, size 20/50/100 default 20, paginazione al fondo e controlli 44. A 320/zoom 200% comandi/dati raggiungibili senza overflow pagina; tabelle ampie soltanto in regione scrollabile locale con label/focus.</p>
+<h2 id="04-interfaccia-ui-04-mockup-schermate">UI-04. Catalogo e composizione delle schermate</h2>
+<p>Inventario canonico: 15 route nominate e 2 superfici errore, 17 schermate S, 17 dialog D, 20 tavole V: <strong>54 unità visuali</strong>. Sono specifiche illustrative, non catture di funzionamento né test superati. V14–V19 sono le sei rappresentazioni mobile aggiuntive; D17 è già mobile e non viene ricontato. Ogni altro flusso conserva disposizione mobile/verifica 360; redirect / e query/tab non creano nuove schermate. Tavole continuate mostrano contenuti sotto la piega, senza eliminarli. Le tre catture reali UC-02/04/06 restano nel capitolo Schermate reali, con provenienza distinta.</p>
+<table><thead><tr><th>ID</th><th>Schermata/route</th><th>Accesso</th></tr></thead><tbody>
+<tr><td>S01</td><td>Accesso /login</td><td>Anonimo</td></tr><tr><td>S02</td><td>Cambio obbligatorio /change-password</td><td>Sessione con cambio richiesto, ogni ruolo</td></tr>
+<tr><td>S03</td><td>Elenco /issues; Assegnate a me è assignedTo=me</td><td>ADMIN/MEMBER/VIEWER</td></tr><tr><td>S04</td><td>Dettaglio /issues/:issueId</td><td>Ogni ruolo secondo capability</td></tr>
+<tr><td>S05</td><td>Nuova issue /issues/new</td><td>ADMIN/MEMBER</td></tr><tr><td>S06</td><td>Modifica /issues/:issueId/edit</td><td>ADMIN o MEMBER assegnatario, secondo canEdit</td></tr>
+<tr><td>S07</td><td>Archivio /archive</td><td>Ogni ruolo</td></tr><tr><td>S08</td><td>Notifiche /notifications</td><td>Ogni ruolo, soltanto proprie</td></tr>
+<tr><td>S09</td><td>Profilo /profile</td><td>Ogni ruolo, soltanto proprio</td></tr><tr><td>S10</td><td>Dashboard /admin/dashboard</td><td>ADMIN</td></tr>
+<tr><td>S11</td><td>Utenti /admin/users</td><td>ADMIN</td></tr><tr><td>S12</td><td>Nuovo utente /admin/users/new</td><td>ADMIN</td></tr>
+<tr><td>S13</td><td>Gestisci utente /admin/users/:userId/edit</td><td>ADMIN</td></tr><tr><td>S14</td><td>Etichette /admin/labels</td><td>ADMIN</td></tr>
+<tr><td>S15</td><td>Report mensili /admin/reports</td><td>ADMIN</td></tr><tr><td>S16</td><td>Accesso non consentito, 403 sulla route richiesta</td><td>Sessione valida</td></tr>
+<tr><td>S17</td><td>Pagina non trovata, 404 sulla route richiesta</td><td>Sessione valida; errore risorsa nel suo dettaglio</td></tr>
+</tbody></table>
+<h3 id="04-interfaccia-accesso-e-cambio-obbligatorio">S01/S02 — Accesso e cambio obbligatorio</h3>
+<p>Layout auth max 528, padding 24 desktop/16 mobile, distanza superiore 48/32; marchio 36 e wordmark 24 sopra card max 480/raggio 12, padding 32 desktop/24 mobile. A 360 card 328 e scroll se messaggi/tastiera riducono l'area; nessun centraggio verticale rigido. S01: Email, Password con toggle 44, Accedi full-width, nota account creati dall'amministratore. Enter/busy proteggono invio, password cancellata all'esito. Credenziali errate generiche, sessione fallita con Riprova, 429 con attesa server; nessun social login, Ricordami o recupero anonimo aggiunto.</p>
+<p>S02: Password corrente, Nuova password, Conferma, avviso revoca sessioni, Salva password/Esci secondario. Nuova 12–128 code point e ≤ 512 byte UTF-8, diversa dalla corrente, conferma identica, senza troncamento. Autocomplete current-password/new-password e toggle nominati. Obbligo prioritario su ogni pagina; successo cancella segreti/torna login, errore sulla password corrente conserva sessione. ReturnTo soltanto interno/autorizzato; loading sessione senza menu riservato transitorio.</p>
+<h3 id="04-interfaccia-elenco-corrente-e-archivio">S03/S07 — Elenco e archivio</h3>
+<p>Titolo/Nuova issue solo S03 ADMIN/MEMBER; link all'altro ambito sotto titolo. Toolbar piatta cinque gruppi/gap 12: ricerca 548, Filtri 112, Ordina 164, Direzione 136, CSV 144 sul main 1152. Ricerca input 492+Cerca 44+gap 12, label visibili, blocco 70. Sort default <code>createdAt,desc</code>, campo/verso entrambi espliciti, senza frecce decorative sulle intestazioni. Filtri disclosure inline chiusa: Tipo/Stato/Priorità/Etichette native, Assegnatario, Reporter, Scadenza; tre/due/una colonne secondo spazio, catalogo label max 176 scrollabile. Applica/Pulisci non sono un dialog e chiudere non applica bozza.</p>
+<p>Tabella 1152: identità/titolo/tipo/label 652, Stato 112, Priorità 104, Responsabile 156, Scadenza 128; Creata metadato sotto Scadenza, S07 data/autore archiviazione sotto titolo. Registro campione ordinario senza avvisi entro y298. Mobile ricerca 272+Cerca 44+gap 12, Filtri/CSV 158 ciascuno, Ordina 164/Direzione 136; registro unico con tutti i dati, Precedente/Successiva 160 gap 8 e nessun controllo oltre x344. Totale reale, size 20/50/100 e paginazione al fondo, senza pagine inventate.</p>
+<p>Query invariata: q letterale normalizzata, multivalori type/status/priority/label, assignedTo=me|unassigned|UUID, reporter/overdue. Cerca/Applica/sort/size azzerano page, pagine conservano tutto, cambio ambito conserva ricerca/filtri/sort e azzera page; Back/Forward/ritorno dettaglio ripristinano query confermata, scroll/focus. Distinguere loading, risultati precedenti, vuoto, zero corrispondenze, oltre fine e query invalida. Prima pagina conserva filtri/size/sort; Ripristina vista non reinterpreta invalidi. CSV occupa soltanto il proprio comando e l'esito si riferisce ai filtri dell'invio.</p>
+<h3 id="04-interfaccia-creazione-e-modifica-uc-0209">S05/S06 — Creazione e modifica, UC-02/09</h3>
+<p>Form max 760 allineato a sinistra, senza colonna decorativa, padding 24/16; ordine Titolo 3–160, Descrizione 10–10000 code point, Tipo default BUG, Priorità default MEDIUM, Etichette max 20. Tipo/Priorità affiancati solo con interno ≥ 640 e viewport ≥ 768; resto piena larghezza, label/obbligo/contatori espliciti. Nessun reporter/stato/responsabile/scadenza nel form.</p>
+<p>S05 una immagine PNG/JPEG opzionale, input ≤ 5 MiB, lato 4096,16 milioni pixel; server autorevole. Preview contain max 320×180 desktop/296×168 mobile, nome/dimensione/Rimuovi selezione, Blob URL revocato a sostituzione/uscita. S06 conserva label inattive associate/rimovibili e rinvia al dettaglio per comando immagine D08; non simula atomicità PATCH campi+PUT immagine. Salva immutato disabilitato.</p>
+<p>Riepilogo errori dopo titolo, focus una volta al submit invalido, link campi; correzione non sottrae focus. Bozza D10. Creazione incerta: payload/file/chiave conservati, campi congelati, solo Riprova esplicito stessa chiave entro 24h. Conflitto S06 inline, non modal: Bozza/Dati correnti, Ricarica dati per confronto, Usa la versione corrente mantenendo la bozza; Salva bloccato sino ad accettazione, nessun merge automatico. Mobile confronto impilato e bozza intatta anche su fetch fallito.</p>
+<h3 id="04-interfaccia-dettaglio-commenti-e-cronologia">S04 — Dettaglio, commenti e cronologia</h3>
+<p>Desktop: ritorno 44, BB-n/titolo/badge e Modifica solo canEdit, banner esito/notifica/archivio/duplicato. Corpo descrizione/discussione 800 e metadati/comandi 328, gap 24. Metadati padding 16/interno 296: Reporter, Responsabile, Scadenza, Creata, Aggiornata, Ultima attività, Versione; label 112/valore 176/gap 8. Azioni due colonne 144/gap 8 con nomi interi; nessuna preview della lista. Mobile: ritorno, titolo/badge, Modifica, banner, metadati/azioni, descrizione, discussione; nessun riquadro fisso sovrapposto.</p>
+<p>Tab Commenti/Cronologia 44 con attivazione manuale, frecce/Home/End e Invio/Spazio; URL tab/commentsPage/historyPage. Parametri invalidi: Vista della discussione non valida/Ripristina vista dentro dettaglio, senza query invalide. Commenti cronologici, pagine 20, ingresso ultima; invio proprio raggiunge ultima pagina della stessa issue, composer dopo elenco, textarea 160/limite 5000. Cronologia pagine 20 dalla prima, occurredAt/eventSequence, attore e tutti i campi prima/dopo, senza dump JSON. Date dd/MM/yyyy HH:mm Europe/Rome, inattivi espliciti, email altrui assente per MEMBER/VIEWER.</p>
+<p>Archivio data/autore/sola lettura, Ripristina solo se capability; Duplicata collega canonica anche archiviata e invita a commentare lì, senza nuovo commento/ciclo. Risolta conserva commenti/modifica consentiti, assegnazione/scadenza dopo riapertura. VIEWER senza composer; bozza esistente readonly/avviso/Scarta. Commento incerto corpo+chiave/Riprova esplicito entro 24h. Comandi da capability/allowedStateTargets server, mai da UserRef o sola identità del reporter.</p>
+<h3 id="04-interfaccia-assegnazione-e-suggerimento-uc-0414">D01 — Assegnazione, UC-04/14</h3>
+<p>Dialog 680: responsabile corrente, ricerca nome/Cerca utenti, Aggiorna carichi/asOf, radio Nessuna assegnazione/candidati, nome/ruolo/UUID 8/carico/motivo, pagine 20. Ricerca/refresh gap ≥ 8, lista max 288 desktop/240 mobile con scroll/focus. Corrente e selezione verificata visibili/confermabili fuori pagina, senza email. Nessuna preselezione del primo suggerito; carichi falliti consentono candidati manuali e non significano zero candidati. Riassegnazione IN_PROGRESS → TODO conserva ciclo, rimozione senza promessa notifica, no-op a versione corrente. Apri/scegli/conferma ≤ 3 azioni con candidato visibile, oltre eventuale ricerca/pagine.</p>
+<h3 id="04-interfaccia-cambio-stato-e-risoluzione-uc-06">D02 — Stato, risoluzione e riapertura, UC-06</h3>
+<p>Dialog 680: stato corrente/responsabile, radio soltanto allowedStateTargets, senza stato corrente/DUPLICATE. Conferma Salva stato/Segna come risolta/Riapri issue specifica. Risoluzione notifica reporter/credito responsabile storico; riapertura nuovo ciclo e idoneità server. Target vuoti → nessun comando; aggiornamento capability invalida scelta non ammessa. Focus conforme alla semantica, versione/no-op sempre controllati.</p>
+<h3 id="04-interfaccia-scadenza-duplicazione-archiviazione">D03–D10 — Comandi e allegati</h3>
+<table><thead><tr><th>ID/max desktop</th><th>Dati/effetti</th><th>Conferma</th></tr></thead><tbody>
+<tr><td>D03/680</td><td>Date corrente/min oggi Europe/Rome/max 2100-12-31, Rimuovi disabilita data conservando bozza; passato esistente non blocca risoluzione.</td><td>Salva scadenza</td></tr>
+<tr><td>D04/760</td><td>Ricerca titolo/descrizione, Cerca canonica, radio BB-n/titolo/stato, pagine 20; nessuna scelta iniziale, source esclusa, target non archiviata/non DUPLICATE; nessuna notifica risoluzione.</td><td>Segna duplicato</td></tr>
+<tr><td>D05/520</td><td>Canonica e conseguenze, collegamento rimosso/TODO/nuovo ciclo, responsabile solo idoneo; focus Annulla.</td><td>Annulla duplicazione</td></tr>
+<tr><td>D06/520</td><td>BB-n/titolo/esclusione lista-carico, stato/commenti/storia conservati, non cancellazione; focus Annulla.</td><td>Archivia</td></tr>
+<tr><td>D07/520</td><td>Ritorno elenco, preserva stato/assegnazione salvo aperta con responsabile non idoneo → null/TODO; server decide, focus Annulla.</td><td>Ripristina</td></tr>
+<tr><td>D08/680</td><td>Attuale/Nessuna, file/limiti/preview, comando separato; conferma rimozione nello stesso dialog, niente modal annidato; nuovo file annulla rimozione. Successo resta nel dialog, aggiorna dati/cancella file locale.</td><td>Aggiungi/Sostituisci/Conferma rimozione</td></tr>
+<tr><td>D09/fullscreen</td><td>Nome/Chiudi, loading/errore, immagine autenticata contain; header 72 desktop/88 mobile, margini 24/16, area max 1392×780/328×680 ridotta da nomi lunghi. Niente download/zoom obbligatorio; rimozione esterna revoca Blob e torna focus.</td><td>Chiudi</td></tr>
+<tr><td>D10/520</td><td>Lasciare la bozza?, perdita modifiche; focus Continua. Continua conserva RAM/file/chiave/cursore; Esci scarta e raggiunge destinazione richiesta, beforeunload nativo.</td><td>Continua a scrivere/Esci senza salvare</td></tr>
+</tbody></table>
+<p>409 variante nello stesso D01–D08: selezione/data/file intatti, avviso, Ricarica dati per confronto, submit bloccato; nuova versione/capability richiede nuova conferma, permesso ritirato non riabilita comando. 401 → login conserva RAM per stesso account, senza D10; account diverso/logout/cambio password cancellano RAM. Nessuna password/bozza/file/body in URL/log/storage persistente.</p>
+<h3 id="04-interfaccia-notifiche-e-profilo">S08/S09 e D11 — Notifiche/profilo</h3>
+<p>S08 toolbar Solo non lette/Segna tutte come lette secondario, registro campione entro y272. Riga Letta/Non letta, Ti è stata assegnata/È stata risolta BB-n—titolo, data Europe/Rome, Apri/Segna come letta solo se non letta. Mobile stessi dati/azioni/pagine, niente swipe/avatar mittente inesistente. unreadOnly/page/size singoli, page ≥ 0, size 1–100, cambio filtro/size → page 0; vuoto totale/non lette distinti. Apri continua se mark-read fallisce e porta avviso al dettaglio; letture invalidano lista/badge.</p>
+<p>S09 identità compatta/email propria/ruolo; desktop ≥ 1024 sezioni Nome/Password 564/gap 24, padding 24; tablet/mobile impilate, padding 16 mobile. Submit/busy indipendenti, nessun Salva tutto. Nome 2–80 code point NFC/trim senza controlli, PATCH profile/expectedVersion, Salva nome solo variato e shell aggiornata. Password sequenzaS 02 senza secondo Esci; successo revoca/cancella segreti. D11 conflitto 680 conserva bozza: Torna alla bozza adotta versione corrente; Carica dati correnti passa a conferma scarto nello stesso dialog. Profilo mantiene provider/beforeunload, senza nuovo D10.</p>
+<h3 id="04-interfaccia-gestione-utenti">S11–S13 e D12–D14 — Utenti</h3>
+<p>S11 titolo/Nuovo utente, toolbar Nome-email/Ruolo/Stato/Applica/Pulisci, primo dato campione entro y328. Sei colonne 1152: Nome 248, Email 312, Ruolo 200, Stato 120, Cambio password 160, Gestisci 112; testi lunghi a capo. Mobile registro con tutte le sei informazioni e label. q/role/active/page/size singoli, q0–100, size 1–100; nessun ultimo admin dedotto dalla pagina. Loading/precedenti/vuoto/nessuna corrispondenza/oltre fine/query invalida distinti.</p>
+<p>S12 form 760: Nome 2–80, Email ASCII ≤ 254 normalizzata, Ruolo ADMIN/MEMBER/VIEWER default MEMBER, Password temporanea 12–128 code point/ ≤ 512 byte. Due colonne Nome-email/Ruolo-password solo viewport ≥ 768/interno ≥ 640. Nessun active/mustChangePassword/ripetizione password aggiunto. Crea/Annulla/errori campo-riepilogo/D10; successo cancella segreto, invalida query/apre S13 con messaggio cambio obbligatorio, senza invio email.</p>
+<p>S13 identità compatta, email readonly/date/stato cambio; Nome/Ruolo/Account attivo, Salva/Torna agli utenti, submit immutato disabilitato. Password di accesso separata: reset secondario solo altro account, disabilitato busy/ricaricamento/bozza non salvata; per sé link Profilo. Proprio cambio sicurezza termina sessione, nome aggiorna provider. D12 conferma 520 ruolo/stato, danger se disattiva/focus Annulla; invarianti LAST_ADMIN_REQUIRED/OPEN_ASSIGNMENTS_EXIST conservano bozza/link issue aperte reali.</p>
+<p>D13 reset 520 un campo segreto; 409 tiene password solo RAM/submit bloccato/ricarica/Usa la versione corrente e conferma di nuovo. Reset riuscito+refetch fallito successo parziale/Ricarica account, mai retry reset; chiusura/successo cancellano password, reset proprio assente. D14 conflitto 680 confronto Nome/Ruolo/Stato, Torna alla bozza/Mantieni bozza e usa versione corrente/Scarta bozza e carica dati correnti; nuova modifica sicurezza richiede D12, nessun salvataggio al fetch/segreto nel confronto.</p>
+<h3 id="04-interfaccia-catalogo-etichette">S14 e D15/D16 — Etichette</h3>
+<p>Registro immediato, creazione disclosure inline chiusa; toolbar Ricerca/Stato/Applica/Pulisci, primo dato campione y ≤ 300 desktop/ ≤ 400 mobile. Colonne 1152: Nome 432, Colore 192, Stato 160, Azioni 368. Nuova etichetta apre Nome/Colore/Crea/Annulla, focus Nome, padding 16/altezza valida desktop ≤ 160 crescente con errori. Nome 1–32 NFC/trim, sei colori API nominati/default blue, nessun HEX/color picker; successo pulisce nome/disclosure aperta sino a chiusura esplicita.</p>
+<p>Modifica inline riga Nome/Colore/Salva/Annulla, active conservato e comando separato; editor fuori pagina identificato sotto registro senza perdere bozza. Nuova etichetta primary solo editor chiusi, Crea primary con sola creazione, Salva modifica primary con modifica aperta/Crea secondario se coesiste. Mobile una colonna/stesse azioni. q/active/page/size singoli/default all-0-20, q ≤ 100, size 1–100, vuoti/errori/duplicati/query distinti. D15 conferma 520 Disattiva/Riattiva mantiene associazioni/spiega nuove scelte vietate. D16 conflitto 680 chiude conferma stato, confronta Nome/Colore/Stato nominati e conserva bozza sino a scelta esplicita versione; nessuna cancellazione.</p>
+<h3 id="04-interfaccia-dashboard-e-report">S10/S15 — Dashboard/report</h3>
+<p>S10 Dashboard/Situazione corrente, Aggiorna secondario, asOf/timezone/refresh visibili. Fascia operativa Aperte/In corso/Aperte senza responsabile/Scadute entro y232 nel campione; Carico entro y416, largo 672, Tipo/Priorità 456 a destra/gap 24, categorie anche 0. Cinque metriche contesto: Issue non archiviate/Risolte/Duplicate/Tempo medio del ciclo/Cicli conclusi; registro Risoluzioni e definizioni disclosure. <strong>Nove metriche e quattro registri/breakdown completi</strong>, superfici piatte con separatori, nessuna hero-card.</p>
+<p>Carico Nome/Ruolo/Issue aperte/Apri elenco, riga usernull Senza responsabile; Risoluzioni Nome/Cicli/Tempo medio con inattivi. Link reali elenco TODO+IN_PROGRESS, IN_PROGRESS, unassigned+aperti, overdue+aperti, UUID/unassigned del carico. Dashboard esclude archivio attuale; media server di tutti i cicli conclusi di issue oggi non archiviate anche riaperte/duplicate, credito storico. Mobile fascia operativa due colonne 156/gap 16, carico/tipo/priorità poi contesto/storico, senza nascondere metriche.</p>
+<p>S15 month nativo/fallback Mese-Anno e Mostra report esplicito; month singolo YYYY-MM, 2000-01 sino mese corrente Europe/Rome. Periodo/inizio incluso-fine esclusa/timezone/asOf, parziale corrente, dati precedenti con proprio periodo durante il fetch. Dieci metriche in fasce piatte 4/4/2 desktop, due colonne mobile: Create/Gestite/Cicli risolti/Issue risolte; Duplicate/Riaperte/Duplicazioni annullate/Tempo medio; Aperte/Senza responsabile al termine o alla rilevazione. Fasce campione desktop ≤ 460 px senza clipping di avvisi reali.</p>
+<p>Attività per utente sette colonne: Nome/Ruolo 280, quattro conteggi 104 ciascuno, Tempo medio 208, Aperte 248, totale 1152. Mobile tabella circa 1000 in regione scrollabile locale con label/tabindex/focus e testo Scorri la tabella per consultare tutte le colonne, senza overflow pagina. Inattivi espliciti, 0 distinto da null Nessuna risoluzione, numeri it-IT/ore un decimale. Nessuna media delle medie o Gestite totale da somma utenti; report include archivio storico, intervallo Rome/DST/stato sino asOf escluso, duplicazione non risolve/cicli e issue distinti. Definizioni consultabili, nessun export report/grafico aggiunto.</p>
+<h3 id="04-interfaccia-errori-e-varianti">S16/S17 e varianti</h3>
+<p>403/404 URL originale/shell sessione valida, testo sobrio max 560, Torna alle issue 44; anonimo → login, cambio richiesto → S02,404 risorsa nel proprio dettaglio. D11/D14/D16 confronto 680, D12/D13/D15 conferma 520, D17 drawer. Mobile confronti impilati Campo/La tua bozza/Valore attuale, senza modal sovrapposti.</p>
+<table><thead><tr><th>ID</th><th>Stati/rappresentazioni</th></tr></thead><tbody>
+<tr><td>V01</td><td>Accesso/sessione/shell: obbligo, loading/errori/429, footer e ruoli</td></tr><tr><td>V02</td><td>Lista/archivio: filtri/query/loading/precedenti/errori/vuoto/oltre fine/CSV</td></tr>
+<tr><td>V03</td><td>Dettaglio per stato e ruolo</td></tr><tr><td>V04</td><td>Commenti/storia: pagine/errori/query/invio incerto/readonly</td></tr>
+<tr><td>V05</td><td>Editor: validazione/file/label/retry/conflitto inline</td></tr><tr><td>V06</td><td>Candidati: carico fallito/manuale/zero/ricerca/pagine/corrente fuori pagina</td></tr>
+<tr><td>V07</td><td>Comandi issue: transizioni/scadenza/duplicati/archivio/ripristino/409</td></tr><tr><td>V08</td><td>Allegati: assenza/presenza/preview/loading/errore/rimozione</td></tr>
+<tr><td>V09</td><td>Notifiche: letta/non letta/vuoti/query/lettura fallita, navigazione consentita</td></tr><tr><td>V10</td><td>Profilo: errori/successi separati/confronto e scarto D11</td></tr>
+<tr><td>V11</td><td>Account: lista/editor/invarianti/reset/conflitto/refetch, D12–D14</td></tr><tr><td>V12</td><td>Etichette: disclosure/editor/palette/errori/duplicati, D15/D16</td></tr>
+<tr><td>V13</td><td>Dashboard/report: nove/dieci metriche, 0/null, storico/parziale, loading/errori/query/fallback</td></tr><tr><td>V14</td><td>S03 lista mobile</td></tr>
+<tr><td>V15</td><td>S04 dettaglio mobile</td></tr><tr><td>V16</td><td>S05 editor mobile</td></tr><tr><td>V17</td><td>S15 report mobile</td></tr>
+<tr><td>V18</td><td>S11 utenti mobile</td></tr><tr><td>V19</td><td>S01 accesso mobile</td></tr><tr><td>V20</td><td>Errori pagina/risorsa/accesso negato e caricamento risorsa</td></tr>
+</tbody></table>
 <h2 id="04-interfaccia-ui-05-permessi-visibili-e-cambiamenti-di-stato">UI-05. Permessi visibili e cambiamenti di stato</h2>
 <table>
 <thead>
@@ -2016,28 +1751,54 @@
 <li>Landmark header/nav/main, un h1 per schermata, titoli gerarchici, document title “Titolo — BugBoard26”. Cambio route focus su h1 con tabindex=-1; ritorno elenco ripristina focus al link issue se presente. Link visibili e sottolineati nel contenuto.</li>
 <li>Tab segue ordine visivo, Shift+Tab inverso; nessun tabindex positivo, drag obbligatorio o shortcut globale a carattere singolo. Invio invia i form testuali, nella textarea inserisce una nuova riga; invio commento tramite pulsante. Select/checkbox/radio sono nativi.</li>
 <li>Drawer/dialog con nome accessibile, aria-modal, sfondo inert, focus intrappolato, chiusura Escape quando non in invio. Dialog non distruttivo focus su primo campo; conferma sensibile focus su Annulla. Chiusura torna al comando di origine; se scomparso, al titolo del dettaglio. Loading invio disabilita doppio submit ma non produce perdita del focus né falsi successi.</li>
-<li>Tab Commenti/Cronologia implementa pattern tablist: frecce sinistra/destra spostano focus, Home/End estremi, Invio/Spazio attivano; caricamento solo all'attivazione. Disclosure Filtri e definizioni sono button con aria-expanded/aria-controls. Menu profilo usa semplice disclosure con link/pulsanti focusabili, non role menu custom.</li>
+<li>Tab Commenti/Cronologia implementa pattern tablist: frecce sinistra/destra spostano focus, Home/End estremi, Invio/Spazio attivano; caricamento solo all'attivazione. Disclosure Filtri e definizioni sono button con aria-expanded/aria-controls. Il footer account presenta Profilo ed Esci sempre visibili, con link/pulsante nativi focusabili; il drawer mobile conserva lo stesso contenuto, senza disclosure account o role menu custom.</li>
 <li>Errori riepilogati con link campo; focus al riepilogo dopo submit invalido. Annunci errori dinamici importanti role alert, risultati/successi role status/polite; niente doppi annunci o live-region per intere tabelle. Totale ricerca annunciato dopo risposta, non a ogni battuta.</li>
 <li>Target minimo44×44px per controlli principali, spaziatura almeno8px fra azioni; focus sempre visibile e non coperto da header/footer. Zoom200%, text spacing e viewport360 senza sovrapposizione. Nessuna animazione di loading lampeggiante.</li>
 <li>Immagine utente alt “Immagine allegata alla issue BB-n: nomefile”, e descrizione della issue vicina: non inventare descrizioni semantiche del contenuto. Button Apri immagine accessibile. Icone mai unica spiegazione di stato/priorità/errore.</li>
 <li>Tabelle con caption e header scope; ogni pulsante ripetuto ha nome contestuale (“Gestisci Luca”, “Apri BB-42”). Badge non interattivi non ricevono focus; etichetta rimovibile ha bottone “Rimuovi etichetta frontend”.</li>
 </ul>
-<h2 id="04-interfaccia-ui-08-contratto-di-verifica">UI-08. Contratto di verifica</h2>
-<p>Verifica documentale attuale: esistenza delle15 route nominate, corrispondenza ai19 casi, mockup di tutti i gruppi principali e dei3 casi Cockburn; assenza di comandi contrari al dominio; token determinati, comportamenti per stati e ruoli; output dichiarati come specifiche. Nessun risultato di test browser o persone è anticipato.</p>
-<p>Criteri ripetibili con fixture e test del piano di verifica:</p>
-<ol>
-<li>Screenshot e percorso creazione → assegnazione → risoluzione a360/768/1440; nessun overflow pagina, titolo/campi/azioni leggibili e stessi dati. Font ingrandito/zoom200% su lista/dettaglio/form/dialog senza perdita di azioni.</li>
-<li>Visitare ogni route via URL/refresh e avanti/indietro; confronto filtro/ordine/pagina serializzati. Issue archiviata e duplicata apribili direttamente; 403 distinti da404.</li>
-<li>Ripetere matrice UI-05 con ADMIN, MEMBER assegnatario/non assegnatario, VIEWER; verificare assenza comandi e rifiuto delle mutazioni dirette server.</li>
-<li>Percorrere tutto da tastiera, dialog compresi; errore form focus, successi annunciati e nessuna fuga del focus. Misurare contrasto dei token applicati; scanner automatico accessibilità senza violazioni critical/serious e revisione manuale dei punti non automatici.</li>
-<li>Simulare rete lenta/errore/sessione scaduta/409 e risposta obsoleta; bozza conservata, zero successo falso, zero salvataggio sovrascritto. Retry create/commento senza duplicati e una sola richiesta in volo per submit.</li>
-<li>Con Clock fissato controllare date Rome, giorno scadenza/non scaduta e mese corrente parziale. CSV e valori metrici uguali al backend, senza ricostruzioni client.</li>
-<li>Collaudo tecnico UI: protocollo VER-08 con prove browser e ispezione senza persone reali, come richiesto dall’utente; completamento task, tempi, errori, screenshot e limiti annotati. Qualità visiva e percezione non sono interamente oggettive: queste prove non misurano comprensione o soddisfazione umana.</li>
-</ol></section><section class="chapter" id="chapter-05-architettura"><h1 id="05-architettura-05-architettura-e-design-software">05. Architettura e design software</h1><h2 id="implementation-map">Mappa dell’implementazione corrente</h2><p>Issue è un aggregato Java persistito tramite JDBC; account e catalogo usano repository JPA. I DTO REST restano separati dalla persistenza. IssueService gestisce creazione e modifica; IssueWorkflowService assegnazione, stato, duplicazione, scadenza e archivio. ActorAccess verifica account e authVersion sotto lock prima dei comandi.</p><table><tr><th>Responsabilità</th><th>File reali</th></tr><tr><td>Issue</td><td>IssueService,IssueWorkflowService,IssueQueryService,CommentService,IssueExportService,ImageService; IssueRepository,IssueEventWriter,LabelDirectory.</td></tr><tr><td>Policy unit</td><td>IssuePolicy,WorkflowPolicy,AssignmentAdvisor,MetricsCalculator: indipendenti da Spring.</td></tr><tr><td>Report</td><td>ReportService,AssignmentSuggestionService,ReportQueryRepository; aggregati SQL in snapshot REPEATABLE_READ.</td></tr><tr><td>Account e accesso</td><td>UserService,UserRepository,AuthenticationService,PasswordService,BootstrapService,AdminRecoveryService,SessionRevocationService; Spring Session JDBC.</td></tr><tr><td>Catalogo e inbox</td><td>LabelService,NotificationService, repository dedicati e notifiche persistenti private.</td></tr><tr><td>SPA amministrazione</td><td>UsersPage,UserCreatePage,UserEditPage,LabelsPage,DashboardPage,ReportsPage.</td></tr><tr><td>SPA lavoro</td><td>IssueListPage,IssueCreatePage,IssueEditPage,IssueEditor,IssueDetailPage,IssueCommandDialog,IssueDiscussion,IssueBadges,ImagePicker,ArchivePage,NotificationsPage,UnsavedChanges.</td></tr></table>
+<h2 id="04-interfaccia-ui-08-contratto-di-verifica">UI-08. Contratto di verifica della revisione</h2>
+<p>Il contratto è verificato su inventario 54, sorgenti, DOM e browser reali con dati sintetici isolati. Misure delle tavole illustrative, esistenza dei file e PASS del frontend precedente non dimostrano il funzionamento della nuova revisione. Esiti effettivi, revisione, comando, conteggi e limiti sono nel capitolo Evidenze. Questi criteri sono risultati richiesti, non prove anticipate.</p>
+<table><thead><tr><th>Criterio comune</th><th>Prova richiesta</th></tr></thead><tbody>
+<tr><td>VIS-A</td><td>Screenshot 1440×900/768×1024/360×800 e DOMRect/computedStyle: sidebar 240, header 64/56, padding 24/16, tolleranza 2 px strutturale; gerarchia coerente con proposta 1.</td></tr>
+<tr><td>VIS-B</td><td>Palette/scale applicate, Inter locale realmente caricato, nessuna richiesta font/icona esterna; monospace soltanto BB-n.</td></tr>
+<tr><td>VIS-C</td><td>Contrasto di default/hover/pressed/focus/error/disabled e badge/drawer secondo UI-02, zero violazioni axe, nessun overflow pagina, zoom 200%/text spacing.</td></tr>
+<tr><td>VIS-D</td><td>Primary attiva ≤ 1 per contesto, target 44×44, testi interi, gap 8 tra azioni comprese ricerca/refresh candidati.</td></tr>
+<tr><td>VIS-E</td><td>Deadline ieri/oggi/domani su aperte/concluse: solo ieri+aperta è scaduta, date Europe/Rome ed enum invariati.</td></tr>
+<tr><td>VIS-F</td><td>Icone nominate/decorative, tastiera completa, drawer/dialog trap/Escape/ritorno focus, profilo/logout/notifiche reali.</td></tr>
+<tr><td>VIS-G</td><td>Lint/typecheck/unit/build/audit e regressioni reali issue/commenti/bozze/conflitti/archivio/notifiche/admin/report/auth, istanza test senza dati delivery.</td></tr>
+<tr><td>VIS-H</td><td>Tabler import nominati, JS iniziale gzip ≤ 350 KiB; cinque contesti freddi con font disponibile, mediana ≤ 2500 ms, zero errori console/pageerror.</td></tr>
+<tr><td>VIS-I</td><td>Revisione visiva dei tre flussi significativi e auth/admin, confronto tavole approvate/differenze motivate, nessun numero/comando/scorciatoia fittizio.</td></tr>
+</tbody></table>
+<table><thead><tr><th>Criterio schermate/admin</th><th>Prova richiesta</th></tr></thead><tbody>
+<tr><td>ADM-01</td><td>Ogni S01–S17, D01–D17, V01–V20 mappato; stessi campi/azioni/API/parametri/permessi.</td></tr>
+<tr><td>ADM-02</td><td>Tre viewport canonici, palette/font/icone/shell comuni, auth senza shell, pagina senza overflow 360/320, scroll locale S15.</td></tr>
+<tr><td>ADM-03</td><td>S01/S02 sessione assente/valida/limitata, redirect sicuro, obbligo prioritario, toggle/Enter/busy/429 e recupero sessione.</td></tr>
+<tr><td>ADM-04</td><td>Password 12/128/129 code point, 512/oltre 512 byte, confronto attuale/conferma, target/focus, nessun troncamento; successo cancella segreti/revoca sessioni, reset proprio assente.</td></tr>
+<tr><td>ADM-05</td><td>Profilo nome 2–80, bozza 409/confronto/scarto esplicito, submit indipendenti, shell aggiornata, nessun salvataggio al refetch.</td></tr>
+<tr><td>ADM-06</td><td>Notifiche dati/stati/azioni completi, letture/badge coerenti, Apri continua su mark-read fallito, vuoti/query distinti.</td></tr>
+<tr><td>ADM-07</td><td>Utenti sei colonne anche mobile, q ≤ 100/size 1–100, invalidi senza richiesta, nessun ultimo admin dedotto; primo dato campione ≤ y328.</td></tr>
+<tr><td>ADM-08</td><td>Nuovo utente soli Nome/Email/Ruolo/Password, default MEMBER, duplicato/D10, successo S13/segreto cancellato, due colonne con limiti comuni.</td></tr>
+<tr><td>ADM-09</td><td>Account conferma sicurezza, invarianti server/bozza intatta/link aperte, confronto 409 e nuova conferma, revoca propria → login.</td></tr>
+<tr><td>ADM-10</td><td>Reset altro account/bozza salvata, 409 conserva segreto in RAM/blocca invio, nessun retry automatico, refetch fallito distinto da reset riuscito.</td></tr>
+<tr><td>ADM-11</td><td>Catalogo immediato/creazione chiusa, primo dato campione ≤ y300 desktop/ ≤ y400 mobile, disclosure valida desktop ≤ 160 px, nessun form permanente alto.</td></tr>
+<tr><td>ADM-12</td><td>Sei colori nominati/contrastati, editor inline, nome 1–32/duplicato, associazioni/bozza 409 conservate, confronto testuale, nessuna cancellazione/HEX.</td></tr>
+<tr><td>ADM-13</td><td>Nove metriche dashboard/quattro registri-breakdown, link operativi/carico corretti; fascia ≤ y232/Carico ≤ y416 campione desktop.</td></tr>
+<tr><td>ADM-14</td><td>Report dieci metriche/sette colonne nei due layout, 0/null distinti/media server, scroll locale etichettato con tastiera, nessun overflow pagina.</td></tr>
+<tr><td>ADM-15</td><td>asOf/timezone/periodo/parzialità/precedenti visibili, mese 2000-01/corrente valido, futuro/invalido/duplicato senza query, fallback identico YYYY-MM.</td></tr>
+<tr><td>ADM-16</td><td>D11–D17 Tab/Shift-Tab/Escape/focus/ritorno, chiusura/body/footer entro viewport, confronti 360, nessun modal sovrapposto/doppio invio.</td></tr>
+<tr><td>ADM-17</td><td>Label/h1 unico/errori-live collegati, testo ≥ 4,5:1/non testo ≥ 3:1, target 44/gap 8, focus non coperto, nuovo errore focus una volta.</td></tr>
+<tr><td>ADM-18</td><td>403/404 route originale/shell/testo/link, anonimo → login/limitato → S02, nessuna esposizione dati altrui.</td></tr>
+<tr><td>ADM-19</td><td>Testi massimi/zoom 200%/viewport 320/tastiera virtuale, azioni/dati raggiungibili senza clipping; soglie densità separate sul campione.</td></tr>
+<tr><td>ADM-20</td><td>Confronto screenshot/tavole/token, revisione visiva motivata nei tre frame, nessun PASS redesign ereditato.</td></tr>
+</tbody></table>
+<p>Verifiche mirate issue: toolbar/colonne sommano 1152, registro campione y ≤ 298, stessi dati/azioni nei layout; filtri/sort/pagine/back-forward eCSV uguali all'API. S06 bozza 409, D01 selezione/fallback manuale, D02 capability, D03 oggi non scaduta, D04/D05 senza risoluzioni, D06/D07 storia conservata, D08 immagine separata, D09 revoca Blob, D10 conserva/scarta esplicitamente. ADMIN, MEMBER assegnatario/non assegnatario, VIEWER; URL dirette/refresh/sessione scaduta/errori rete 503/409/retry idempotente. Chromium/Firefox nei tre frame, zoom 200%, reduced-motion, zero errori console/pageerror imprevisti. Tastiera completa e nessun successo simulato o query invalida reinterpretata.</p>
+<p>54 indica unità illustrative, non numero di test o catture reali. Le immagini generate non sono evidenza runtime. Coerenza artistica parzialmente soggettiva, confronto motivato oltre alle misure; il collaudo tecnico non misura comprensione/soddisfazione umana e non inventa partecipanti/survey.</p>
+</section><section class="chapter" id="chapter-05-architettura"><h1 id="05-architettura-05-architettura-e-design-software">05. Architettura e design software</h1><h2 id="implementation-map">Mappa dell’implementazione corrente</h2><p>Issue è un aggregato Java persistito tramite JDBC; account e catalogo usano repository JPA. I DTO REST restano separati dalla persistenza. IssueService gestisce creazione e modifica; IssueWorkflowService assegnazione, stato, duplicazione, scadenza e archivio. ActorAccess verifica account e authVersion sotto lock prima dei comandi.</p><table><tr><th>Responsabilità</th><th>File reali</th></tr><tr><td>Issue</td><td>IssueService,IssueWorkflowService,IssueQueryService,CommentService,IssueExportService,ImageService; IssueRepository,IssueEventWriter,LabelDirectory.</td></tr><tr><td>Policy unit</td><td>IssuePolicy,WorkflowPolicy,AssignmentAdvisor,MetricsCalculator: indipendenti da Spring.</td></tr><tr><td>Report</td><td>ReportService,AssignmentSuggestionService,ReportQueryRepository; aggregati SQL in snapshot REPEATABLE_READ.</td></tr><tr><td>Account e accesso</td><td>UserService,UserRepository,AuthenticationService,PasswordService,BootstrapService,AdminRecoveryService,SessionRevocationService; Spring Session JDBC.</td></tr><tr><td>Catalogo e inbox</td><td>LabelService,NotificationService, repository dedicati e notifiche persistenti private.</td></tr><tr><td>SPA amministrazione</td><td>UsersPage,UserCreatePage,UserEditPage,LabelsPage,DashboardPage,ReportsPage.</td></tr><tr><td>SPA lavoro</td><td>IssueListPage,IssueCreatePage,IssueEditPage,IssueEditor,IssueDetailPage,IssueCommandDialog,IssueDiscussion,IssueBadges,ImagePicker,ArchivePage,NotificationsPage,UnsavedChanges.</td></tr></table>
 <h2 id="05-architettura-arch-01-soluzione">ARCH-01. Soluzione</h2>
 <p>Monolite modulare Java con REST, frontend statico separato e PostgreSQL. Tre processi indipendenti; non servono microservizi, code o Redis per un team e 20 utenti concorrenti. Il backend non serve asset del frontend, non conosce React né route UI e non importa codice frontend. Nginx serve la SPA e inoltra /api al backend solo come proxy di rete; backend e frontend hanno immagini, build e avvii distinti. Un client HTTP può usare l'intero backend senza frontend.</p>
 <h2 id="05-architettura-arch-02-stack-bloccato">ARCH-02. Stack bloccato</h2>
-<p>Versioni osservate il 6 ottobre 2026. Non adottare release milestone/RC. Aggiornamenti sono modifiche della baseline, non scelta implicita durante sviluppo.</p>
+<p>Versioni della baseline applicativa, con font e iconografia del contratto visivo del 7 ottobre 2026. Non adottare release milestone/RC; aggiornamenti espliciti della baseline richiedono controlli sulla revisione interessata.</p>
 <table>
 <thead>
 <tr>
@@ -2101,6 +1862,16 @@
 <td>TanStack React Query</td>
 <td>5.104.1</td>
 <td>Cache volatile e invalidazione dei dati API</td>
+</tr>
+<tr>
+<td>Inter locale</td>
+<td>4.1, InterVariable.woff2 roman variable; SIL OFL 1.1</td>
+<td>Tipografia stabile senza font remoti; asset e licenza distribuiti col frontend</td>
+</tr>
+<tr>
+<td>Tabler React</td>
+<td>@tabler/icons-react 3.49.0, MIT; import nominati, stroke 2</td>
+<td>Famiglia outline coerente con la bacheca, senza secondo kit UI o import del catalogo completo</td>
 </tr>
 <tr>
 <td>Vitest / Testing Library React</td>
@@ -3935,7 +3706,7 @@ Ricerca accent-sensitive, normalizzazione NFC+lowercase Java Locale.ROOT sia que
 </tr>
 </tbody>
 </table>
-<p>Copertura pianificata:18/18 RF,19 UC,12 NFR,12 OUT. Per ogni RF: attore, input, validazione, permesso, esito positivo/negativo e test. Nessun RF implementato oggi. Controlli automatici provano riferimenti/struttura, non correttezza semantica; revisione indipendente confronta contratti e valori numerici. Esiti realmente eseguiti sono in15.</p></section><section class="chapter" id="chapter-14-decisioni"><h1 id="14-decisioni-14-registro-decisioni">14. Registro decisioni</h1>
+<p>La matrice collega 18 RF, 19 UC, 12 NFR e 12 OUT ad attori, input, validazioni, permessi, esiti attesi e prove. La revisione visiva mantiene 17 schermate, 17 dialoghi e 20 tavole senza introdurre requisiti o route nuove. I controlli documentali provano riferimenti/struttura, non correttezza semantica o funzionamento. Gli esiti realmente eseguiti e la revisione cui appartengono sono nel capitolo Evidenze; i PASS precedenti non certificano automaticamente una modifica successiva.</p></section><section class="chapter" id="chapter-14-decisioni"><h1 id="14-decisioni-14-registro-decisioni">14. Registro decisioni</h1>
 <p>Decisioni prese per questa baseline; nessuna scelta di prodotto intenzionalmente sospesa o rimandata al coding. Le condizioni sotto indicano quando una richiesta futura può motivare una revisione.</p>
 <table>
 <thead>

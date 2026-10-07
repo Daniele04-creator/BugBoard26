@@ -1,75 +1,85 @@
 {
-  "measuredAt": "2026-10-07T00:44:04+02:00; revisione software di input 59c39d3",
+  "measuredAt": "2026-10-07T00:08:05.807718+00:00; input Git aacc5af12570fac6f8b9345f855e25b9aca8137f; workspace con modifiche locali",
   "checks": [
     {
       "check": "Backend JUnit/Testcontainers",
-      "status": "PASS: 990 test, zero skip",
-      "evidence": "Clone pulito revisione 3c910a0: comando unico clean verify -Psecurity completato con exit 0. 990 test JUnit/Testcontainers su PostgreSQL reale; output/reports/clean-clone-backend/clean-verify.log."
+      "status": "STORICO: PASS: 990 test, zero skip",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Clone pulito revisione 3c910a0: comando unico clean verify -Psecurity completato con exit 0. 990 test JUnit/Testcontainers su PostgreSQL reale; output/reports/clean-clone-backend/clean-verify.log."
     },
     {
       "check": "Copertura progetto",
-      "status": "PASS: 85,360% linee, 76,962% rami",
-      "evidence": "Report finale clean-clone-backend/jacoco/jacoco.xml: 1860 linee coperte su 2179, 902 rami su 1172. Soglie 80% linee e 70% rami."
+      "status": "STORICO: PASS: 85,360% linee, 76,962% rami",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Report finale clean-clone-backend/jacoco/jacoco.xml: 1860 linee coperte su 2179, 902 rami su 1172. Soglie 80% linee e 70% rami."
     },
     {
       "check": "Quattro policy unit",
-      "status": "PASS: quattro metodi oltre il 90% rami",
-      "evidence": "Report JaCoCo finale: IssuePolicy.canEdit 100,000%; WorkflowPolicy.transition 98,148%; AssignmentAdvisor.rank 100,000%; MetricsCalculator.summarize 95,000%. Strategie e input in VER-04; non si sostituisce copertura metodo con quella della classe."
+      "status": "STORICO: PASS: quattro metodi oltre il 90% rami",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Report JaCoCo finale: IssuePolicy.canEdit 100,000%; WorkflowPolicy.transition 98,148%; AssignmentAdvisor.rank 100,000%; MetricsCalculator.summarize 95,000%. Strategie e input in VER-04; non si sostituisce copertura metodo con quella della classe."
     },
     {
       "check": "PMD / SpotBugs / feed vulnerabilità",
-      "status": "PASS: PMD/SpotBugs zero finding non giustificati; CVE0",
-      "evidence": "Clone pulito 3c910a0: gate completo riuscito; escluse specifiche segnalazioni infrastrutturali documentate (quattro filtri DI SpotBugs e regola PMD namespace). Nessuna suppression di vulnerabilità; report pmd.xml, spotbugsXml.xml e dependency-check-report.json. nvd-feed.json: metadata ufficiale modified fresco (età 0,027635 giorni), SHA256 verificato. Tomcat 11.0.26; Dependency-Check completo su 47 dipendenze, zero vulnerabilità note nel report; nessun PASS dedotto dalla sola freschezza del feed."
+      "status": "STORICO: PASS: PMD/SpotBugs zero finding non giustificati; CVE0",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Clone pulito 3c910a0: gate completo riuscito; escluse specifiche segnalazioni infrastrutturali documentate (quattro filtri DI SpotBugs e regola PMD namespace). Nessuna suppression di vulnerabilità; report pmd.xml, spotbugsXml.xml e dependency-check-report.json. nvd-feed.json: metadata ufficiale modified fresco (età 0,027635 giorni), SHA256 verificato. Tomcat 11.0.26; Dependency-Check completo su 47 dipendenze, zero vulnerabilità note nel report; nessun PASS dedotto dalla sola freschezza del feed."
+    },
+    {
+      "check": "Progettazione visiva prima del frontend",
+      "status": "PASS: 54 PNG distinti e specifiche congelate",
+      "evidence": "mockup-gate.json chiuso 2026-10-06T23:30:09.374142+00:00, frontend ancora invariato sulla revisione aacc5af. Inventario: 17 schermate S01-S17, 17 dialoghi D01-D17, 20 varianti V01-V20 incluse 6 mobile. Hash PNG e snapshot pianificati conservati; successivo codice segue Bacheca di sviluppo. Le tavole illustrative non sono prove runtime."
     },
     {
       "check": "Frontend unit/componenti",
-      "status": "PASS: 69 test, lint, typecheck, build e audit zero",
-      "evidence": "Verifica da clone pulito della revisione 3c02718: npm ci, lint, typecheck, 69 test, build e npm audit con zero finding. Fonti frontend equivalenti dopo le successive correzioni solo backend; P09 include 14 test users/labels/reporting."
+      "status": "PASS: 97 test; lint, typecheck, build; audit produzione zero",
+      "evidence": "Nuovo frontend verificato nel workspace sulla base aacc5af con modifiche locali. Log redesign-unit-final.log: 12 file e 97 test; redesign-lint-final.log, redesign-typecheck-final.log, redesign-build-final.log e redesign-audit.log. Audit npm --omit=dev: zero vulnerabilità. Font Inter 4.1 locale e Tabler 3.49.0 esatto; nessun nuovo clone pulito dichiarato."
     },
     {
       "check": "Browser E2E e accessibilità",
-      "status": "PASS composito: 61 scenari coperti, zero residui",
-      "evidence": "ui-acceptance.json: run completo 60/61 PASS e rerun mirato compatibilità 12/12 PASS; report grezzi conservati con SHA256. Non è un singolo run completo verde. Sei progetti Chromium/Firefox ×360/768/1440; 67 allegati axe con zero violazioni; errori diagnostici delle fixture corretti senza modifica del prodotto. Rerun auth/protocol dopo patch health 9/9 PASS sulla stessa UI: tre prove auth e U-01...03 nei sei progetti."
+      "status": "PASS composito: 67 scenari coperti, zero residui; 169 controlli axe",
+      "evidence": "redesign-ui-acceptance.json: run 1: 66/67 PASS, 1 fallimenti grezzi; run 2: 20/20 PASS, 0 fallimenti grezzi. Sei progetti Chromium/Firefox su 1440/768/360 px; 61 scenari preesistenti e 6 verifiche redesign attraversano tutte le 17 schermate. Zero violazioni axe negli allegati selezionati. Report grezzi conservati con SHA256; ultimo risultato per identico ID/file/titolo/progetto, rerun cronologici. Verificati Inter caricato, overflow pagina, gerarchia, toolbar 44 px, badge compatti, etichette con creazione chiusa, sette colonne report e posizione/dimensione CSV durante busy. I fallimenti precedenti restano nelle fonti; il composito non è un unico run completo verde."
     },
     {
       "check": "Runtime, persistenza e indisponibilità DB",
-      "status": "PASS: 6 controlli, 45 richieste reali",
-      "evidence": "runtime-verification.json: riavvio backend/DB conserva dati, audit, notifiche, sessione JDBC e SHA256 immagine; replay create/commento unico. DB fermo: live 200 e ready 503 anche con cookie, letture/scritture 503 senza mutazioni. Chunked oversize 413; JSON console/file con correlation ID e senza password, cookie, body o query privati. Prova precedente fallita conservata."
+      "status": "STORICO: PASS: 6 controlli, 45 richieste reali",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. runtime-verification.json: riavvio backend/DB conserva dati, audit, notifiche, sessione JDBC e SHA256 immagine; replay create/commento unico. DB fermo: live 200 e ready 503 anche con cookie, letture/scritture 503 senza mutazioni. Chunked oversize 413; JSON console/file con correlation ID e senza password, cookie, body o query privati. Prova precedente fallita conservata."
     },
     {
       "check": "Recupero amministratore locale",
-      "status": "PASS: revoca sessioni e cambio obbligatorio",
-      "evidence": "recovery-result.json e log wrapper: authVersion/version da 1 a 2, tre sessioni precedenti revocate, un evento ACCOUNT_PASSWORD_RESET con attore di sistema; login 200, mustChange=true, azioni di prodotto 403. Consegna della password mediante file privato fuori Git; nessuna credenziale o percorso privato in questa documentazione. delivery-first-access.json: login reale sulla UI sulla porta 8088 apre il cambio obbligatorio con tre campi vuoti e accesso tastiera; navigazione di prodotto assente, zero errori console e nessun cambio password inviato."
+      "status": "STORICO: PASS: revoca sessioni e cambio obbligatorio",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. recovery-result.json e log wrapper: authVersion/version da 1 a 2, tre sessioni precedenti revocate, un evento ACCOUNT_PASSWORD_RESET con attore di sistema; login 200, mustChange=true, azioni di prodotto 403. Consegna della password mediante file privato fuori Git; nessuna credenziale o percorso privato in questa documentazione. delivery-first-access.json: login reale sulla UI sulla porta 8088 apre il cambio obbligatorio con tre campi vuoti e accesso tastiera; navigazione di prodotto assente, zero errori console e nessun cambio password inviato."
     },
     {
       "check": "Dataset non funzionale",
-      "status": "PASS: composizione completa",
-      "evidence": "Seed 2606: 10.000 issue, 100 account, 50.000 commenti, 100.000 eventi, 30.000 notifiche,100 immagini da 100 KiB (102.400 byte). output/reports/performance-dataset.json."
+      "status": "STORICO: PASS: composizione completa",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Seed 2606: 10.000 issue, 100 account, 50.000 commenti, 100.000 eventi, 30.000 notifiche,100 immagini da 100 KiB (102.400 byte). output/reports/performance-dataset.json."
     },
     {
       "check": "Backup e restore separato",
-      "status": "PASS: conteggi e SHA256 immagini",
-      "evidence": "Dataset grande ripristinato su database separato; questo singolo restore non prova storico giornaliero RPO 24 ore."
+      "status": "STORICO: PASS: conteggi e SHA256 immagini",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Dataset grande ripristinato su database separato; questo singolo restore non prova storico giornaliero RPO 24 ore."
     },
     {
       "check": "Benchmark T-NFR-01/02/03",
-      "status": "PASS soglie API, dashboard, report, CSV e UI; RAM diversa dalla baseline",
-      "evidence": "NFR-01: performance-final/summary.json (30 s warm-up, 120 s misura, 20 utenti). NFR-02 ripetuto dopo ottimizzazione: performance-report-optimized/summary.json; 30 richieste: dashboard p95 39,3891 ms, report p95 190,7605 ms. Tre CSV da 10.000 righe: 216,135 / 122,1284 / 122,6892 ms, heap aggiuntivo 73 / 70 / 34 MiB. Heap campionato ogni 25 ms può perdere picchi più brevi; JFR presente. NFR-03: ui-performance.json, cinque contesti browser Chromium nuovi; mediana 224,0644 ms, JavaScript iniziale gzip 139.028 byte, zero errori console. Login API prima della misura; navigazione reale alla lista e controlli utilizzabili. Server con affinità condivisa 0-3; host fisico da 12 CPU. Docker: 8.167.542.784 byte = 7,6066169739 GiB utilizzabili, inferiori agli 8 GiB della baseline. Tutte le soglie misurate sono rispettate con RAM ridotta; non si dichiara identità hardware né corrispondenza esatta alla baseline da 8 GiB."
+      "status": "STORICO: PASS soglie API, dashboard, report, CSV e UI; RAM diversa dalla baseline",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. NFR-01: performance-final/summary.json (30 s warm-up, 120 s misura, 20 utenti). NFR-02 ripetuto dopo ottimizzazione: performance-report-optimized/summary.json; 30 richieste: dashboard p95 39,3891 ms, report p95 190,7605 ms. Tre CSV da 10.000 righe: 216,135 / 122,1284 / 122,6892 ms, heap aggiuntivo 73 / 70 / 34 MiB. Heap campionato ogni 25 ms può perdere picchi più brevi; JFR presente. NFR-03: ui-performance.json, cinque contesti browser Chromium nuovi; mediana 224,0644 ms, JavaScript iniziale gzip 139.028 byte, zero errori console. Login API prima della misura; navigazione reale alla lista e controlli utilizzabili. Server con affinità condivisa 0-3; host fisico da 12 CPU. Docker: 8.167.542.784 byte = 7,6066169739 GiB utilizzabili, inferiori agli 8 GiB della baseline. Tutte le soglie misurate sono rispettate con RAM ridotta; non si dichiara identità hardware né corrispondenza esatta alla baseline da 8 GiB."
+    },
+    {
+      "check": "Build da clone pulito",
+      "status": "STORICO: PASS: backend, frontend e generatore pubblico",
+      "evidence": "Evidenza precedente al redesign, non rieseguita in questa revisione. Backend 3c910a0: clean verify -Psecurity con 990 test e tutti i gate; frontend 3c02718 equivalente: npm ci/lint/typecheck/69 test/build/audit con zero finding. Generatore source-only fuori dal repository: PDF da 97 pagine senza docs/README; build normale conserva SHA dello snapshot HTML. Cleanup59c39d3 elimina solo un profilo inattivo: modello Maven attivo canonicalizzato identico a3c910a0, Enforcer/JaCoCo post-cleanup PASS; cleanup-model-validation.json. Il full990 appartiene a3c910a0, non viene presentato come ripetizione su59c39d3."
+    },
+    {
+      "check": "NFR-03 del nuovo frontend",
+      "status": "PASS: mediana 238,2639 ms; JavaScript gzip 145408 byte",
+      "evidence": "redesign-ui-performance.json: cinque contesti Chromium nuovi, viewport 1440x900, login API prima della misura. Navigazione produzione /issues fino a prima issue, controlli ricerca/filtri/CSV/creazione utilizzabili e Inter locale caricato. Zero errori console. Soglie 2500 ms e 358400 byte rispettate. Dati sintetici e servizio isolato su localhost:8089; misura locale automatica, non tempo di un utente reale. Le precedenti misure API/backend restano storiche. Dataset corrente dei test, non ripetizione del dataset prestazionale da 10.000 issue."
     },
     {
       "check": "Usabilità OUT-11 / NFR-12",
       "status": "PASS tecnico U-01...05; persone escluse",
-      "evidence": "Tutti i task U-01...05 superati nei sei progetti browser reali; screenshot e risultati in ui-acceptance.json. Richiesta esplicita dell’utente: nessuna survey né risultato di comprensione o soddisfazione umana."
+      "evidence": "Flussi tecnici, tastiera, focus, responsive, zoom e text spacing verificati nei sei progetti reali; risultati in redesign-ui-acceptance.json. Confronti screenshot/mockup e revisione esperta separati da axe. Per richiesta esplicita dell’utente nessuna persona reale, survey, soddisfazione o comprensione umana misurata; estetica valutata con criteri progettuali, non oggettivamente certificata."
     },
     {
-      "check": "Build da clone pulito",
-      "status": "PASS: backend, frontend e generatore pubblico",
-      "evidence": "Backend 3c910a0: clean verify -Psecurity con 990 test e tutti i gate; frontend 3c02718 equivalente: npm ci/lint/typecheck/69 test/build/audit con zero finding. Generatore source-only fuori dal repository: PDF da 97 pagine senza docs/README; build normale conserva SHA dello snapshot HTML. Cleanup59c39d3 elimina solo un profilo inattivo: modello Maven attivo canonicalizzato identico a3c910a0, Enforcer/JaCoCo post-cleanup PASS; cleanup-model-validation.json. Il full990 appartiene a3c910a0, non viene presentato come ripetizione su59c39d3."
-    },
-    {
-      "check": "PDF tecnico",
-      "status": "PASS struttura; verifica visiva separata",
-      "evidence": "Copertura completa degli identificatori, link e immagini; otto modelli UML editabili con SVG e tre screenshot reali. Indice e font Vera incorporati. Ispezione dei render e limiti registrati nel rapporto esterno output/reports/documentation-visual-review.json, senza auto-certificazione del generatore."
+      "check": "PDF tecnico LaTeX",
+      "status": "PASS struttura e compilazione; revisione visiva mirata",
+      "evidence": "PDF da 88 pagine: sorgente canonica public-artifacts/technical-document.tex, compilazione pdfLaTeX in tre pass, controlli strutturali e log senza errori bloccanti. Otto UML editabili con SVG/PDF e tre screenshot reali del nuovo frontend. HTML precedenti conservati come archivio della conversione. Latin Modern editoriale incorporato, distinto da Inter dell’app; alcuni font standard degli UML non incorporati. Pagine UI 30-35 e 39-40, evidenze 82-85 e figure 86-88 ispezionate senza tagli o sovrapposizioni; figura UC02 intera con testo minuto a scala carta, leggibile nel PNG e ingrandendo il PDF. Rapporto separato redesign-documentation-visual-review.json; nessuna dichiarazione di revisione umana completa di tutte le 88 pagine."
     }
   ]
 }
