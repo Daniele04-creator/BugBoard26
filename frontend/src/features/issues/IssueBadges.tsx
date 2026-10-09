@@ -6,12 +6,10 @@ import {
   IconCircle,
   IconCircleDot,
   IconCircleCheck,
-  IconCopy,
-  IconChevronDown,
-  IconMinus,
-  IconChevronUp,
+  IconLink,
+  IconSpark,
   IconChevronsUp,
-} from "@tabler/icons-react";
+} from "../../components/Icons";
 import type { IssueSummary } from "../../api/types";
 import { priorityNames, statusNames, typeNames } from "./issuePresentation";
 
@@ -19,18 +17,18 @@ const typeIcons = {
   BUG: IconBug,
   QUESTION: IconHelpCircle,
   DOCUMENTATION: IconFileText,
-  FEATURE: IconChartBarPopular,
+  FEATURE: IconSpark,
 };
 const statusIcons = {
   TODO: IconCircle,
   IN_PROGRESS: IconCircleDot,
   RESOLVED: IconCircleCheck,
-  DUPLICATE: IconCopy,
+  DUPLICATE: IconLink,
 };
 const priorityIcons = {
-  LOW: IconChevronDown,
-  MEDIUM: IconMinus,
-  HIGH: IconChevronUp,
+  LOW: IconChartBarPopular,
+  MEDIUM: IconChartBarPopular,
+  HIGH: IconChartBarPopular,
   CRITICAL: IconChevronsUp,
 };
 
@@ -64,15 +62,31 @@ export function IssueStatusBadge({
     </span>
   );
 }
+export function IssuePriorityIcon({
+  priority,
+  size = 16,
+}: {
+  priority: IssueSummary["priority"];
+  size?: number;
+}) {
+  const Icon = priorityIcons[priority];
+  return (
+    <Icon
+      size={size}
+      stroke={2}
+      aria-hidden="true"
+      className={`issue-priority-${priority.toLowerCase()}`}
+    />
+  );
+}
 export function IssuePriorityBadge({
   priority,
 }: {
   priority: IssueSummary["priority"];
 }) {
-  const Icon = priorityIcons[priority];
   return (
     <span className={`issue-badge issue-priority-${priority.toLowerCase()}`}>
-      <Icon size={16} stroke={2} aria-hidden="true" />
+      <IssuePriorityIcon priority={priority} />
       {priorityNames[priority]}
     </span>
   );

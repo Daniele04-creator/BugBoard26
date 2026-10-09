@@ -2,14 +2,15 @@ import {
   IconArrowLeft,
   IconPencil,
   IconPhoto,
-  IconUserPlus,
   IconCalendar,
-  IconSwitchHorizontal,
   IconCopy,
   IconCopyOff,
   IconArchive,
   IconRestore,
-} from "@tabler/icons-react";
+  IconDots,
+  IconChevronDown,
+  IconLink,
+} from "../../components/Icons";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,7 +28,12 @@ import {
   UUID,
   userName,
 } from "./issuePresentation";
-import { IssueBadges } from "./IssueBadges";
+import {
+  IssueTypeIcon,
+  IssueStatusBadge,
+  IssuePriorityBadge,
+  IssueLabels,
+} from "./IssueBadges";
 import { IssuePerson } from "./IssuePerson";
 import { IssueCommandDialog } from "./IssueCommandDialog";
 import type { IssueCommand } from "./IssueCommandDialog";
@@ -52,7 +58,7 @@ export function IssueDetailPage() {
   const image = useQuery({
     queryKey: ["issues", "image", issueId, issue.data?.image?.sha256],
     queryFn: ({ signal }) => issueApi.image(issueId, signal),
-    enabled: imageOpen && !!issue.data?.image,
+    enabled: !!issue.data?.image,
   });
   useEffect(() => {
     if (issue.data && !issue.data.image) setImageOpen(false);
@@ -76,6 +82,9 @@ export function IssueDetailPage() {
   const state = location.state as {
     returnTo?: string;
     scrollY?: number;
+    focusIssueId?: string;
+    focusNewIssue?: boolean;
+    boardScrollLeft?: number;
     notificationReadError?: boolean;
   } | null;
   const back =
@@ -89,7 +98,17 @@ export function IssueDetailPage() {
     return (
       <>
         <h1 tabIndex={-1}>Issue non trovata</h1>
-        <Link to="/issues">Torna alle issue</Link>
+        <Link
+          to={back}
+          state={{
+            restoreScrollY: state?.scrollY,
+            focusIssueId: state?.focusIssueId,
+            focusNewIssue: state?.focusNewIssue,
+            boardScrollLeft: state?.boardScrollLeft,
+          }}
+        >
+          Torna alle issue
+        </Link>
       </>
     );
   if (issue.isPending) return <LoadingState />;
@@ -108,26 +127,85 @@ export function IssueDetailPage() {
   const p = data.permissions;
   return (
     <section className="issue-detail-page">
-      <Link
-        className="issue-back-link"
-        to={back}
-        state={{ restoreScrollY: state?.scrollY }}
-      >
-        <IconArrowLeft size={20} stroke={2} aria-hidden="true" />
-        Torna {back.startsWith("/archive") ? "all’archivio" : "all’elenco"}
-      </Link>
-      <div className="issue-heading">
-        <div>
-          <p className="issue-number">BB-{data.number}</p>
-          <h1 tabIndex={-1}>{data.title}</h1>
-          <IssueBadges issue={data} />
+      <div className="issue-context">
+        <Link
+          className="issue-back-link"
+          to={back}
+          state={{
+            restoreScrollY: state?.scrollY,
+            focusIssueId: state?.focusIssueId,
+            focusNewIssue: state?.focusNewIssue,
+            boardScrollLeft: state?.boardScrollLeft,
+          }}
+        >
+          <IconArrowLeft size={16} aria-hidden="true" />
+          {back.startsWith("/archive") ? "Archivio" : "Issue"}
+        </Link>
+        <span>/</span>
+        <span className="issue-context-number">
+          <IssueTypeIcon type={data.type} size={14} /> BB-{data.number}
+        </span>
+        <div className="issue-context-actions">
+          <Button
+            variant="link"
+            aria-label="Copia link della issue"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(window.location.href);
+                setMessage("Link copiato.");
+              } catch {
+                setMessage("Copia il link dalla barra degli indirizzi.");
+              }
+            }}
+          >
+            <IconLink size={16} aria-hidden="true" />
+          </Button>
+          {p.canEdit && (
+            <Link
+              className="button"
+              to={`/issues/${issueId}/edit`}
+              state={state}
+            >
+              <IconPencil size={16} aria-hidden="true" /> Modifica
+            </Link>
+          )}
+          {(p.canDuplicate ||
+            p.canUndoDuplicate ||
+            p.canArchive ||
+            p.canRestore) && (
+            <details className="issue-actions-menu">
+              <summary aria-label="Altre azioni sulla issue">
+                <IconDots size={20} aria-hidden="true" />
+              </summary>
+              <div>
+                {p.canDuplicate && (
+                  <Button
+                    variant="link"
+                    onClick={() => setCommand("duplicate")}
+                  >
+                    <IconCopy size={16} aria-hidden="true" /> Segna duplicato
+                  </Button>
+                )}
+                {p.canUndoDuplicate && (
+                  <Button variant="link" onClick={() => setCommand("undo")}>
+                    <IconCopyOff size={16} aria-hidden="true" /> Annulla
+                    duplicazione
+                  </Button>
+                )}
+                {p.canArchive && (
+                  <Button variant="link" onClick={() => setCommand("archive")}>
+                    <IconArchive size={16} aria-hidden="true" /> Archivia
+                  </Button>
+                )}
+                {p.canRestore && (
+                  <Button variant="link" onClick={() => setCommand("restore")}>
+                    <IconRestore size={16} aria-hidden="true" /> Ripristina
+                  </Button>
+                )}
+              </div>
+            </details>
+          )}
         </div>
-        {p.canEdit && (
-          <Link className="button" to={`/issues/${issueId}/edit`}>
-            <IconPencil size={20} stroke={2} aria-hidden="true" />
-            Modifica
-          </Link>
-        )}
       </div>
       {message && <Alert variant="success">{message}</Alert>}
       {state?.notificationReadError && (
@@ -158,106 +236,157 @@ export function IssueDetailPage() {
         </Alert>
       )}
       <div className="issue-detail-grid">
-        <aside className="panel issue-meta">
-          <h2>Metadati</h2>
-          <dl>
-            <dt>Reporter</dt>
-            <dd>
+        <div className="issue-detail-main">
+          <header className="issue-title">
+            <h1 tabIndex={-1}>{data.title}</h1>
+            <p>
               <IssuePerson user={data.reporter} />
-            </dd>
-            <dt>Responsabile</dt>
-            <dd>
-              <IssuePerson user={data.assignee} />
-            </dd>
-            <dt>Scadenza</dt>
-            <dd>
-              {dateOnly(data.dueDate)}
+              <span>
+                ha aperto questa issue il{" "}
+                <time dateTime={data.createdAt}>
+                  {dateTime(data.createdAt)}
+                </time>
+              </span>
+            </p>
+          </header>
+          <article className="issue-description-panel">
+            <h2 className="sr-only">Descrizione</h2>
+            <p className="issue-description">{data.description}</p>
+          </article>
+          <section className="attachments-block">
+            <header>
+              <h2>
+                Allegati <span>{data.image ? 1 : 0}</span>
+              </h2>
+              {p.canEdit && (
+                <Button variant="link" onClick={() => setCommand("image")}>
+                  <IconPhoto size={14} aria-hidden="true" /> Gestisci immagine
+                </Button>
+              )}
+            </header>
+            {data.image ? (
+              <>
+                <ErrorAlert error={image.error} />
+                <button
+                  type="button"
+                  className="attachment-preview"
+                  onClick={() => setImageOpen(true)}
+                  aria-label={`Apri immagine · ${data.image.originalName}`}
+                >
+                  {imageUrl && (
+                    <img src={imageUrl} alt="Anteprima immagine allegata" />
+                  )}
+                  <span>
+                    <IconPhoto size={14} aria-hidden="true" />
+                    {data.image.originalName}
+                  </span>
+                </button>
+              </>
+            ) : (
+              <p>Nessuna immagine allegata.</p>
+            )}
+          </section>
+          <IssueDiscussion key={issueId} issue={data} />
+        </div>
+        <aside className="issue-meta" aria-label="Proprietà della issue">
+          <h2>Proprietà</h2>
+          <div className="property-list">
+            <div className="property-row">
+              <span className="property-label">Stato</span>
+              {p.canChangeState ? (
+                <Button
+                  className="property-control"
+                  aria-label={`Stato: ${data.status === "RESOLVED" ? "Risolta" : data.status === "IN_PROGRESS" ? "In corso" : data.status === "TODO" ? "Da fare" : "Duplicata"}`}
+                  onClick={() => setCommand("state")}
+                >
+                  <IssueStatusBadge status={data.status} />
+                  <IconChevronDown size={14} aria-hidden="true" />
+                </Button>
+              ) : (
+                <span className="property-control static">
+                  <IssueStatusBadge status={data.status} />
+                </span>
+              )}
+              {!data.archived && !data.assignee && data.status === "TODO" && (
+                <small className="property-note">
+                  Assegna un responsabile per cambiare stato.
+                </small>
+              )}
+            </div>
+            <div className="property-row">
+              <span className="property-label">Priorità</span>
+              <span className="property-control static">
+                <IssuePriorityBadge priority={data.priority} />
+              </span>
+            </div>
+            <div className="property-row">
+              <span className="property-label">Responsabile</span>
+              {p.canAssign ? (
+                <Button
+                  className="property-control"
+                  aria-label={`Responsabile: ${userName(data.assignee)}`}
+                  onClick={() => setCommand("assignment")}
+                >
+                  <IssuePerson user={data.assignee} />
+                  <IconChevronDown size={14} aria-hidden="true" />
+                </Button>
+              ) : (
+                <span className="property-control static">
+                  <IssuePerson user={data.assignee} />
+                </span>
+              )}
+            </div>
+            <div className="property-row">
+              <span className="property-label">Scadenza</span>
+              {p.canSetDeadline ? (
+                <Button
+                  className="property-control"
+                  aria-label={`Scadenza: ${dateOnly(data.dueDate)}`}
+                  onClick={() => setCommand("deadline")}
+                >
+                  <IconCalendar size={16} aria-hidden="true" />
+                  {data.dueDate ? dateOnly(data.dueDate) : "Nessuna"}
+                  <IconChevronDown size={14} aria-hidden="true" />
+                </Button>
+              ) : (
+                <span className="property-control static">
+                  <IconCalendar size={16} aria-hidden="true" />
+                  {data.dueDate ? dateOnly(data.dueDate) : "Nessuna"}
+                </span>
+              )}
               {!data.archived &&
                 ["TODO", "IN_PROGRESS"].includes(data.status) &&
                 data.dueDate &&
                 data.dueDate < todayRome() && (
-                  <p className="overdue-text">
+                  <small className="overdue-text">
                     Scaduta il {dateOnly(data.dueDate)}
-                  </p>
+                  </small>
                 )}
-            </dd>
-            <dt>Creata</dt>
-            <dd>
-              <time dateTime={data.createdAt} title={data.createdAt}>
-                {dateTime(data.createdAt)}
-              </time>
-            </dd>
-            <dt>Aggiornata</dt>
-            <dd>{dateTime(data.updatedAt)}</dd>
-            <dt>Ultima attività</dt>
-            <dd>{dateTime(data.lastActivityAt)}</dd>
-            <dt>Versione</dt>
-            <dd>{data.version}</dd>
-          </dl>
-          <div className="actions">
-            {p.canAssign && (
-              <Button onClick={() => setCommand("assignment")}>
-                <IconUserPlus size={20} stroke={2} aria-hidden="true" />
-                {data.assignee ? "Riassegna" : "Assegna"}
-              </Button>
-            )}
-            {p.canSetDeadline && (
-              <Button onClick={() => setCommand("deadline")}>
-                <IconCalendar size={20} stroke={2} aria-hidden="true" />
-                Scadenza
-              </Button>
-            )}
-            {p.canChangeState && (
-              <Button onClick={() => setCommand("state")}>
-                <IconSwitchHorizontal size={20} stroke={2} aria-hidden="true" />
-                {data.status === "RESOLVED" ? "Riapri" : "Cambia stato"}
-              </Button>
-            )}
-            {p.canDuplicate && (
-              <Button onClick={() => setCommand("duplicate")}>
-                <IconCopy size={20} stroke={2} aria-hidden="true" />
-                Segna duplicato
-              </Button>
-            )}
-            {p.canUndoDuplicate && (
-              <Button onClick={() => setCommand("undo")}>
-                <IconCopyOff size={20} stroke={2} aria-hidden="true" />
-                Annulla duplicazione
-              </Button>
-            )}
-            {p.canArchive && (
-              <Button onClick={() => setCommand("archive")}>
-                <IconArchive size={20} stroke={2} aria-hidden="true" />
-                Archivia
-              </Button>
-            )}
-            {p.canRestore && (
-              <Button onClick={() => setCommand("restore")}>
-                <IconRestore size={20} stroke={2} aria-hidden="true" />
-                Ripristina
-              </Button>
-            )}
-            {p.canEdit && (
-              <Button onClick={() => setCommand("image")}>
-                <IconPhoto size={20} stroke={2} aria-hidden="true" />
-                Gestisci immagine
-              </Button>
-            )}
+            </div>
+            <div className="property-row">
+              <span className="property-label">Tipo</span>
+              <span className="property-control static">
+                <IssueTypeIcon type={data.type} size={16} />
+                {
+                  {
+                    BUG: "Bug",
+                    QUESTION: "Domanda",
+                    FEATURE: "Funzionalità",
+                    DOCUMENTATION: "Documentazione",
+                  }[data.type]
+                }
+              </span>
+            </div>
           </div>
-        </aside>
-        <div className="issue-detail-main">
-          <article className="panel issue-description-panel">
-            <h2>Descrizione</h2>
-            <p className="issue-description">{data.description}</p>
-            {data.image && (
-              <Button onClick={() => setImageOpen(true)}>
-                <IconPhoto size={20} stroke={2} aria-hidden="true" />
-                Apri immagine · {data.image.originalName}
-              </Button>
+          <section className="property-labels">
+            <h2>Etichette</h2>
+            {data.labels.length ? (
+              <IssueLabels issue={data} />
+            ) : (
+              <p>Nessuna etichetta</p>
             )}
-          </article>
-          <IssueDiscussion key={issueId} issue={data} />
-        </div>
+          </section>
+        </aside>
       </div>
       {command && (
         <IssueCommandDialog

@@ -1,6 +1,6 @@
 import { Avatar } from "../../components/Avatar";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { IssueDetail } from "../../api/types";
 import { ApiError, NetworkError } from "../../api/ApiClient";
@@ -128,6 +128,7 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
     }>(draftName),
   );
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
   const tab = params.get("tab") ?? "comments";
   const [focusedTab, setFocusedTab] = useState(tab);
   useEffect(() => setFocusedTab(tab), [tab]);
@@ -195,12 +196,12 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
     const query = new URLSearchParams(params);
     if (next === "comments") query.delete("tab");
     else query.set("tab", next);
-    setParams(query);
+    setParams(query, { state: location.state });
   }
   function changePage(name: string, page: number) {
     const query = new URLSearchParams(params);
     query.set(name, String(page));
-    setParams(query);
+    setParams(query, { state: location.state });
     if (name === "commentsPage") setCommentsPage(page);
   }
   async function send(retry = false) {
@@ -254,6 +255,8 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
       void cache.invalidateQueries({
         queryKey: ["issues", "detail", issue.id],
       });
+      void cache.invalidateQueries({ queryKey: ["issues", "list"] });
+      void cache.invalidateQueries({ queryKey: ["reporting"] });
       setSuccess("Commento inviato.");
     } catch (problem) {
       setError(problem);
@@ -271,7 +274,9 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
     return (
       <>
         <Alert>Vista della discussione non valida.</Alert>
-        <Button onClick={() => setParams({})}>Ripristina vista</Button>
+        <Button onClick={() => setParams({}, { state: location.state })}>
+          Ripristina vista
+        </Button>
       </>
     );
   return (
@@ -315,7 +320,10 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
           onFocus={() => setFocusedTab("comments")}
           onClick={() => chooseTab("comments")}
         >
-          Commenti
+          Discussione{" "}
+          <span className="discussion-count">
+            {comments.data?.totalElements ?? 0}
+          </span>
         </Button>
         <Button
           role="tab"
@@ -405,7 +413,7 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
                     </Button>
                   </Alert>
                 )}
-                <label htmlFor="comment-body">Commento</label>
+                <label className="sr-only" htmlFor="comment-body">Commento</label>
                 <textarea
                   id="comment-body"
                   value={body}
@@ -414,7 +422,9 @@ export function IssueDiscussion({ issue }: { issue: IssueDetail }) {
                   onChange={(e) => setBody(e.target.value)}
                 />
                 <p id="comment-count" className="field-hint">
-                  {codePoints(body)}/5000 caratteri
+                  Visibile al team
+                  {codePoints(body) >= 4500 &&
+                    ` · ${codePoints(body)}/5000 caratteri`}
                 </p>
                 <Button
                   type="submit"

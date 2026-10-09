@@ -28,25 +28,24 @@ export const userName = (user: UserRef | null) =>
     : "Nessuno";
 export const dateOnly = (value: string | null) =>
   value ? value.split("-").reverse().join("/") : "Non impostata";
+const dateTimeFormatter = new Intl.DateTimeFormat("it-IT", {
+  timeZone: "Europe/Rome",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+const dateFormatter = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "Europe/Rome",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 export const dateTime = (value: string) =>
-  new Intl.DateTimeFormat("it-IT", {
-    timeZone: "Europe/Rome",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  })
-    .format(new Date(value))
-    .replace(",", "");
-export const todayRome = () =>
-  new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Rome",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+  dateTimeFormatter.format(new Date(value)).replace(",", "");
+export const todayRome = () => dateFormatter.format(new Date());
 export const normalized = (text: string) => text.normalize("NFC").trim();
 export const codePoints = (text: string) => Array.from(text).length;
 export const UUID =

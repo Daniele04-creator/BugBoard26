@@ -1,4 +1,5 @@
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight } from "../../components/Icons";
+import { SelectControl } from "../../components/SelectField";
 import { Button } from "../../components/Button";
 
 export function IssueListPagination({
@@ -47,7 +48,8 @@ export function IssueListPagination({
       </Button>
       <label className="issue-page-size">
         Per pagina
-        <select
+        <SelectControl
+          aria-label="Per pagina"
           value={size}
           onChange={(event) => onSizeChange(Number(event.target.value))}
         >
@@ -56,7 +58,7 @@ export function IssueListPagination({
               {value}
             </option>
           ))}
-        </select>
+        </SelectControl>
       </label>
     </nav>
   );

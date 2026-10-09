@@ -1,4 +1,4 @@
-import { IconSearch, IconRefresh } from "@tabler/icons-react";
+import { IconSearch } from "../../components/Icons";
 import { Avatar } from "../../components/Avatar";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -91,6 +91,10 @@ export function IssueCommandDialog({
     queryKey: ["issues", "suggestions", issue.id],
     queryFn: ({ signal }) => issueApi.suggestions(issue.id, signal),
     enabled: command === "assignment",
+    staleTime: 0,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
   const targets = useQuery({
     queryKey: ["issues", "duplicate-targets", search, page],
@@ -128,6 +132,14 @@ export function IssueCommandDialog({
       ? ranked.length
       : (candidates.data?.totalElements ?? 0);
   const candidateTotalPages = Math.ceil(candidateTotal / 20);
+  const candidateTotalKnown =
+    (!candidateSearch && ranked !== null) ||
+    (!!candidates.data && !candidates.isPlaceholderData);
+  useEffect(() => {
+    if (command !== "assignment" || !candidateTotalKnown) return;
+    const lastPage = Math.max(0, candidateTotalPages - 1);
+    if (candidatePage > lastPage) setCandidatePage(lastPage);
+  }, [command, candidateTotalKnown, candidateTotalPages, candidatePage]);
   const selectedCandidate =
     ranked?.find((candidate) => candidate.user.id === selection)?.user ??
     candidates.data?.items.find((user) => user.id === selection) ??
@@ -359,19 +371,11 @@ export function IssueCommandDialog({
               Carico non disponibile. Puoi scegliere fra i candidati manuali.
             </Alert>
           )}
-          <div className="actions">
-            <Button
-              disabled={busy}
-              onClick={() => void suggestions.refetch()}
-              busy={suggestions.isFetching}
-            >
-              <IconRefresh size={20} stroke={2} aria-hidden="true" />
-              Aggiorna carichi
-            </Button>
-            {ranked && (
-              <span>Rilevato alle {dateTime(suggestions.data!.asOf)}</span>
-            )}
-          </div>
+          {ranked && (
+            <p className="muted">
+              Rilevato alle {dateTime(suggestions.data!.asOf)}
+            </p>
+          )}
           <ErrorAlert error={candidates.error} />
           {candidates.error && (
             <Button onClick={() => void candidates.refetch()}>
@@ -383,57 +387,64 @@ export function IssueCommandDialog({
           )}
           <fieldset className="assignment-list">
             <legend>Scegli responsabile</legend>
-            <label className="assignment-option">
-              <input
-                type="radio"
-                disabled={busy}
-                name="assignee"
-                value=""
-                checked={!selection}
-                onChange={() => {
-                  setSelection("");
-                  setSelectedUser(null);
-                }}
-              />
-              <span>Nessuna assegnazione</span>
-            </label>
-            {visibleCandidates.map((user) => (
-              <label className="assignment-option" key={user.id}>
+            <div
+              className="assignment-options"
+              role="region"
+              aria-label="Candidati assegnabili"
+              tabIndex={0}
+            >
+              <label className="assignment-option">
                 <input
                   type="radio"
                   disabled={busy}
                   name="assignee"
-                  value={user.id}
-                  checked={selection === user.id}
+                  value=""
+                  checked={!selection}
                   onChange={() => {
-                    setSelection(user.id);
-                    setSelectedUser(user);
+                    setSelection("");
+                    setSelectedUser(null);
                   }}
                 />
-                <Avatar name={user.displayName} id={user.id} size={32} />
-                <span>
-                  {userName(user)} · {roleNames[user.role]} ·{" "}
-                  {user.id.slice(0, 8)}
-                  <small>
-                    {rankedById.has(user.id)
-                      ? `${rankedById.get(user.id)!.openIssueCount} issue aperte · ${rankedById.get(user.id)!.reason}`
-                      : "Carico non disponibile"}
-                  </small>
-                  {rankedById.get(user.id)?.rank === 1 && (
-                    <small>Suggerito per il carico minore</small>
-                  )}
-                  {user.id === issue.assignee?.id && (
-                    <small>Responsabile attuale</small>
-                  )}
-                  {!candidateRows.some(
-                    (candidate) => candidate.id === user.id,
-                  ) &&
-                    user.id === selection && (
-                      <small>Selezione conservata fuori pagina</small>
-                    )}
-                </span>
+                <span>Nessuna assegnazione</span>
               </label>
-            ))}
+              {visibleCandidates.map((user) => (
+                <label className="assignment-option" key={user.id}>
+                  <input
+                    type="radio"
+                    disabled={busy}
+                    name="assignee"
+                    value={user.id}
+                    checked={selection === user.id}
+                    onChange={() => {
+                      setSelection(user.id);
+                      setSelectedUser(user);
+                    }}
+                  />
+                  <Avatar name={user.displayName} id={user.id} size={32} />
+                  <span>
+                    {userName(user)} · {roleNames[user.role]} ·{" "}
+                    {user.id.slice(0, 8)}
+                    <small>
+                      {rankedById.has(user.id)
+                        ? `${rankedById.get(user.id)!.openIssueCount} issue aperte · ${rankedById.get(user.id)!.reason}`
+                        : "Carico non disponibile"}
+                    </small>
+                    {rankedById.get(user.id)?.rank === 1 && (
+                      <small>Suggerito per il carico minore</small>
+                    )}
+                    {user.id === issue.assignee?.id && (
+                      <small>Responsabile attuale</small>
+                    )}
+                    {!candidateRows.some(
+                      (candidate) => candidate.id === user.id,
+                    ) &&
+                      user.id === selection && (
+                        <small>Selezione conservata fuori pagina</small>
+                      )}
+                  </span>
+                </label>
+              ))}
+            </div>
           </fieldset>
           {(ranked || candidates.data) && (
             <Pagination

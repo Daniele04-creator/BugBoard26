@@ -1,14 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  focusManager,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import type { IssueDetail } from "../../api/types";
 import { ApiError, NetworkError } from "../../api/ApiClient";
 import { IssueEditor } from "./IssueEditor";
+import { IssueDetailPage } from "./IssueDetailPage";
+import { IssueEditPage } from "./IssueEditPage";
+import { IssueListPage } from "./IssueListPage";
 import { IssueCommandDialog } from "./IssueCommandDialog";
 import { IssueDiscussion } from "./IssueDiscussion";
+import { ImagePicker } from "./ImagePicker";
 import { issueApi } from "./issueApi";
 const draftStore = vi.hoisted(() => new Map<string, unknown>());
 vi.mock("../auth/AuthProvider", () => ({
@@ -21,7 +36,10 @@ vi.mock("../auth/AuthProvider", () => ({
 }));
 vi.mock("./issueApi", () => ({
   getLabels: vi.fn(async () => []),
+  getDirectory: vi.fn(async () => []),
   issueApi: {
+    list: vi.fn(),
+    export: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     detail: vi.fn(),
@@ -31,6 +49,9 @@ vi.mock("./issueApi", () => ({
     history: vi.fn(),
     suggestions: vi.fn(),
     candidates: vi.fn(),
+    image: vi.fn(),
+    putImage: vi.fn(),
+    deleteImage: vi.fn(),
   },
 }));
 const issue: IssueDetail = {
@@ -123,7 +144,105 @@ beforeEach(() => {
     totalPages: 0,
   });
 });
+describe("image selection", () => {
+  function ImageForm() {
+    const [file, setFile] = useState<File | null>(null);
+    return <ImagePicker file={file} onChange={setFile} />;
+  }
+  it("allows selecting the same file again immediately after removal", async () => {
+    const bitmap = vi.fn(async () => ({ width: 800, height: 600, close: vi.fn() }));
+    vi.stubGlobal("createImageBitmap", bitmap);
+    const createUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:preview");
+    const revokeUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    try {
+      render(<ImageForm />);
+      const user = userEvent.setup();
+      const input = screen.getByLabelText("Immagine opzionale") as HTMLInputElement;
+      const file = new File(["image"], "schermata.png", { type: "image/png" });
+      await user.upload(input, file);
+      await screen.findByAltText("Anteprima di schermata.png");
+      await user.click(screen.getByRole("button", { name: "Rimuovi selezione" }));
+      expect(input.files).toHaveLength(0);
+      expect(screen.queryByAltText("Anteprima di schermata.png")).not.toBeInTheDocument();
+      await user.upload(input, file);
+      await screen.findByAltText("Anteprima di schermata.png");
+      expect(bitmap).toHaveBeenCalledTimes(2);
+      expect(revokeUrl).toHaveBeenCalledWith("blob:preview");
+    } finally {
+      createUrl.mockRestore();
+      revokeUrl.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+  it.each([false, true])("ignores an obsolete image validation result (invalid: %s)", async (invalid) => {
+    let resolveFirst!: (bitmap: ImageBitmap) => void;
+    const firstBitmap = new Promise<ImageBitmap>((resolve) => { resolveFirst = resolve; });
+    vi.stubGlobal("createImageBitmap", vi.fn()
+      .mockReturnValueOnce(firstBitmap)
+      .mockResolvedValueOnce({ width: 800, height: 600, close: vi.fn() }));
+    const createUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:preview");
+    const revokeUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    try {
+      render(<ImageForm />);
+      const user = userEvent.setup();
+      const input = screen.getByLabelText("Immagine opzionale") as HTMLInputElement;
+      const first = new File(["first"], "prima.png", { type: "image/png" });
+      const second = new File(["second"], "seconda.png", { type: "image/png" });
+      await user.upload(input, first);
+      await user.upload(input, second);
+      await screen.findByAltText("Anteprima di seconda.png");
+      const close = vi.fn();
+      await act(async () => resolveFirst({ width: invalid ? 5000 : 800, height: 600, close } as unknown as ImageBitmap));
+      expect(screen.getByAltText("Anteprima di seconda.png")).toBeInTheDocument();
+      expect(screen.queryByAltText("Anteprima di prima.png")).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(input.files?.[0]).toBe(second);
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      createUrl.mockRestore();
+      revokeUrl.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+  it("does not restore a pending replacement after the selection is removed", async () => {
+    let resolveReplacement!: (bitmap: ImageBitmap) => void;
+    const pending = new Promise<ImageBitmap>((resolve) => { resolveReplacement = resolve; });
+    vi.stubGlobal("createImageBitmap", vi.fn()
+      .mockResolvedValueOnce({ width: 800, height: 600, close: vi.fn() })
+      .mockReturnValueOnce(pending));
+    const createUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:preview");
+    const revokeUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    try {
+      render(<ImageForm />);
+      const user = userEvent.setup();
+      const input = screen.getByLabelText("Immagine opzionale") as HTMLInputElement;
+      await user.upload(input, new File(["image"], "prima.png", { type: "image/png" }));
+      await screen.findByAltText("Anteprima di prima.png");
+      await user.upload(input, new File(["image"], "seconda.png", { type: "image/png" }));
+      await user.click(screen.getByRole("button", { name: "Rimuovi selezione" }));
+      await act(async () => resolveReplacement({ width: 800, height: 600, close: vi.fn() } as unknown as ImageBitmap));
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Rimuovi selezione" })).not.toBeInTheDocument();
+      expect(input.files).toHaveLength(0);
+    } finally {
+      createUrl.mockRestore();
+      revokeUrl.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+});
 describe("issue commands and drafts", () => {
+  it("shows each priority label once in the editor and selects the exact critical option", async () => {
+    mount(<IssueEditor />);
+    const priority = screen.getByRole("button", { name: "Priorità: Media" });
+    expect(priority).toHaveTextContent(/^Media$/);
+    await userEvent.click(priority);
+    for (const name of ["Bassa", "Media", "Alta", "Critica"]) {
+      expect(screen.getByRole("option", { name })).toHaveTextContent(name);
+    }
+    await userEvent.click(screen.getByRole("option", { name: "Critica" }));
+    expect(screen.getByRole("button", { name: "Priorità: Critica" })).toHaveTextContent(/^Critica$/);
+  });
   it("keeps the verified manual selection and current assignee visible across pages without workloads", async () => {
     vi.mocked(issueApi.suggestions).mockRejectedValue(new Error("Unavailable"));
     const first = {
@@ -164,7 +283,7 @@ describe("issue commands and drafts", () => {
       />,
     );
     const current = await screen.findByRole("radio", {
-      name: /Luca · Membro del team/,
+      name: /Luca · Membro/,
     });
     expect(current).toBeChecked();
     expect(
@@ -172,7 +291,7 @@ describe("issue commands and drafts", () => {
     ).not.toBeChecked();
     await userEvent.click(
       await screen.findByRole("radio", {
-        name: /Anna · Membro del team · dddddddd/,
+        name: /Anna · Membro · dddddddd/,
       }),
     );
     await userEvent.click(screen.getByRole("button", { name: "Successiva" }));
@@ -180,7 +299,7 @@ describe("issue commands and drafts", () => {
       expect(screen.getByText(/Pagina 2 di 2/)).toBeInTheDocument(),
     );
     expect(
-      screen.getByRole("radio", { name: /Anna · Membro del team · dddddddd/ }),
+      screen.getByRole("radio", { name: /Anna · Membro · dddddddd/ }),
     ).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Conferma assegnazione" }),
@@ -212,7 +331,7 @@ describe("issue commands and drafts", () => {
     await screen.findByText(/Carico non disponibile\. Puoi scegliere/);
     await userEvent.click(
       await screen.findByRole("radio", {
-        name: /Luca · Membro del team · cccccccc/,
+        name: /Luca · Membro · cccccccc/,
       }),
     );
     const submit = screen.getByRole("button", {
@@ -231,6 +350,166 @@ describe("issue commands and drafts", () => {
     expect(
       screen.queryByText(/Non ci sono utenti assegnabili/),
     ).not.toBeInTheDocument();
+  });
+  it("refreshes workload automatically while focused, preserves selection and stops after closing", async () => {
+    vi.useFakeTimers();
+    focusManager.setFocused(true);
+    const anna = {
+      ...issue.assignee!,
+      id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      displayName: "Anna",
+    };
+    let fetches = 0;
+    vi.mocked(issueApi.suggestions).mockImplementation(async () => {
+      fetches++;
+      return {
+        asOf: fetches === 1 ? "2026-10-06T10:00:00Z" : "2026-10-06T10:01:00Z",
+        candidates:
+          fetches === 1
+            ? [
+                {
+                  user: anna,
+                  rank: 1,
+                  openIssueCount: 1,
+                  reason: "Carico minore",
+                },
+                {
+                  user: issue.assignee!,
+                  rank: 2,
+                  openIssueCount: 4,
+                  reason: "Disponibile",
+                },
+              ]
+            : [
+                {
+                  user: issue.assignee!,
+                  rank: 1,
+                  openIssueCount: 2,
+                  reason: "Carico aggiornato",
+                },
+              ],
+      };
+    });
+    let dispose = () => {};
+    try {
+      const rendered = mount(
+        <IssueCommandDialog
+          issue={issue}
+          command="assignment"
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+          onReload={vi.fn()}
+        />,
+      );
+      dispose = rendered.unmount;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(issueApi.suggestions).toHaveBeenCalledOnce();
+      expect(
+        screen.queryByRole("button", { name: "Aggiorna carichi" }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("radio", { name: /Anna/ }));
+      const originalTimestamp = screen.getByText(/Rilevato alle/).textContent;
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_001);
+      });
+      expect(issueApi.suggestions).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole("radio", { name: /Anna/ })).toBeChecked();
+      expect(screen.getByText(/Rilevato alle/).textContent).not.toBe(
+        originalTimestamp,
+      );
+
+      act(() => focusManager.setFocused(false));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_001);
+      });
+      expect(issueApi.suggestions).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        focusManager.setFocused(true);
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(issueApi.suggestions).toHaveBeenCalledTimes(3);
+      expect(screen.getByRole("radio", { name: /Anna/ })).toBeChecked();
+      expect(
+        screen.getByRole("button", { name: "Conferma assegnazione" }),
+      ).toBeEnabled();
+
+      dispose();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_001);
+      });
+      expect(issueApi.suggestions).toHaveBeenCalledTimes(3);
+    } finally {
+      dispose();
+      focusManager.setFocused(undefined);
+      vi.useRealTimers();
+    }
+  });
+  it("returns to a valid candidate page after automatic refresh removes the last page, preserving selection", async () => {
+    vi.useFakeTimers();
+    focusManager.setFocused(true);
+    const people = Array.from({ length: 21 }, (_value, index) => ({
+      ...issue.assignee!,
+      id: `candidate-${index}`,
+      displayName: `Persona ${index}`,
+    }));
+    let fetches = 0;
+    vi.mocked(issueApi.suggestions).mockImplementation(async () => ({
+      asOf: "2026-10-06T10:00:00Z",
+      candidates: people
+        .slice(0, ++fetches === 1 ? 21 : 20)
+        .map((person, index) => ({
+          user: person,
+          rank: index + 1,
+          openIssueCount: index,
+          reason: "Disponibile",
+        })),
+    }));
+    let dispose = () => {};
+    try {
+      dispose = mount(
+        <IssueCommandDialog
+          issue={{ ...issue, assignee: null }}
+          command="assignment"
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+          onReload={vi.fn()}
+        />,
+      ).unmount;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Successiva" }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(vi.mocked(issueApi.candidates).mock.calls.at(-1)?.[1]).toBe(1);
+      fireEvent.click(screen.getByRole("radio", { name: /^Persona 20 ·/ }));
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_001);
+      });
+      expect(issueApi.suggestions).toHaveBeenCalledTimes(2);
+      expect(
+        screen.getByRole("radio", { name: /^Persona 1 ·/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("radio", { name: /^Persona 20 ·/ }),
+      ).toBeChecked();
+      expect(
+        screen.getByRole("button", { name: "Conferma assegnazione" }),
+      ).toBeEnabled();
+      expect(
+        screen.queryByRole("button", { name: "Successiva" }),
+      ).not.toBeInTheDocument();
+      expect(vi.mocked(issueApi.candidates).mock.calls.at(-1)?.[1]).toBe(0);
+    } finally {
+      dispose();
+      focusManager.setFocused(undefined);
+      vi.useRealTimers();
+    }
   });
   it("searches eligible candidates independently of workload availability", async () => {
     vi.mocked(issueApi.suggestions).mockRejectedValue(new Error("Unavailable"));
@@ -271,7 +550,7 @@ describe("issue commands and drafts", () => {
         onReload={vi.fn()}
       />,
     );
-    await screen.findByRole("radio", { name: /Luca · Membro del team/ });
+    await screen.findByRole("radio", { name: /Luca · Membro/ });
     await userEvent.click(
       screen.getByRole("button", { name: "Conferma assegnazione" }),
     );
@@ -535,6 +814,57 @@ describe("issue commands and drafts", () => {
       4,
     );
   });
+  it("saves an edited image with the field update version and preserves the file when the image fails", async () => {
+    const bitmap = vi.fn(async () => ({
+      width: 800,
+      height: 600,
+      close: vi.fn(),
+    }));
+    vi.stubGlobal("createImageBitmap", bitmap);
+    const createUrl = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:preview");
+    const revokeUrl = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => {});
+    const updated = { ...issue, title: "Titolo aggiornato", version: 4 };
+    vi.mocked(issueApi.update).mockResolvedValue(updated);
+    vi.mocked(issueApi.putImage).mockRejectedValueOnce(
+      new Error("Immagine non salvata"),
+    );
+    mount(<IssueEditor issue={issue} />);
+    await userEvent.clear(screen.getByLabelText("Titolo *"));
+    await userEvent.type(
+      screen.getByLabelText("Titolo *"),
+      "Titolo aggiornato",
+    );
+    const file = new File(["image"], "schermata.png", { type: "image/png" });
+    await userEvent.upload(screen.getByLabelText("Immagine opzionale"), file);
+    await screen.findByAltText("Anteprima di schermata.png");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Salva modifiche" }),
+    );
+    await screen.findByText(/I campi sono stati salvati/);
+    expect(issueApi.putImage).toHaveBeenLastCalledWith(issue.id, file, 4);
+    expect(screen.getByLabelText("Titolo *")).toHaveValue("Titolo aggiornato");
+    expect(draftStore.get(`issue:${issue.id}`)).toMatchObject({
+      file,
+      version: 4,
+    });
+    vi.mocked(issueApi.putImage).mockResolvedValueOnce({
+      ...updated,
+      version: 5,
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Salva modifiche" }),
+    );
+    await screen.findByRole("heading", { name: "Issue creata" });
+    expect(issueApi.update).toHaveBeenCalledTimes(1);
+    expect(issueApi.putImage).toHaveBeenLastCalledWith(issue.id, file, 4);
+    createUrl.mockRestore();
+    revokeUrl.mockRestore();
+    vi.unstubAllGlobals();
+  });
   it("uses per-issue page totals after a comment with a global sequence", async () => {
     vi.mocked(issueApi.comment).mockResolvedValue({
       id: "new-comment",
@@ -570,5 +900,186 @@ describe("issue commands and drafts", () => {
     expect(
       vi.mocked(issueApi.comments).mock.calls.some((call) => call[1] === 500),
     ).toBe(false);
+  });
+});
+
+describe("issue navigation context", () => {
+  function mountWorkflow() {
+    const cache = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const router = createMemoryRouter(
+      [
+        { path: "/issues", element: <IssueListPage /> },
+        { path: "/issues/new", element: <IssueEditor /> },
+        { path: "/issues/:issueId", element: <IssueDetailPage /> },
+        { path: "/issues/:issueId/edit", element: <IssueEditPage /> },
+      ],
+      { initialEntries: ["/issues?assignedTo=me&priority=HIGH"] },
+    );
+    render(
+      <QueryClientProvider client={cache}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+    return router;
+  }
+  beforeEach(() => {
+    vi.mocked(issueApi.list).mockResolvedValue({
+      items: [issue],
+      page: 0,
+      size: 100,
+      totalElements: 1,
+      totalPages: 1,
+    });
+    vi.mocked(issueApi.detail).mockResolvedValue(issue);
+  });
+  it("selects the exact priority filter label and preserves its query value", async () => {
+    const router = mountWorkflow();
+    await screen.findByRole("region", { name: "Bacheca issue" });
+    await userEvent.click(screen.getByRole("button", { name: "Filtri" }));
+    const priority = screen.getByRole("button", { name: "Priorità: Alta" });
+    expect(priority).toHaveTextContent(/^Alta$/);
+    await userEvent.click(priority);
+    await userEvent.click(screen.getByRole("option", { name: "Critica" }));
+    expect(router.state.location.search).toContain("priority=CRITICAL");
+    expect(screen.getByRole("button", { name: "Priorità: Critica" })).toHaveTextContent(/^Critica$/);
+  });
+  it("preserves filters, actual scroll and card focus through detail, editor cancel and save", async () => {
+    const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const scrollY = vi.spyOn(window, "scrollY", "get").mockReturnValue(444);
+    const router = mountWorkflow();
+    const board = await screen.findByRole("region", { name: "Bacheca issue" });
+    board.scrollLeft = 150;
+    await userEvent.click(
+      screen.getByRole("link", { name: `BB-42 · ${issue.title}` }),
+    );
+    await screen.findByRole("heading", { name: issue.title });
+    await userEvent.click(screen.getByRole("link", { name: "Modifica" }));
+    await screen.findByRole("heading", { name: "Modifica issue BB-42" });
+    expect(router.state.location.state).toMatchObject({
+      returnTo: "/issues?assignedTo=me&priority=HIGH",
+      scrollY: 444,
+      focusIssueId: issue.id,
+      boardScrollLeft: 150,
+    });
+    await userEvent.click(screen.getByRole("link", { name: "Annulla" }));
+    await screen.findByRole("heading", { name: issue.title });
+    await userEvent.click(screen.getByRole("link", { name: "Modifica" }));
+    await screen.findByRole("heading", { name: "Modifica issue BB-42" });
+    await userEvent.clear(screen.getByLabelText("Titolo *"));
+    await userEvent.type(screen.getByLabelText("Titolo *"), "Titolo salvato");
+    const updated = { ...issue, title: "Titolo salvato", version: 4 };
+    vi.mocked(issueApi.update).mockResolvedValue(updated);
+    vi.mocked(issueApi.detail).mockResolvedValue(updated);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Salva modifiche" }),
+    );
+    await screen.findByRole("heading", { name: "Titolo salvato" });
+    await userEvent.click(screen.getByRole("link", { name: "Issue" }));
+    await screen.findByRole("region", { name: "Bacheca issue" });
+    expect(router.state.location.search).toBe("?assignedTo=me&priority=HIGH");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: `BB-42 · ${issue.title}` }),
+      ).toHaveFocus(),
+    );
+    expect(
+      screen.getByRole("region", { name: "Bacheca issue" }).scrollLeft,
+    ).toBe(150);
+    expect(scroll).toHaveBeenLastCalledWith({ top: 444, behavior: "instant" });
+    scroll.mockRestore();
+    scrollY.mockRestore();
+  });
+  it("retains the original board context through discussion tabs and comment/history pagination", async () => {
+    vi.mocked(issueApi.comments).mockImplementation(async (_id, page) => ({
+      items: [],
+      page,
+      size: 20,
+      totalElements: 21,
+      totalPages: 2,
+    }));
+    vi.mocked(issueApi.history).mockImplementation(async (_id, page) => ({
+      items: [],
+      page,
+      size: 20,
+      totalElements: 21,
+      totalPages: 2,
+    }));
+    const router = mountWorkflow();
+    await screen.findByRole("region", { name: "Bacheca issue" });
+    await userEvent.click(
+      screen.getByRole("link", { name: `BB-42 · ${issue.title}` }),
+    );
+    await screen.findByRole("heading", { name: issue.title });
+    const context = router.state.location.state;
+    await userEvent.click(screen.getByRole("tab", { name: "Cronologia" }));
+    await userEvent.click(
+      await within(screen.getByRole("tabpanel")).findByRole("button", {
+        name: "Successiva",
+      }),
+    );
+    expect(router.state.location.search).toContain("historyPage=1");
+    expect(router.state.location.state).toEqual(context);
+    expect(screen.getByRole("link", { name: "Issue" })).toHaveAttribute(
+      "href",
+      "/issues?assignedTo=me&priority=HIGH",
+    );
+    await userEvent.click(screen.getByRole("tab", { name: /Discussione/ }));
+    const previous = await within(screen.getByRole("tabpanel")).findByRole(
+      "button",
+      { name: "Precedente" },
+    );
+    await waitFor(() => expect(previous).toBeEnabled());
+    await userEvent.click(previous);
+    expect(router.state.location.search).toContain("commentsPage=0");
+    expect(router.state.location.state).toEqual(context);
+    await userEvent.click(screen.getByRole("link", { name: "Modifica" }));
+    await screen.findByRole("heading", { name: "Modifica issue BB-42" });
+    await userEvent.click(screen.getByRole("link", { name: "Annulla" }));
+    await screen.findByRole("heading", { name: issue.title });
+    expect(router.state.location.state).toEqual(context);
+    expect(screen.getByRole("link", { name: "Issue" })).toHaveAttribute(
+      "href",
+      "/issues?assignedTo=me&priority=HIGH",
+    );
+  });
+  it("returns a new issue flow to its original filtered board after cancel and creation", async () => {
+    const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const router = mountWorkflow();
+    await screen.findByRole("region", { name: "Bacheca issue" });
+    await userEvent.click(screen.getByRole("link", { name: "Nuova issue" }));
+    await screen.findByRole("heading", { name: "Nuova issue" });
+    await userEvent.click(
+      screen.getByRole("link", { name: "Torna all’elenco" }),
+    );
+    await screen.findByRole("region", { name: "Bacheca issue" });
+    expect(router.state.location.search).toBe("?assignedTo=me&priority=HIGH");
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Nuova issue" })).toHaveFocus(),
+    );
+    await userEvent.click(screen.getByRole("link", { name: "Nuova issue" }));
+    await userEvent.type(
+      screen.getByLabelText("Titolo *"),
+      "Nuova segnalazione",
+    );
+    await userEvent.type(
+      screen.getByLabelText("Descrizione *"),
+      "Descrizione della nuova segnalazione",
+    );
+    vi.mocked(issueApi.create).mockResolvedValue(issue);
+    await userEvent.click(screen.getByRole("button", { name: "Crea issue" }));
+    await screen.findByRole("heading", { name: issue.title });
+    expect(router.state.location.state).toMatchObject({
+      returnTo: "/issues?assignedTo=me&priority=HIGH",
+      focusNewIssue: true,
+    });
+    await userEvent.click(screen.getByRole("link", { name: "Issue" }));
+    await screen.findByRole("region", { name: "Bacheca issue" });
+    expect(router.state.location.search).toBe("?assignedTo=me&priority=HIGH");
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Nuova issue" })).toHaveFocus(),
+    );
+    scroll.mockRestore();
   });
 });

@@ -1,12 +1,14 @@
-import { IconArrowLeft, IconInfoCircle } from "@tabler/icons-react";
+import { IconArrowLeft } from "../../components/Icons";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, NetworkError } from "../../api/ApiClient";
 import type { IssueDetail } from "../../api/types";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { Button } from "../../components/Button";
+import { SelectControl } from "../../components/SelectField";
+import { IssueTypeIcon, IssuePriorityIcon } from "./IssueBadges";
 import { getLabels, issueApi } from "./issueApi";
 import type { IssueFields } from "./issueApi";
 import {
@@ -35,6 +37,28 @@ const empty: IssueFields = {
 };
 export function IssueEditor({ issue }: { issue?: IssueDetail }) {
   const auth = useAuth();
+  const location = useLocation();
+  const returnContext = location.state as {
+    returnTo?: string;
+    scrollY?: number;
+    focusIssueId?: string;
+    focusNewIssue?: boolean;
+    boardScrollLeft?: number;
+  } | null;
+  const returnTo = /^\/(?:issues|archive)(?:\?|$)/.test(
+    returnContext?.returnTo ?? "",
+  )
+    ? returnContext!.returnTo!
+    : "/issues";
+  const back = issue ? `/issues/${issue.id}` : returnTo;
+  const backState = issue
+    ? returnContext
+    : {
+        restoreScrollY: returnContext?.scrollY,
+        focusIssueId: returnContext?.focusIssueId,
+        focusNewIssue: returnContext?.focusNewIssue,
+        boardScrollLeft: returnContext?.boardScrollLeft,
+      };
   const discarded = useRef(false);
   const draftName = `issue:${issue?.id ?? "new"}`;
   const previousDraft = useRef(
@@ -46,6 +70,7 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
       submitted: { fields: IssueFields; file: File | null } | null;
       uncertain: boolean;
       retryUsed: boolean;
+      removeImage?: boolean;
       submittedAt?: number;
     }>(draftName),
   );
@@ -58,8 +83,16 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
   const [version, setVersion] = useState(
     previousDraft.current?.version ?? issue?.version ?? 0,
   );
-  const [initial] = useState(JSON.stringify(issue ? fieldsOf(issue) : empty));
+  const [initial, setInitial] = useState(
+    JSON.stringify(issue ? fieldsOf(issue) : empty),
+  );
   const [busy, setBusy] = useState(false);
+  const [removeImage, setRemoveImage] = useState(
+    previousDraft.current?.removeImage ?? false,
+  );
+  const [imagePreview, setImagePreview] = useState("");
+  const [partialSave, setPartialSave] = useState(false);
+  const [imageIssue, setImageIssue] = useState(issue);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const errorSummary = useRef<HTMLDivElement>(null);
@@ -87,11 +120,16 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
     queryFn: ({ signal }) => getLabels(signal),
   });
   useEffect(() => {
-    if (saved) navigate(`/issues/${savedId.current}`, { replace: true });
-  }, [saved, navigate]);
+    if (saved)
+      navigate(`/issues/${savedId.current}`, {
+        replace: true,
+        state: returnContext,
+      });
+  }, [saved, navigate, returnContext]);
   const savedId = useRef("");
   const dirty =
-    !saved && (JSON.stringify(fields) !== initial || !!file || uncertain);
+    !saved &&
+    (JSON.stringify(fields) !== initial || !!file || removeImage || uncertain);
   useEffect(() => {
     if (saved || discarded.current) auth.removeDraft(draftName);
     else if (dirty)
@@ -104,6 +142,7 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
         uncertain,
         retryUsed,
         submittedAt: submittedAt.current,
+        removeImage,
       });
     else auth.removeDraft(draftName);
   }, [
@@ -116,7 +155,22 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
     dirty,
     auth,
     draftName,
+    removeImage,
   ]);
+  const existingImage = useQuery({
+    queryKey: ["issues", "image", issue?.id, imageIssue?.image?.sha256],
+    queryFn: ({ signal }) => issueApi.image(issue!.id, signal),
+    enabled: !!issue && !!imageIssue?.image,
+  });
+  useEffect(() => {
+    if (!existingImage.data) {
+      setImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(existingImage.data);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [existingImage.data]);
   function change(name: keyof IssueFields, value: unknown) {
     setFields((previous) => ({ ...previous, [name]: value }));
     setErrors((previous) => ({ ...previous, [name]: "" }));
@@ -157,7 +211,8 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
       setError(new Error("Controlla i campi indicati."));
       return;
     }
-    if (issue && JSON.stringify(clean) === initial) return;
+    if (issue && JSON.stringify(clean) === initial && !file && !removeImage)
+      return;
     setBusy(true);
     setError(null);
     if (!retry) {
@@ -165,13 +220,31 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
       submittedAt.current = Date.now();
     } else setRetryUsed(true);
     try {
-      const result = issue
-        ? await issueApi.update(issue.id, clean, version)
-        : await issueApi.create(
-            submitted.current!.fields,
-            submitted.current!.file,
-            key.current,
-          );
+      let result: IssueDetail;
+      if (issue) {
+        result = { ...(imageIssue ?? issue), version };
+        if (JSON.stringify(clean) !== initial) {
+          result = await issueApi.update(issue.id, clean, version);
+          setVersion(result.version);
+          setInitial(JSON.stringify(clean));
+          setImageIssue(result);
+          cache.setQueryData(["issues", "detail", result.id], result);
+          void cache.invalidateQueries({ queryKey: ["issues", "list"] });
+          void cache.invalidateQueries({ queryKey: ["reporting"] });
+          if (file || removeImage) setPartialSave(true);
+        }
+        if (file)
+          result = await issueApi.putImage(issue.id, file, result.version);
+        else if (removeImage && result.image)
+          result = await issueApi.deleteImage(issue.id, result.version);
+      } else {
+        result = await issueApi.create(
+          submitted.current!.fields,
+          submitted.current!.file,
+          key.current,
+        );
+      }
+      setPartialSave(false);
       cache.setQueryData(["issues", "detail", result.id], result);
       void cache.invalidateQueries({ queryKey: ["issues", "list"] });
       void cache.invalidateQueries({ queryKey: ["reporting"] });
@@ -208,10 +281,7 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
     ) ?? [];
   return (
     <div className="form-layout issue-editor">
-      <Link
-        className="issue-back-link"
-        to={issue ? `/issues/${issue.id}` : "/issues"}
-      >
+      <Link className="issue-back-link" to={back} state={backState}>
         <IconArrowLeft size={20} stroke={2} aria-hidden="true" />
         {issue ? "Torna al dettaglio" : "Torna all’elenco"}
       </Link>
@@ -258,6 +328,12 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
           <ErrorAlert error={error} />
         )}
       </div>
+      {partialSave && !!error && (
+        <Alert variant="warning">
+          I campi sono stati salvati. L’immagine resta da aggiornare: controlla
+          l’errore e riprova.
+        </Alert>
+      )}
       {uncertain && (
         <Alert variant="warning">
           L’esito della creazione è incerto. La bozza è conservata; riprova con
@@ -347,13 +423,57 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
             onChange={(e) => change("title", e.target.value)}
           />
           <p id="title-count" className="field-hint">
-            {codePoints(fields.title)}/160 caratteri
+            Da 3 a 160 caratteri.
+            {codePoints(fields.title) >= 144 &&
+              ` ${codePoints(fields.title)}/160`}
           </p>
           {errors.title && (
             <p id="title-error" className="field-error">
               {errors.title}
             </p>
           )}
+        </div>
+        <div className="issue-form-grid">
+          <div className="field">
+            <label htmlFor="issue-type">Tipo *</label>
+            <SelectControl
+              aria-label="Tipo"
+              leadingVisual={(value) => (
+                <IssueTypeIcon type={value as IssueDetail["type"]} size={16} />
+              )}
+              id="issue-type"
+              value={fields.type}
+              disabled={busy || uncertain}
+              onChange={(e) => change("type", e.target.value)}
+            >
+              {Object.entries(typeNames).map(([value, text]) => (
+                <option key={value} value={value}>
+                  {text}
+                </option>
+              ))}
+            </SelectControl>
+          </div>
+          <div className="field">
+            <label htmlFor="issue-priority">Priorità</label>
+            <SelectControl
+              aria-label="Priorità"
+              leadingVisual={(value) => (
+                <IssuePriorityIcon
+                  priority={value as IssueDetail["priority"]}
+                />
+              )}
+              id="issue-priority"
+              value={fields.priority}
+              disabled={busy || uncertain}
+              onChange={(e) => change("priority", e.target.value)}
+            >
+              {Object.entries(priorityNames).map(([value, text]) => (
+                <option key={value} value={value}>
+                  {text}
+                </option>
+              ))}
+            </SelectControl>
+          </div>
         </div>
         <div className="field">
           <label htmlFor="issue-description">Descrizione *</label>
@@ -367,45 +487,15 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
             onChange={(e) => change("description", e.target.value)}
           />
           <p id="description-count" className="field-hint">
-            {codePoints(fields.description)}/10000 caratteri
+            Da 10 a 10.000 caratteri.
+            {codePoints(fields.description) >= 9000 &&
+              ` ${codePoints(fields.description)}/10000`}
           </p>
           {errors.description && (
             <p id="description-error" className="field-error">
               {errors.description}
             </p>
           )}
-        </div>
-        <div className="issue-form-grid">
-          <div className="field">
-            <label htmlFor="issue-type">Tipo *</label>
-            <select
-              id="issue-type"
-              value={fields.type}
-              disabled={busy || uncertain}
-              onChange={(e) => change("type", e.target.value)}
-            >
-              {Object.entries(typeNames).map(([value, text]) => (
-                <option key={value} value={value}>
-                  {text}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="issue-priority">Priorità</label>
-            <select
-              id="issue-priority"
-              value={fields.priority}
-              disabled={busy || uncertain}
-              onChange={(e) => change("priority", e.target.value)}
-            >
-              {Object.entries(priorityNames).map(([value, text]) => (
-                <option key={value} value={value}>
-                  {text}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
         <fieldset id="issue-labels" tabIndex={-1} className="field">
           <legend>Etichette · massimo 20</legend>
@@ -426,34 +516,54 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
                     )
                   }
                 />
-                {label.name}
-                {label.active ? "" : " · Inattiva (rimuovibile)"}
+                <span className={`badge badge-${label.color.toLowerCase()}`}>
+                  {label.name}
+                  {label.active ? "" : " · Inattiva (rimuovibile)"}
+                </span>
               </label>
             ))}
           </div>
           {errors.labelIds && <p className="field-error">{errors.labelIds}</p>}
         </fieldset>
-        {issue ? (
-          <p>
-            Immagine: {issue.image?.originalName ?? "Nessuna immagine"}.{" "}
-            <Link to={`/issues/${issue.id}`}>
-              Torna al dettaglio per gestirla
-            </Link>
-            . La gestione dell’immagine salva un comando separato.
-          </p>
-        ) : (
-          <>
-            <ImagePicker
-              file={file}
-              onChange={setFile}
-              disabled={busy || uncertain}
-            />
-            <p className="issue-create-note">
-              <IconInfoCircle size={20} stroke={2} aria-hidden="true" />
-              L’issue nascerà Da fare e senza assegnatario.
+        <section className="editor-attachment">
+          <h2>Immagine</h2>
+          <ErrorAlert error={existingImage.error} />
+          {issue && imageIssue?.image && !removeImage && !file && (
+            <div className="editor-existing-image">
+              {imagePreview && (
+                <img
+                  className="issue-preview"
+                  src={imagePreview}
+                  alt={`Anteprima di ${imageIssue.image.originalName}`}
+                />
+              )}
+              <p>{imageIssue.image.originalName}</p>
+              <Button
+                variant="link"
+                disabled={busy}
+                onClick={() => setRemoveImage(true)}
+              >
+                Rimuovi immagine
+              </Button>
+            </div>
+          )}
+          {removeImage && !file && (
+            <p className="field-hint">
+              L’immagine sarà rimossa al salvataggio.{" "}
+              <Button variant="link" onClick={() => setRemoveImage(false)}>
+                Annulla rimozione
+              </Button>
             </p>
-          </>
-        )}
+          )}
+          <ImagePicker
+            file={file}
+            onChange={(selected) => {
+              setFile(selected);
+              if (selected) setRemoveImage(false);
+            }}
+            disabled={busy || uncertain}
+          />
+        </section>
         <div className="actions issue-editor-actions">
           <Button
             type="submit"
@@ -463,17 +573,17 @@ export function IssueEditor({ issue }: { issue?: IssueDetail }) {
               uncertain ||
               (error instanceof ApiError &&
                 error.code === "VERSION_CONFLICT") ||
-              (!!issue && JSON.stringify(fields) === initial) ||
+              (!!issue &&
+                JSON.stringify(fields) === initial &&
+                !file &&
+                !removeImage) ||
               labels.isPending ||
               !!labels.error
             }
           >
             {issue ? "Salva modifiche" : "Crea issue"}
           </Button>
-          <Link
-            className="button button-link"
-            to={issue ? `/issues/${issue.id}` : "/issues"}
-          >
+          <Link className="button button-link" to={back} state={backState}>
             Annulla
           </Link>
         </div>
