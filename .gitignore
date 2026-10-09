@@ -12,8 +12,11 @@
 !**/.env.example
 **/test-results/
 **/playwright-report/
-output/reports/
-output/documentation/
+/output/
+/.playwright-cli/
+/.playwright-mcp/
+**/__pycache__/
+*.pyc
 backups/
 tmp/
 .tools/
