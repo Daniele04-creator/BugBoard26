@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "./Button";
-import { IconX } from "@tabler/icons-react";
+import { IconX } from "./Icons";
 export interface DialogProps {
   open: boolean;
   title: string;
@@ -47,7 +47,7 @@ export function Dialog({
           "[data-cancel]:not([data-dialog-close])",
         ) ?? dialog.querySelector<HTMLElement>("[data-dialog-close]"))
       : (dialog.querySelector<HTMLElement>(
-          "input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+          "input:not([disabled]):not([hidden]), select:not([disabled]):not([hidden]), textarea:not([disabled])",
         ) ??
         dialog.querySelector<HTMLElement>("button:not([disabled]), a[href]"));
     (first ?? dialog).focus();

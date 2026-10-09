@@ -1,7 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 import type { UserRole } from "../../api/types";
 import { useAuth } from "./AuthProvider";
-import { IconLock } from "@tabler/icons-react";
+import { IconLock } from "../../components/Icons";
 export function RequireRole({ roles }: { roles: UserRole[] }) {
   const { user } = useAuth();
   return user && roles.includes(user.role) ? (

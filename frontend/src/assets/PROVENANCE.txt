@@ -1,20 +1,14 @@
-BugBoard26 local UI assets
+BugBoard26 current UI assets - identity refresh, 2026-10-09
 
-InterVariable.woff2
-Source: https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2
-Release: Inter 4.1, official rsms/inter tag v4.1.
-Retrieved: 2026-10-07. Original bytes, no font conversion or subsetting.
-License: SIL Open Font License 1.1, included in fonts/OFL.txt.
-SHA256: 693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3
+Octicons 19.40.0 (GitHub, MIT)
+Source: output/mockups/saas-from-zero-2026-10-08/icons.js
+Original official SVG geometry reused as a static local icon map in octicons.json.
+React exports in components/Icons.tsx provide functional icons, including the Bug type. They are separate from the brand symbol.
+License: licenses/octicons-MIT.txt. No remote runtime asset dependency.
 
-bugboard-mark.png
-Source: product-specific ImageGen asset approved in the redesign mockup gate.
-Original: output/documentation/redesign-2026-10-07/assets/bugboard-mark.png.
-Copied unchanged; transparent local PNG, also used as favicon.
-SHA256: 9fabb834e4d3d7e040d653646c6426bafc21d2bfb560378ba833224281cfb542
+Palette: Primer semantic colors from the approved mockup, with the existing AA warning adjustment. Original BugBoard26 brand: #0f6270, hover #0b4d58, soft #eaf4f5. Brand actions and focus are separate from semantic success, information and priority colors.
 
-Tabler icons
-Package: @tabler/icons-react, exact version 3.49.0.
-Source: https://registry.npmjs.org/@tabler/icons-react/3.49.0
-Only named standard icons imported; no custom SVG drawing or remote icon font.
-License: MIT, included in licenses/tabler-MIT.txt.
+Original mark: assets/brand/bugboard-symbol.png, generated with OpenAI Image Gen on 2026-10-09 for BugBoard26. Transparent PNG; combines a bug silhouette and resolution check. Shared by BrandMark.tsx and favicon. Source archived in output/identity-refresh-2026-10-09/logo-source.txt.
+Typography: operating-system font stack; no downloaded web font.
+
+Historical PNG, Inter font and Tabler icon assets were removed from the frontend after verifying no imports remain. Approved mockup and older output artifacts retain their original source assets.

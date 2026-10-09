@@ -34,6 +34,24 @@ const anonymous = () =>
     fieldErrors: [],
   });
 describe("identity UI", () => {
+  it("keeps login minimal and reveals the same password without losing autofill semantics", async () => {
+    vi.spyOn(authApi, "me").mockRejectedValue(anonymous());
+    render(<MemoryRouter><AuthProvider><LoginPage /></AuthProvider></MemoryRouter>);
+    const password = await screen.findByLabelText("Password *");
+    expect(screen.getByRole("heading", { name: "Accedi" })).toBeInTheDocument();
+    expect(screen.getByText("BugBoard26")).toBeInTheDocument();
+    expect(screen.queryByText(/Gli account sono creati/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Email *")).toHaveAttribute("autocomplete", "username");
+    expect(password).toHaveAttribute("autocomplete", "current-password");
+    const user = userEvent.setup();
+    await user.type(password, "  password test  ");
+    await user.click(screen.getByRole("button", { name: "Mostra password" }));
+    expect(password).toHaveAttribute("type", "text");
+    expect(password).toHaveValue("  password test  ");
+    await user.click(screen.getByRole("button", { name: "Nascondi password" }));
+    expect(password).toHaveAttribute("type", "password");
+    expect(password).toHaveValue("  password test  ");
+  });
   it("keeps profile forms independent and shows the readable role without an editable email", async () => {
     vi.spyOn(authApi, "me").mockResolvedValue(account);
     const nameUpdate = vi.spyOn(authApi, "profile").mockResolvedValue({ ...account, displayName: "Marta Romano", version: 1 });
@@ -41,8 +59,12 @@ describe("identity UI", () => {
     render(<MemoryRouter><AuthProvider><Routes><Route element={<RequireSession />}><Route path="/" element={<ProfilePage />} /></Route></Routes></AuthProvider></MemoryRouter>);
     const name = await screen.findByLabelText("Nome *");
     await waitFor(() => expect(name).toHaveValue("Marta"));
-    expect(screen.getByText(/person@example.test · Amministratore/)).toBeInTheDocument();
+    expect(screen.getByText("person@example.test")).toBeInTheDocument();
+    expect(screen.getByText("Amministratore")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Informazioni personali" })).toBeInTheDocument();
     expect(screen.queryByLabelText(/^Email/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Password corrente *")).toHaveAttribute("autocomplete", "current-password");
+    expect(screen.getByLabelText("Nuova password *")).toHaveAttribute("autocomplete", "new-password");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Password corrente *"), "Current-Password-2026!");
     await user.type(screen.getByLabelText("Nuova password *"), "Next-Password-2026!");
@@ -76,6 +98,37 @@ describe("identity UI", () => {
     await user.click(screen.getByRole("button", { name: "Salva nome" }));
     await screen.findByText("Modifiche salvate.");
     expect(update).toHaveBeenLastCalledWith("La mia bozza", 2);
+  });
+  it("uses the current profile as the clean baseline after explicitly discarding a conflict", async () => {
+    vi.spyOn(authApi, "me").mockResolvedValueOnce(account).mockResolvedValue({ ...account, displayName: "Nome corrente", version: 2 });
+    const update = vi.spyOn(authApi, "profile").mockRejectedValueOnce(new ApiError({
+      ...anonymous().problem, status: 409, code: "VERSION_CONFLICT", detail: "Il profilo è cambiato.",
+    })).mockResolvedValueOnce({ ...account, displayName: "Nome successivo", version: 3 });
+    function DraftProbe() {
+      const auth = useAuth();
+      return <button onClick={() => expect(auth.getDraft("profile")).toBeUndefined()}>Verifica bozza</button>;
+    }
+    render(<MemoryRouter><AuthProvider><Routes><Route element={<RequireSession />}><Route path="/" element={<><ProfilePage /><DraftProbe /></>} /></Route></Routes></AuthProvider></MemoryRouter>);
+    const name = await screen.findByLabelText("Nome *");
+    await waitFor(() => expect(name).toHaveValue("Marta"));
+    const user = userEvent.setup();
+    await user.clear(name);
+    await user.type(name, "La mia bozza");
+    await user.click(screen.getByRole("button", { name: "Salva nome" }));
+    const dialog = await screen.findByRole("dialog", { name: "Profilo aggiornato da un altro utente" });
+    await user.click(within(dialog).getByRole("button", { name: "Carica dati correnti" }));
+    expect(name).toHaveValue("La mia bozza");
+    await user.click(within(dialog).getByRole("button", { name: "Scarta bozza" }));
+    expect(name).toHaveValue("Nome corrente");
+    expect(screen.getByRole("button", { name: "Salva nome" })).toBeDisabled();
+    expect(screen.getByText("Nome corrente")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Verifica bozza" }));
+    expect(update).toHaveBeenCalledTimes(1);
+    await user.clear(name);
+    await user.type(name, "Nome successivo");
+    await user.click(screen.getByRole("button", { name: "Salva nome" }));
+    await screen.findByText("Modifiche salvate.");
+    expect(update).toHaveBeenLastCalledWith("Nome successivo", 2);
   });
   it("announces a completed password change even when the session guard redirects to login", async () => {
     vi.spyOn(authApi, "me").mockResolvedValue({

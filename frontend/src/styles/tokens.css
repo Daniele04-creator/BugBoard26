@@ -1,35 +1,66 @@
+/* Primer semantic colors with the BugBoard26 brand identity. */
+:root{
+  --brand:#0f6270;
+  --brand-hover:#0b4d58;
+  --brand-soft:#eaf4f5;
+  --ink:#1f2328; /* fgColor-default */
+  --muted:#59636e; /* fgColor-muted */
+  --disabled:#818b98; /* fgColor-disabled */
+  --inverse:#ffffff; /* fgColor-onInverse */
+  --surface:#ffffff; /* bgColor-default */
+  --soft:#f6f8fa; /* bgColor-muted */
+  --hover:#eff2f5; /* bgColor-disabled */
+  --accent:#0969da; /* fgColor-accent */
+  --accent-bg:#ddf4ff; /* bgColor-accent-muted */
+  --rail:#25292e; /* bgColor-inverse */
+  --line:#d1d9e0; /* borderColor-default */
+  --success:#1a7f37; /* fgColor-success */
+  --success-bg:#dafbe1; /* bgColor-success-muted */
+  --primary:var(--brand);
+  --warning:#946200; /* Attention text with AA contrast on hovered rows. */
+  --warning-bg:#fff8c5; /* bgColor-attention-muted */
+  --danger:#d1242f; /* fgColor-danger */
+  --danger-bg:#ffebe9; /* bgColor-danger-muted */
+  --done:#8250df; /* fgColor-done */
+  --done-bg:#fbefff; /* bgColor-done-muted */
+  --severe:#bc4c00; /* fgColor-severe */
+  --severe-bg:#fff1e5; /* bgColor-severe-muted */
+  --overlay:#1f232826; /* borderColor-translucent */
+  --shadow:#25292e1f; /* shadow-floating-small-color */
+}
+
 :root {
-  --color-bg: #f7f9fc;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #f1f4f8;
-  --color-text: #152239;
-  --color-text-muted: #53637c;
-  --color-border: #dde5ee;
-  --color-control-border: #7b8da5;
-  --color-primary: #087f5b;
-  --color-primary-hover: #066649;
-  --color-primary-pressed: #05513a;
-  --color-primary-subtle: #e6f6f0;
-  --color-focus: #087f5b;
-  --color-sidebar: #152333;
-  --color-sidebar-hover: #20364a;
-  --color-sidebar-active: #1b4245;
-  --color-sidebar-text: #f5f8fc;
-  --color-sidebar-muted: #b8cbdd;
-  --color-sidebar-selected-text: #b6f6e4;
-  --color-brand-mint: #51e5c2;
-  --color-info: #175cd3;
-  --color-info-subtle: #eff6ff;
-  --color-danger: #b42318;
-  --color-danger-subtle: #fff1ed;
-  --color-critical: #9f1239;
-  --color-critical-subtle: #feecef;
-  --color-success: #067647;
-  --color-success-subtle: #ecfdf3;
-  --color-warning: #946200;
-  --color-warning-subtle: #fff7e6;
-  --color-purple: #6941c6;
-  --color-purple-subtle: #f4f0ff;
+  --color-bg: var(--surface);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--soft);
+  --color-text: var(--ink);
+  --color-text-muted: var(--muted);
+  --color-border: var(--line);
+  --color-control-border: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--brand-hover);
+  --color-primary-pressed: var(--brand-hover);
+  --color-primary-subtle: var(--brand-soft);
+  --color-focus: var(--brand);
+  --color-sidebar: var(--soft);
+  --color-sidebar-hover: var(--hover);
+  --color-sidebar-active: var(--brand-soft);
+  --color-sidebar-text: var(--ink);
+  --color-sidebar-muted: var(--muted);
+  --color-sidebar-selected-text: var(--brand);
+  --color-brand-mint: var(--brand);
+  --color-info: var(--accent);
+  --color-info-subtle: var(--accent-bg);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-bg);
+  --color-critical: var(--danger);
+  --color-critical-subtle: var(--danger-bg);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-bg);
+  --color-purple: var(--done);
+  --color-purple-subtle: var(--done-bg);
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -38,30 +69,13 @@
   --space-6: 24px;
   --space-7: 32px;
   --space-8: 48px;
-  --radius-control: 8px;
-  --radius-panel: 12px;
-  --shadow-dialog: 0 20px 64px rgb(21 34 57 / 20%);
-  --font-body:
-    Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-identifier:
-    ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-  --font-small: 14px;
-  --font-title: 36px;
-  --font-section: 20px;
-  --font-label: 14px;
-  --control-height: 44px;
-  --content-max: 1440px;
-  --form-max: 760px;
-  --header-height: 64px;
-  --sidebar-width: 240px;
-  --z-header: 20;
-  --z-backdrop: 40;
-  --z-dialog: 50;
-  --z-toast: 60;
+  --radius-control: 6px; --radius-panel: 6px; --shadow-dialog: 0 20px 80px var(--shadow);
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-identifier: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-small: 12px; --font-title: 24px; --font-section: 16px; --font-label: 14px;
+  --control-height: 36px; --content-max: 1600px; --form-max: 900px;
+  --header-height: 64px; --sidebar-width: 200px;
+  --z-header: 20; --z-backdrop: 40; --z-dialog: 50; --z-toast: 60;
   --transition-fast: 120ms ease-out;
 }
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --transition-fast: 0ms;
-  }
-}
+@media (prefers-reduced-motion: reduce) { :root { --transition-fast: 0ms; } }

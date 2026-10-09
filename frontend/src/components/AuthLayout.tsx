@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
-import mark from "../assets/brand/bugboard-mark.png";
+import { BrandMark } from "./BrandMark";
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <main className="auth-layout">
-      <div className="auth-brand">
-        <img src={mark} width={36} height={36} alt="" />
-        <span>BugBoard26</span>
-      </div>
-      <section className="panel auth-panel">{children}</section>
+      <section className="auth-panel">
+        <div className="auth-brand">
+          <BrandMark />
+          <span>BugBoard26</span>
+        </div>
+        {children}
+      </section>
     </main>
   );
 }

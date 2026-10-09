@@ -76,7 +76,6 @@ export function PasswordChangeForm({
   }
   return (
     <form className={`password-change-form${mandatory ? " password-change-mandatory" : ""}`} onSubmit={(e) => void submit(e)}>
-      <p className="muted">* Campo obbligatorio.</p>
       {Object.keys(fields).length > 0 && (
         <Alert focus focusKey={fields}>
           Controlla i campi indicati.
@@ -97,7 +96,7 @@ export function PasswordChangeForm({
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         error={fields.newPassword}
-        hint="12–128 caratteri. La password non viene troncata."
+        hint="Da 12 a 128 caratteri. Usa una password diversa da quella attuale."
         required
       />
       <PasswordField
@@ -108,10 +107,7 @@ export function PasswordChangeForm({
         error={fields.confirmation}
         required
       />
-      <Alert variant="info">
-        Il cambio password chiude tutte le tue sessioni. Dovrai accedere di
-        nuovo.
-      </Alert>
+      <p className="password-session-note">Il cambio password termina tutte le tue sessioni. Accedi di nuovo dopo il salvataggio.</p>
       <div className="actions">
         <Button type="submit" variant="primary" busy={busy}>
           Salva password
@@ -141,7 +137,7 @@ export function ChangePasswordPage() {
   return (
     <AuthLayout>
       <h1 tabIndex={-1}>Cambia la password iniziale</h1>
-      <p>Per accedere alle issue scegli una nuova password.</p>
+      <p>Scegli una nuova password prima di continuare.</p>
       <PasswordChangeForm mandatory />
     </AuthLayout>
   );

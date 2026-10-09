@@ -35,7 +35,9 @@ describe("role-aware shell presentation", () => {
     const { container } = renderShell();
     await advance(0);
     const sidebar = within(container.querySelector(".sidebar")!);
-    expect(sidebar.getByText("Amministratore")).toBeInTheDocument();
+    expect(sidebar.getByRole("link", { name: "Il tuo profilo" })).toHaveAttribute("title", "Administrator · Amministratore");
+    expect(sidebar.getByRole("link", { name: "Analisi" })).toHaveAttribute("href", "/admin/dashboard");
+    expect(sidebar.queryByRole("link", { name: "Report" })).not.toBeInTheDocument();
     expect(
       sidebar.getByRole("link", { name: "Il tuo profilo" }),
     ).toHaveAttribute("href", "/profile");
@@ -52,9 +54,9 @@ describe("role-aware shell presentation", () => {
     vi.spyOn(api, "get").mockResolvedValue({ count: 0 });
     renderShell();
     await advance(0);
-    expect(screen.getByText("Lettore esterno")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Il tuo profilo" })).toHaveAttribute("title", "Administrator · Sola lettura");
     expect(
-      screen.queryByRole("link", { name: "Utenti" }),
+      screen.queryByRole("link", { name: "Team" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Assegnate a me" }),

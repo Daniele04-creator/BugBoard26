@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { IconListDetails } from "@tabler/icons-react";
+import { IconListDetails } from "./Icons";
 export function EmptyState({
   title,
   children,

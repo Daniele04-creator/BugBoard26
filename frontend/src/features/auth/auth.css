@@ -1,130 +1,52 @@
-.auth-form > .button-primary {
-  width: 100%;
-}
-
-.auth-note {
-  margin-top: 24px;
-  margin-bottom: 0;
-  text-align: center;
-  font-size: 14px;
-}
-
-.password-field {
-  position: relative;
-  min-width: 0;
-}
-
-.password-field .field input {
-  padding-right: 52px;
-}
-
-.password-field .password-toggle {
-  position: absolute;
-  top: 26px;
-  right: 1px;
-  min-width: 44px;
-  width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-text-muted);
-}
-
-.password-field .password-toggle:hover {
-  background: var(--color-surface-subtle);
-}
-
-.password-change-form .alert {
-  margin-block: 20px;
-}
-
-.password-change-mandatory .actions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.profile-heading {
-  margin-bottom: 24px;
-}
-
-.profile-heading h1 {
-  margin-bottom: 8px;
-}
-
-.profile-heading p {
-  overflow-wrap: anywhere;
-}
-
-.profile-sections {
-  display: grid;
-  gap: 24px;
-  align-items: start;
-}
-
-.profile-section {
-  padding: 24px;
-  min-width: 0;
-}
-
-.profile-section h2 {
-  margin-top: 0;
-  margin-bottom: 24px;
-}
-
-.profile-section form {
-  max-width: 480px;
-}
-
-.profile-section .actions {
-  margin-top: 24px;
-}
-
-.profile-conflict-dialog {
-  max-width: 680px;
-}
-
-.profile-comparison {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-block: 24px;
-}
-
-.profile-comparison div {
-  min-width: 0;
-}
-
-.profile-comparison dt {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.profile-comparison dd {
-  margin: 0;
-  padding: 12px;
-  background: var(--color-surface-subtle);
-  border-radius: var(--radius-control);
-  overflow-wrap: anywhere;
-}
-
-@media (min-width: 1024px) {
-  .profile-sections {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 639px) {
-  .profile-section {
-    padding: 16px;
-  }
-  .profile-comparison {
-    grid-template-columns: 1fr;
-  }
-  .profile-section .actions > .button {
-    width: 100%;
-  }
+/* Shared BugBoard26 identity with a compact sign-in and sectioned settings. */
+.auth-layout{min-height:100dvh;display:grid;place-items:center;padding:48px 24px;background:var(--surface)}
+.auth-layout .auth-panel{width:100%;max-width:340px;padding:0 0 36px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.auth-brand{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--ink);font-size:16px;font-weight:600;margin:0 0 24px}
+.auth-brand .brand-mark{width:40px;height:40px}
+.auth-panel h1{font-size:24px;font-weight:600;text-align:center;margin:0 0 18px;line-height:1.3}
+.auth-panel>p{text-align:center;color:var(--muted);font-size:12px;margin:0 0 18px}
+.auth-panel>form{padding:20px;border:1px solid var(--line);border-radius:6px;background:var(--soft)}
+.auth-form,.password-change-form,.profile-name-form{display:flex;flex-direction:column;gap:16px}
+.auth-panel .field,.profile-section .field{margin-bottom:0}
+.auth-panel .field label,.profile-section .field label{font-size:12px;font-weight:500;line-height:18px;margin-bottom:7px}
+.auth-panel .field input,.profile-section .field input{font-size:13px;min-height:36px}
+.auth-form>.button-primary{width:100%;margin-top:2px;justify-content:center;min-height:34px}
+.password-field{position:relative;min-width:0}
+.password-field .field input{padding-right:80px}
+.password-field .password-toggle{position:absolute;top:25px;right:5px;min-width:0;width:auto;min-height:32px;height:32px;padding:4px 5px;border:0;border-radius:4px;background:transparent;color:var(--accent);font-size:12px;font-weight:400;line-height:1}
+.password-field .password-toggle:hover{background:var(--hover);color:var(--accent)}
+.password-session-note{color:var(--muted);font-size:12px;line-height:1.6;margin:0}
+.password-change-form .alert{margin:0}
+.password-change-form .actions{margin:0;justify-content:flex-start}
+.password-change-mandatory .actions{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.profile-page{max-width:1120px;margin:0 auto}
+.profile-heading{margin-bottom:24px}
+.profile-heading h1{margin:0}
+.profile-identity{display:flex;align-items:center;gap:12px;margin:0 0 25px;font-size:15px}
+.profile-identity strong{font-weight:600;overflow-wrap:anywhere}
+.profile-sections{display:flex;flex-direction:column}
+.profile-section{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(260px,1fr);gap:36px;padding:28px 0;border-top:1px solid var(--line);min-width:0}
+.profile-section-label h2{font-size:14px;font-weight:600;margin:0 0 7px}
+.profile-section-label p{max-width:245px;color:var(--muted);font-size:12px;line-height:1.6;margin:0}
+.profile-section-content{min-width:0;max-width:440px}
+.profile-section-content>.alert{margin:0 0 16px}
+.profile-name-form>.button{align-self:flex-start}
+.profile-account-facts{display:grid;gap:12px;margin:0;padding:3px 0;font-size:12px}
+.profile-account-facts>div{display:grid;grid-template-columns:70px minmax(0,1fr);gap:16px}
+.profile-account-facts dt{color:var(--muted)}
+.profile-account-facts dd{margin:0;overflow-wrap:anywhere}
+.profile-conflict-dialog{max-width:680px}
+.profile-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-block:24px}
+.profile-comparison div{min-width:0}
+.profile-comparison dt{font-size:14px;font-weight:600;margin-bottom:8px}
+.profile-comparison dd{margin:0;padding:12px;background:var(--soft);border-radius:6px;overflow-wrap:anywhere}
+@media(max-width:700px){
+  .auth-layout{padding:38px 20px}
+  .auth-layout .auth-panel{padding-bottom:20px}
+  .auth-panel>form{padding:16px}
+  .profile-section{grid-template-columns:1fr;gap:18px;padding:24px 0}
+  .profile-section-label p,.profile-section-content{max-width:none}
+  .profile-account-facts>div{grid-template-columns:55px minmax(0,1fr);gap:10px}
+  .profile-comparison{grid-template-columns:1fr}
+  .password-field .password-toggle{min-height:36px;height:36px}
 }

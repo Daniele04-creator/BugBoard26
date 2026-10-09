@@ -5,7 +5,7 @@ import {
   IconAlertCircle,
   IconCheck,
   IconInfoCircle,
-} from "@tabler/icons-react";
+} from "./Icons";
 export function Alert({
   children,
   variant = "error",

@@ -117,7 +117,7 @@ export function LoginPage() {
   }
   return (
     <AuthLayout>
-      <h1 tabIndex={-1}>Accedi al progetto</h1>
+      <h1 tabIndex={-1}>Accedi</h1>
       {auth.sessionExpired && (
         <Alert variant="warning">
           La sessione è terminata. Accedi di nuovo.
@@ -138,7 +138,6 @@ export function LoginPage() {
         <p>Troppi tentativi. Riprova tra {remaining} secondi.</p>
       )}
       <form className="auth-form" onSubmit={(e) => void submit(e)}>
-        <p className="muted">* Campo obbligatorio.</p>
         <TextField
           label="Email"
           type="email"
@@ -163,7 +162,6 @@ export function LoginPage() {
           Accedi
         </Button>
       </form>
-      <p className="muted auth-note">Gli account sono creati dall'amministratore.</p>
     </AuthLayout>
   );
 }

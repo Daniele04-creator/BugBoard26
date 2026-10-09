@@ -8,6 +8,7 @@ import { Button } from "../../components/Button";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { ApiError } from "../../api/ApiClient";
 import { Dialog } from "../../components/Dialog";
+import { Avatar } from "../../components/Avatar";
 import { roleNames } from "../users/adminPresentation";
 import "./auth.css";
 export function ProfilePage() {
@@ -48,7 +49,7 @@ export function ProfilePage() {
   }, [dirty]);
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (busy || !auth.user) return;
+    if (busy || !dirty || !auth.user) return;
     setError(null);
     setSaved(false);
     const normalized = displayName.normalize("NFC").trim();
@@ -72,6 +73,7 @@ export function ProfilePage() {
       if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
         try {
           const next = await authApi.me();
+          auth.updateUser(next);
           setCurrentName(next.displayName);
           setNewVersion(next.version);
           setConflict(true);
@@ -91,17 +93,21 @@ export function ProfilePage() {
     <section className="profile-page">
       <header className="profile-heading">
         <h1 tabIndex={-1}>Il tuo profilo</h1>
-        <p className="muted">
-          {auth.user?.email} · {auth.user && roleNames[auth.user.role]}
-        </p>
       </header>
+      {auth.user && <div className="profile-identity">
+        <Avatar name={auth.user.displayName} id={auth.user.id} size={42} />
+        <strong>{auth.user.displayName}</strong>
+      </div>}
       <div className="profile-sections">
-        <section className="panel profile-section">
-          <h2>Nome visualizzato</h2>
+        <section className="profile-section">
+          <div className="profile-section-label">
+            <h2>Informazioni personali</h2>
+            <p>Il nome viene mostrato nelle issue e nei commenti.</p>
+          </div>
+          <div className="profile-section-content">
           {saved && <Alert variant="success">Modifiche salvate.</Alert>}
           <ErrorAlert error={error} focus />
           <form className="profile-name-form" onSubmit={(e) => void submit(e)}>
-            <p className="muted">* Campo obbligatorio.</p>
             <TextField
               label="Nome"
               value={displayName}
@@ -113,21 +119,27 @@ export function ProfilePage() {
               hint="Da 2 a 80 caratteri."
               required
             />
+            <dl className="profile-account-facts">
+              <div><dt>Email</dt><dd>{auth.user?.email}</dd></div>
+              <div><dt>Ruolo</dt><dd>{auth.user && roleNames[auth.user.role]}</dd></div>
+            </dl>
             <Button
               type="submit"
               variant="primary"
               busy={busy}
-              disabled={
-                displayName.normalize("NFC").trim() === auth.user?.displayName
-              }
+              disabled={!dirty}
             >
               Salva nome
             </Button>
           </form>
+          </div>
         </section>
-        <section className="panel profile-section">
-          <h2>Cambia password</h2>
-          <PasswordChangeForm />
+        <section className="profile-section">
+          <div className="profile-section-label">
+            <h2>Password</h2>
+            <p>Il cambio della password termina tutte le tue sessioni.</p>
+          </div>
+          <div className="profile-section-content"><PasswordChangeForm /></div>
         </section>
       </div>
       <Dialog

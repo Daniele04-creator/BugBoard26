@@ -61,9 +61,10 @@ describe("shared presentation", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Accedi al progetto",
     );
-    const image = document.querySelector(".auth-brand img")!;
+    const image = document.querySelector(".auth-brand .brand-mark")!;
+    expect(image).toHaveAttribute("aria-hidden", "true");
     expect(image).toHaveAttribute("alt", "");
-    expect(image.getAttribute("src")).toContain("bugboard-mark.png");
+    expect(image).toHaveAttribute("src", expect.stringContaining("bugboard-symbol.png"));
   });
   it("keeps the safe action initially focused in a sensitive dialog with an accessible icon close control", () => {
     const { rerender } = render(<button>Apri</button>);

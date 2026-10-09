@@ -1,5 +1,6 @@
+import { SelectControl } from "./SelectField";
 import { Button } from "./Button";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight } from "./Icons";
 export function Pagination({
   page,
   totalPages,
@@ -15,6 +16,7 @@ export function Pagination({
   onPageChange: (page: number) => void;
   onSizeChange?: (size: number) => void;
 }) {
+  if (totalPages <= 1) return null;
   return (
     <nav aria-label="Paginazione" className="pagination">
       <Button
@@ -44,7 +46,8 @@ export function Pagination({
       {onSizeChange && (
         <label>
           Per pagina{" "}
-          <select
+          <SelectControl
+            aria-label="Per pagina"
             value={size}
             onChange={(e) => onSizeChange(Number(e.target.value))}
           >
@@ -53,7 +56,7 @@ export function Pagination({
                 {n}
               </option>
             ))}
-          </select>
+          </SelectControl>
         </label>
       )}
     </nav>
