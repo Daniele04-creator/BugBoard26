@@ -2,14 +2,13 @@
 /docs/
 /design-qa.md
 /public-artifacts/
-/scripts/build-technical-documents.ps1
-/scripts/build-technical-documents.py
-/scripts/render-docs.ps1
-/scripts/render-data-model.py
-/scripts/render-design-diagrams.py
-/scripts/verify-docs.ps1
-/scripts/report-versioning.ps1
-/frontend/tests/e2e/fixtures/collect-ui-evidence.mjs
+/scripts/
+/assets/
+/deploy/compose.test.yaml
+/deploy/performance-compose.yaml
+/deploy/performance-init.sh
+/deploy/performance-nginx.conf
+/deploy/performance-ui.yaml
 
 # Build, dependencies, runtime evidence, and private configuration.
 **/target/

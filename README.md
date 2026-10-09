@@ -41,27 +41,27 @@ Le schermate mostrano l'applicazione con dati dimostrativi e persone fittizie.
 
 Vista per stato, ricerca, filtri, priorità e accesso alle issue assegnate.
 
-![Bacheca delle issue organizzate per stato](assets/screenshots/bacheca.png)
+![Bacheca delle issue organizzate per stato](https://github.com/Daniele04-creator/BugBoard26/releases/download/documentation/bacheca.png)
 
 ### Dettaglio di una issue
 
 Descrizione, responsabile, scadenza, etichette, discussione e accesso alla cronologia.
 
-![Dettaglio di una issue con proprietà e commenti](assets/screenshots/dettaglio-issue.png)
+![Dettaglio di una issue con proprietà e commenti](https://github.com/Daniele04-creator/BugBoard26/releases/download/documentation/dettaglio-issue.png)
 
 ### Assegnazione del lavoro
 
 Scelta del responsabile con indicazione del carico e suggerimento del candidato.
 
-![Dialogo di assegnazione con carico di lavoro e suggerimento](assets/screenshots/assegnazione.png)
+![Dialogo di assegnazione con carico di lavoro e suggerimento](https://github.com/Daniele04-creator/BugBoard26/releases/download/documentation/assegnazione.png)
 
 ## Documentazione tecnica
 
-[**Apri la documentazione tecnica in PDF**](assets/BugBoard26-documentazione.pdf)
+[**Scarica la documentazione tecnica in PDF**](https://github.com/Daniele04-creator/BugBoard26/releases/download/documentation/BugBoard26-documentazione.pdf)
 
 Il documento descrive requisiti e casi d'uso, architettura del sistema, design del software, persistenza, diagrammi UML e verifiche di qualità.
 
-Il repository contiene il PDF e le schermate in `assets/`. I sorgenti e gli strumenti interni usati per preparare la documentazione e raccogliere le evidenze non fanno parte del materiale pubblicato.
+Il PDF e le schermate sono allegati alla [release della documentazione](https://github.com/Daniele04-creator/BugBoard26/releases/tag/documentation), esterni alle cartelle del codice.
 
 ## Provare il progetto
 
@@ -80,10 +80,21 @@ Esegui questi comandi in PowerShell:
 ```powershell
 git clone https://github.com/Daniele04-creator/BugBoard26.git
 cd BugBoard26
-pwsh -File scripts/start-local.ps1
+Copy-Item deploy/.env.example deploy/.env
+
+$configuration = Get-Content -Raw deploy/.env
+foreach ($key in @('DATABASE_PASSWORD', 'MIGRATION_PASSWORD', 'POSTGRES_ADMIN_PASSWORD', 'AUTH_IP_HASH_SECRET')) {
+    $bytes = [byte[]]::new(32)
+    [Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+    $secret = [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
+    $configuration = [regex]::Replace($configuration, "(?m)^$key=\s*$", "$key=$secret")
+}
+[IO.File]::WriteAllText((Join-Path (Get-Location) 'deploy/.env'), $configuration)
+
+docker compose --env-file deploy/.env -f deploy/compose.yaml up --build -d --wait --wait-timeout 180
 ```
 
-Lo script genera la configurazione locale, compila le immagini e avvia database, backend e frontend. Al primo avvio sono necessari accesso a Internet e il tempo per scaricare le dipendenze. Attendi il messaggio di avvio completato, poi apri **[http://localhost:8088](http://localhost:8088)**.
+Questi comandi generano i segreti locali, compilano le immagini e avviano database, backend e frontend. Esegui la copia e la generazione dei segreti soltanto alla prima configurazione. Al primo avvio sono necessari accesso a Internet e il tempo per scaricare le dipendenze. Quando i servizi risultano pronti, apri **[http://localhost:8088](http://localhost:8088)**.
 
 ### Primo accesso
 
@@ -96,23 +107,6 @@ Su un database nuovo viene creato questo amministratore dimostrativo:
 
 Il primo accesso richiede il cambio della password. In seguito usa la password scelta: i riavvii non ripristinano le credenziali iniziali. L'amministratore può creare altri utenti dalla sezione **Team**.
 
-### Dati dimostrativi facoltativi
-
-Su una nuova installazione, dopo il cambio password dell'amministratore e prima di creare altri dati, puoi caricare **6 utenti fittizi, 24 issue e 48 commenti**. Questa operazione richiede anche il **JDK 21** sul computer.
-
-Su Windows, dalla cartella principale del progetto:
-
-```powershell
-cd backend
-.\mvnw.cmd -B -ntp -DskipTests package
-cd ..
-pwsh -File scripts/prepare-demo.ps1
-```
-
-Su Linux e macOS usa `./mvnw` al posto di `.\mvnw.cmd`.
-
-Il caricamento richiede il profilo locale `demo`, già previsto dalla configurazione iniziale. La password degli utenti fittizi viene salvata in un file privato esterno al repository; lo script ne indica il percorso. Un secondo caricamento non crea doppioni; il primo viene rifiutato se sono già presenti dati estranei al caricamento.
-
 ### Arrestare e riavviare
 
 Dalla cartella principale:
@@ -124,43 +118,21 @@ docker compose --env-file deploy/.env -f deploy/compose.yaml down
 Il database resta nel volume Docker. Per riavviare:
 
 ```powershell
-pwsh -File scripts/start-local.ps1
+docker compose --env-file deploy/.env -f deploy/compose.yaml up -d --wait --wait-timeout 180
 ```
 
-Le porte predefinite sono `8088` per l'interfaccia, `8080` per le API e `55433` per PostgreSQL. Se una porta è occupata, lo script lo segnala: modifica rispettivamente `FRONTEND_PORT`, `SERVER_PORT` o `DB_HOST_PORT` in `deploy/.env`. Se cambi la porta frontend, aggiorna anche `PUBLIC_BASE_URL` e l'origine corrispondente in `CORS_ALLOWED_ORIGINS`. Questo file contiene segreti locali ed è escluso da Git.
+Le porte predefinite sono `8088` per l'interfaccia, `8080` per le API e `55433` per PostgreSQL. Se una porta è occupata, modifica rispettivamente `FRONTEND_PORT`, `SERVER_PORT` o `DB_HOST_PORT` in `deploy/.env`. Se cambi la porta frontend, aggiorna anche `PUBLIC_BASE_URL` e l'origine corrispondente in `CORS_ALLOWED_ORIGINS`. Questo file contiene segreti locali ed è escluso da Git.
 
 ## Test automatici
 
-Il repository include test del backend, del frontend e dei flussi nel browser, oltre ai controlli di qualità eseguiti da GitHub Actions. Per eseguirli localmente servono **JDK 21**, **Node.js 24** e Docker operativo.
+Il repository include i test del backend. GitHub Actions esegue la stessa suite, con analisi statica e verifica della copertura. Per eseguirla localmente servono **JDK 21** e Docker operativo.
 
 Dalla cartella principale, su Windows:
 
 ```powershell
 cd backend
 .\mvnw.cmd -B -ntp verify
-cd ../frontend
-npm ci
-npm run lint
-npm test
-npm run build
 cd ..
 ```
 
 Su Linux e macOS usa `./mvnw` al posto di `.\mvnw.cmd`.
-
-Per i test nel browser, avvia l'istanza isolata e usa i dati di collaudo:
-
-```powershell
-pwsh -File scripts/start-local.ps1 -Test
-cd frontend
-npx playwright install chromium firefox
-$env:E2E_BASE_URL = 'http://localhost:8089'
-npm run test:e2e
-cd ..
-```
-
-I test browser creano e modificano dati nell'istanza isolata. Per arrestarla conservando il suo database:
-
-```powershell
-docker compose --env-file deploy/.env -f deploy/compose.yaml -f deploy/compose.test.yaml down
-```

@@ -11,7 +11,7 @@ services:
     environment:
       POSTGRES_DB: bugboard26
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Run scripts/start-local.ps1 to configure local secrets}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Configure local secrets as described in README.md}
       MIGRATION_PASSWORD: ${MIGRATION_PASSWORD:?Missing migration password}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Missing runtime password}
     volumes:
