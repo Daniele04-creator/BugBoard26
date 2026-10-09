@@ -1,0 +1,8 @@
+# Local verification suites are kept outside the published repository.
+src/**/*.test.ts
+src/**/*.test.tsx
+src/test/
+tests/
+playwright.config.ts
+vitest.config.ts
+tsconfig.e2e.json

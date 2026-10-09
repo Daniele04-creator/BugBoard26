@@ -1,3 +1,0 @@
-services:
-  backend:
-    entrypoint: [java, '-Xms256m', '-Xmx1g', -jar, /app/app.jar]

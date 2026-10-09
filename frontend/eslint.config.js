@@ -1,7 +1,18 @@
 import js from "@eslint/js";
 import ts from "typescript-eslint";
 export default ts.config(
-  { ignores: ["dist/**", "node_modules/**"] },
+  {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "src/test/**",
+      "tests/**",
+      "playwright.config.ts",
+      "vitest.config.ts",
+    ],
+  },
   js.configs.recommended,
   ...ts.configs.recommended,
   {
