@@ -35,8 +35,9 @@ public final class InputValidation {
 
     public static String email(String value) {
         String email = text(value, "email", 3, 254, false).toLowerCase(Locale.ROOT);
-        if (!email.matches("[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\\.[A-Za-z0-9-]+")
-                || email.contains("..")) {
+        if (!email.matches("[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+                + "(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+")
+                || email.startsWith(".") || email.contains(".@") || email.contains("..")) {
             throw invalid("email", "Inserisci un indirizzo email valido.");
         }
         return email;

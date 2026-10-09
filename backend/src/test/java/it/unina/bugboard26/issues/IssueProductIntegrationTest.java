@@ -12,6 +12,7 @@ import it.unina.bugboard26.issues.domain.IssueImage;
 import it.unina.bugboard26.issues.domain.IssueStatus;
 import it.unina.bugboard26.issues.domain.IssueType;
 import it.unina.bugboard26.issues.domain.Priority;
+import it.unina.bugboard26.issues.persistence.IssueRepository;
 import it.unina.bugboard26.shared.domain.DomainException;
 import it.unina.bugboard26.users.domain.UserAccount;
 import it.unina.bugboard26.users.domain.UserRole;
@@ -24,12 +25,15 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,12 +42,17 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -69,10 +78,12 @@ class IssueProductIntegrationTest {
     @Autowired IssueService service;
     @Autowired IssueWorkflowService workflow;
     @Autowired IssueQueryService queries;
+    @Autowired IssueRepository issueRepository;
+    @Autowired EntityManager entityManager;
     @Autowired CommentService comments;
     @Autowired UserRepository users;
     @Autowired PasswordService passwords;
-    @Autowired JdbcTemplate jdbc;
+    @MockitoSpyBean JdbcTemplate jdbc;
     @Autowired UserService userService;
     private UserAccount admin;
     private UserAccount member;
@@ -222,13 +233,74 @@ class IssueProductIntegrationTest {
     }
 
     @Test
+    void listProjectionPreservesReferencesLabelsImagesAndUsesThreeQueriesPerPage() {
+        UUID alpha = UUID.randomUUID(); UUID zeta = UUID.randomUUID();
+        for (UUID id : List.of(zeta, alpha)) {
+            String name = id.equals(alpha) ? "Alpha" : "Zeta";
+            jdbc.update("insert into labels(id,name,normalized_name,color,active,version,created_at,updated_at) "
+                            + "values(?,?,?,'blue',true,0,?::timestamptz,?::timestamptz)",
+                    id, name, name.toLowerCase(java.util.Locale.ROOT), "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z");
+        }
+        var canonical = create();
+        workflow.assign(canonical.id(), new IssueDtos.Assignment(member.getId(), 0L));
+        workflow.state(canonical.id(), new IssueDtos.State(IssueStatus.RESOLVED, 1L));
+        authenticate(member);
+        var duplicate = service.create(new IssueDtos.CreateIssue("Historical duplicate", "Detailed historical reproduction",
+                IssueType.FEATURE, Priority.HIGH, List.of(zeta, alpha)), null, UUID.randomUUID());
+        authenticate(admin);
+        workflow.assign(duplicate.id(), new IssueDtos.Assignment(other.getId(), 0L));
+        workflow.deadline(duplicate.id(), new IssueDtos.Deadline(LocalDate.of(2026, 2, 11), 1L));
+        service.image(duplicate.id(), new IssueImage(UUID.randomUUID(), "capture.png", "image/png",
+                new byte[]{1, 2, 3}, 1, 1, "a".repeat(64)), 2L);
+        workflow.duplicate(duplicate.id(), new IssueDtos.Duplicate(canonical.id(), 3L));
+        UserAccount archiver = account("Historical admin", UserRole.ADMIN);
+        authenticate(archiver);
+        workflow.archive(duplicate.id(), new IssueDtos.Archive(true, 4L));
+        authenticate(admin);
+        jdbc.update("update labels set active=false,version=version+1 where id=?", alpha);
+        jdbc.update("update user_accounts set active=false,auth_version=auth_version+1 where id in (?,?,?)",
+                member.getId(), other.getId(), archiver.getId());
+        entityManager.clear();
+        var expectedDuplicate = queries.summary(issueRepository.find(duplicate.id()));
+        var expectedCanonical = queries.summary(issueRepository.find(canonical.id()));
+        assertFalse(expectedDuplicate.reporter().active());
+        assertFalse(expectedDuplicate.assignee().active());
+        assertFalse(expectedDuplicate.archivedBy().active());
+        assertEquals(List.of(alpha, zeta), expectedDuplicate.labels().stream().map(IssueDtos.LabelRef::id).toList());
+        assertFalse(expectedDuplicate.labels().getFirst().active());
+        assertTrue(expectedDuplicate.hasImage());
+        assertNotNull(expectedCanonical.resolvedAt());
+
+        clearInvocations(jdbc);
+        var first = queries.list(filter("archived", "all", "sort", "number,asc", "size", "1"));
+        assertEquals(List.of(expectedCanonical), first.items()); assertEquals(2, first.totalElements());
+        verify(jdbc, times(3)).query(any(PreparedStatementCreator.class), any(ResultSetExtractor.class));
+        clearInvocations(jdbc);
+        var complete = queries.list(filter("archived", "all", "sort", "number,asc"));
+        assertEquals(List.of(expectedCanonical, expectedDuplicate), complete.items());
+        verify(jdbc, times(3)).query(any(PreparedStatementCreator.class), any(ResultSetExtractor.class));
+        assertEquals(List.of(expectedDuplicate), queries.list(filter("archived", "all", "page", "1", "size", "1",
+                "sort", "number,asc")).items());
+        clearInvocations(jdbc);
+        var empty = queries.list(filter("archived", "all", "page", "5", "size", "1"));
+        assertEquals(2, empty.totalElements()); assertTrue(empty.items().isEmpty());
+        verify(jdbc, times(2)).query(any(PreparedStatementCreator.class), any(ResultSetExtractor.class));
+        var noMatches = queries.list(filter("q", "No matching issue"));
+        assertEquals(0, noMatches.totalElements()); assertTrue(noMatches.items().isEmpty());
+    }
+
+    @Test
     void imageReplacementNoOpAndRemovalRespectVersions() {
         var issue = create(); byte[] bytes = new byte[]{1, 2, 3};
+        assertNull(queries.detail(issue.id()).image());
         IssueImage image = new IssueImage(UUID.randomUUID(), "capture.png", "image/png", bytes, 1, 1, "a".repeat(64));
         var changed = service.image(issue.id(), image, 0L); assertTrue(changed.hasImage()); assertEquals(1, changed.version());
+        assertEquals(IssueQueryService.imageRef(image), changed.image());
+        assertEquals(changed.image(), queries.detail(issue.id()).image());
         assertEquals(1, service.image(issue.id(), image, 1L).version());
         assertEquals(2, service.image(issue.id(), null, 1L).version());
         assertEquals(2, service.image(issue.id(), null, 2L).version()); assertEquals(3, count("issue_events"));
+        assertNull(queries.detail(issue.id()).image()); assertFalse(queries.detail(issue.id()).hasImage());
     }
 
     @Test

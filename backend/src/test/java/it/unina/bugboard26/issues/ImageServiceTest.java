@@ -18,8 +18,11 @@ class ImageServiceTest {
         assertEquals("capture.png", image.originalName()); assertEquals("image/png", image.contentType());
         assertEquals(20, image.width()); assertEquals(10, image.height());
         assertEquals(64, image.sha256().length());
-        byte[] exposed = image.content(); exposed[0] = 0;
+        byte[] exposed = image.content();
+        assertEquals(exposed.length, image.byteSize());
+        exposed[0] = 0;
         assertNotEquals(0, image.content()[0]);
+        assertEquals(exposed.length, image.byteSize());
         assertNotNull(ImageIO.read(new java.io.ByteArrayInputStream(image.content())));
     }
     @Test

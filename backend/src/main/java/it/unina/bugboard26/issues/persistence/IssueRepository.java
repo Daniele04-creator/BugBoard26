@@ -81,7 +81,7 @@ public class IssueRepository {
                 values(?,?,?,?,?,?,?,?,?,?) on conflict(issue_id) do update set image_id=excluded.image_id,
                   original_name=excluded.original_name,content_type=excluded.content_type,content=excluded.content,
                   byte_size=excluded.byte_size,width=excluded.width,height=excluded.height,sha256=excluded.sha256,created_at=excluded.created_at
-                """, issueId, image.id(), image.originalName(), image.contentType(), image.content(), image.content().length,
+                """, issueId, image.id(), image.originalName(), image.contentType(), image.content(), image.byteSize(),
                 image.width(), image.height(), image.sha256(), timestamp(now));
     }
 

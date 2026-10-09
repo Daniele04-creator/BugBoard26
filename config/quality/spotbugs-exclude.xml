@@ -61,4 +61,5 @@
   <Match><Class name="it.unina.bugboard26.reporting.persistence.ReportQueryRepository"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="it.unina.bugboard26.shared.application.PerformanceSeeder"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
   <Match><Class name="it.unina.bugboard26.shared.application.PerformanceSeeder"/><Field name="mapper" type="tools.jackson.databind.json.JsonMapper"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Class name="it.unina.bugboard26.shared.application.DemoDataService"/><Field name="jdbc" type="org.springframework.jdbc.core.JdbcTemplate"/><Bug pattern="EI_EXPOSE_REP2"/></Match>
 </FindBugsFilter>

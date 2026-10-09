@@ -77,9 +77,16 @@ class InputValidationTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"name", "a@", "a@b", "a..b@example.test", "é@example.test", "a@b..test", "a b@example.test"})
+    @ValueSource(strings = {"name", "a@", "a@b", "a..b@example.test", "é@example.test", "a@b..test", "a b@example.test",
+            ".x@example.test", "x.@example.test", "x@example.-test", "x@ex-.test", "x@-example.test", "x@example.test-"})
     void rejectsInvalidOrNonAsciiEmail(String value) {
         assertEquals("VALIDATION_ERROR", assertThrows(DomainException.class, () -> InputValidation.email(value)).code());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"first.last+tag@sub-domain.example.test", "x@a.b", "admin@bugboard.local"})
+    void acceptsDotsInLocalPartAndHyphensInsideDomainLabels(String value) {
+        assertEquals(value, InputValidation.email(value));
     }
 
     @Test
