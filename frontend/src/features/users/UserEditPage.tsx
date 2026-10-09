@@ -23,7 +23,8 @@ import { PasswordField } from "../auth/PasswordField";
 import { useAuth } from "../auth/AuthProvider";
 import { UnsavedChanges } from "../issues/UnsavedChanges";
 import "./admin.css";
-import { IconArrowLeft, IconKey } from "@tabler/icons-react";
+import { Avatar } from "../../components/Avatar";
+import { IconArrowLeft, IconKey } from "../../components/Icons";
 
 function Comparison({
   latest,
@@ -234,8 +235,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
       <UnsavedChanges dirty={dirty && !signedOut} />
       <div className="admin-form">
         <header className="admin-account-heading">
-          <h1 tabIndex={-1}>Gestisci utente</h1>
-          <p className="muted">{base.displayName}</p>
+          <h1 tabIndex={-1}>{base.displayName}</h1>
         </header>
         {success && <Alert variant="success">{success}</Alert>}
         <ErrorAlert error={error} focus />
@@ -257,15 +257,8 @@ function Editor({ initial }: { initial: UserAdmin }) {
             </Button>
           </Alert>
         )}
-        <dl className="admin-account-meta panel">
-          <div><dt>Email</dt><dd>{base.email}</dd></div>
-          <div><dt>Cambio password</dt><dd>{base.mustChangePassword ? "Richiesto" : "Completato"}</dd></div>
-          <div><dt>Creato il</dt><dd>{dateTime(base.createdAt)}</dd></div>
-          <div><dt>Aggiornato il</dt><dd>{dateTime(base.updatedAt)}</dd></div>
-        </dl>
-        <form className="panel admin-editor-form" onSubmit={submit} noValidate>
-          <h2>Informazioni utente</h2>
-          <p>* Campo obbligatorio.</p>
+        <div className="managed-identity"><Avatar name={base.displayName} id={base.id} /><div><strong>{base.email}</strong><p className="muted">Creato il {dateTime(base.createdAt)} · {base.mustChangePassword ? "Cambio password richiesto" : "Password impostata"}</p></div></div>
+        <form className="admin-editor-form" onSubmit={submit} noValidate>
           {Object.keys(fields).length > 0 && (
             <Alert focus focusKey={fields}>
               <a href="#edit-user-name">
@@ -273,7 +266,8 @@ function Editor({ initial }: { initial: UserAdmin }) {
               </a>
             </Alert>
           )}
-          <fieldset className="admin-form-grid admin-account-edit-grid" disabled={busy || blocked}>
+          <fieldset disabled={busy || blocked}>
+            <section className="admin-settings-section"><div><h2>Account</h2><p>Il ruolo determina le azioni disponibili nel progetto.</p></div><div className="admin-field-stack">
             <div className="admin-full-field">
               <TextField
                 id="edit-user-name"
@@ -305,6 +299,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
               />
               Account attivo
             </label>
+            </div></section>
             <div className="actions admin-form-actions">
               <Button
                 variant="primary"
@@ -315,13 +310,12 @@ function Editor({ initial }: { initial: UserAdmin }) {
                 Salva modifiche
               </Button>
               <Link className="button" to="/admin/users">
-                Torna agli utenti
+                Annulla
               </Link>
             </div>
           </fieldset>
         </form>
-        <section className="panel admin-section">
-          <h2>Password di accesso</h2>
+        <section className="admin-settings-section"><div><h2>Password</h2><p>{own ? "Gestisci la tua password dal profilo." : "Imposta una password temporanea e richiedi un nuovo cambio al prossimo accesso."}</p></div><div>
           {own ? (
             <p>
               Per la tua password usa il{" "}
@@ -329,10 +323,6 @@ function Editor({ initial }: { initial: UserAdmin }) {
             </p>
           ) : (
             <>
-              <p>
-                Il reset termina tutte le sessioni e richiede una nuova password
-                al primo accesso. Le assegnazioni esistenti restano.
-              </p>
               <Button
                 disabled={busy || blocked || dirty}
                 onClick={() => {
@@ -353,7 +343,7 @@ function Editor({ initial }: { initial: UserAdmin }) {
               )}
             </>
           )}
-        </section>
+        </div></section>
       </div>
       <Dialog
         className="admin-compact-dialog"
@@ -382,10 +372,6 @@ function Editor({ initial }: { initial: UserAdmin }) {
         <p>
           La modifica di ruolo o stato terminerà tutte le sessioni di{" "}
           {base.displayName}.{own && " Dovrai accedere di nuovo."}
-        </p>
-        <p>
-          Il server verificherà che resti almeno un amministratore attivo e che
-          non ci siano assegnazioni aperte incompatibili.
         </p>
       </Dialog>
       <Dialog
@@ -529,7 +515,7 @@ export function UserEditPage() {
   });
   return (
     <section>
-      <Link className="admin-back" to="/admin/users"><IconArrowLeft size={20} stroke={2} aria-hidden="true" />Torna agli utenti</Link>
+      <Link className="admin-back" to="/admin/users"><IconArrowLeft size={20} stroke={2} aria-hidden="true" />Team</Link>
       {!valid ? (
         <>
           <h1 tabIndex={-1}>Utente non trovato</h1>

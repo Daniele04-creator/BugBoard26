@@ -1,15 +1,14 @@
 import { ApiError } from "../../api/ApiClient";
-import { useSyncExternalStore } from "react";
 import type { UserRole } from "../../api/types";
 export const roleNames: Record<UserRole, string> = {
   ADMIN: "Amministratore",
-  MEMBER: "Membro del team",
-  VIEWER: "Lettore esterno",
+  MEMBER: "Membro",
+  VIEWER: "Sola lettura",
 };
 export const roleDescriptions: Record<UserRole, string> = {
-  ADMIN: "Gestione completa delle azioni valide",
-  MEMBER: "Crea e commenta; modifica il lavoro assegnato",
-  VIEWER: "Legge issue e commenti, senza modifiche",
+  ADMIN: "Gestisce team, etichette e tutte le issue",
+  MEMBER: "Crea issue, commenta e aggiorna le issue assegnate",
+  VIEWER: "Consulta issue e commenti",
 };
 export function fieldErrors(error: unknown): Record<string, string> {
   return error instanceof ApiError
@@ -27,7 +26,7 @@ export function normalizedName(
   return Array.from(text).length < min ||
     Array.from(text).length > max ||
     /[\p{Cc}\p{Cf}\p{Cs}]/u.test(text)
-    ? `Usa da ${min} a ${max} caratteri, su una sola riga.`
+    ? `Usa da ${min} a ${max} caratteri.`
     : null;
 }
 export function passwordError(value: string): string | null {
@@ -87,20 +86,4 @@ export function parseAdminFilters(
     size >= 1 &&
     size <= 100;
   return { q, role, active, page, size, valid };
-}
-
-function subscribeViewport(listener: () => void) {
-  if (typeof window.matchMedia !== "function") return () => {};
-  const query = window.matchMedia("(max-width:639px)");
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
-}
-export function useMobileCards() {
-  return useSyncExternalStore(
-    subscribeViewport,
-    () =>
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width:639px)").matches,
-    () => false,
-  );
 }

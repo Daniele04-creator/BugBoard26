@@ -18,7 +18,7 @@ import { SelectField } from "../../components/SelectField";
 import { PasswordField } from "../auth/PasswordField";
 import { UnsavedChanges } from "../issues/UnsavedChanges";
 import "./admin.css";
-import { IconArrowLeft } from "@tabler/icons-react";
+import { IconArrowLeft } from "../../components/Icons";
 
 export function UserCreatePage() {
   const cache = useQueryClient();
@@ -84,16 +84,12 @@ export function UserCreatePage() {
     );
   return (
     <section className="admin-form">
-      <Link className="admin-back" to="/admin/users"><IconArrowLeft size={20} stroke={2} aria-hidden="true" />Torna agli utenti</Link>
+      <Link className="admin-back" to="/admin/users"><IconArrowLeft size={20} stroke={2} aria-hidden="true" />Team</Link>
       <h1 tabIndex={-1}>Nuovo utente</h1>
-      <p>
-        * Campo obbligatorio. Il primo accesso richiederà il cambio della
-        password temporanea.
-      </p>
       <UnsavedChanges
         dirty={Boolean(name || email || password || role !== "MEMBER")}
       />
-      <form className="panel admin-editor-form" onSubmit={submit} noValidate>
+      <form className="admin-editor-form" onSubmit={submit} noValidate>
         {Object.keys(fields).length > 0 && (
           <Alert focus focusKey={fields}>
             <strong>Controlla i campi indicati.</strong>
@@ -107,7 +103,8 @@ export function UserCreatePage() {
           </Alert>
         )}
         <ErrorAlert error={error} />
-        <fieldset className="admin-form-grid" disabled={busy}>
+        <fieldset disabled={busy}>
+          <section className="admin-settings-section"><div><h2>Identità</h2><p>Crea un account per una persona del team.</p></div><div className="admin-field-stack">
           <TextField
             id="new-user-displayName"
             label="Nome"
@@ -141,6 +138,8 @@ export function UserCreatePage() {
               </option>
             ))}
           </SelectField>
+          </div></section>
+          <section className="admin-settings-section"><div><h2>Accesso iniziale</h2><p>Al primo accesso la persona dovrà scegliere una nuova password.</p></div><div className="admin-field-stack">
           <PasswordField
             id="new-user-password"
             label="Password temporanea"
@@ -149,8 +148,9 @@ export function UserCreatePage() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             error={fields.password}
-            hint="12–128 caratteri. La password non viene troncata."
+            hint="Da 12 a 128 caratteri. Nessuna email viene inviata."
           />
+          </div></section>
           <div className="actions admin-form-actions">
             <Button type="submit" variant="primary" busy={busy}>
               Crea utente

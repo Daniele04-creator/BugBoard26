@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -60,18 +60,20 @@ describe("notifications register", () => {
     vi.spyOn(api, "get").mockResolvedValue(mixed);
     show();
     const register = await screen.findByRole("list", { name: "Registro delle notifiche" });
-    const rows = within(register).getAllByRole("listitem");
-    expect(rows).toHaveLength(2);
+    const entries = within(register).getAllByRole("listitem");
+    expect(entries).toHaveLength(3);
+    expect(within(entries[0]).getByRole("heading", { name: "7 ottobre 2026" })).toBeVisible();
+    const rows = entries.slice(1);
     expect(within(rows[0]).getByText("Non letta")).toBeVisible();
     expect(within(rows[0]).getByRole("heading", {
-      name: "Ti è stata assegnata BB-142 — Errore nel salvataggio della configurazione",
+      name: unread.issue.title,
     })).toBeVisible();
     expect(rows[0].querySelector("time")).toHaveAttribute("datetime", unread.createdAt);
-    expect(within(rows[0]).getByRole("link", { name: "Apri" })).toHaveAttribute("href", `/issues/${unread.issue.id}`);
+    expect(within(rows[0]).getByRole("link", { name: unread.issue.title })).toHaveAttribute("href", `/issues/${unread.issue.id}`);
     expect(within(rows[0]).getByRole("button", { name: "Segna come letta" })).toBeEnabled();
     expect(within(rows[1]).getByText("Letta")).toBeVisible();
     expect(within(rows[1]).getByRole("heading", {
-      name: "È stata risolta BB-137 — Correggere il nome del file CSV",
+      name: read.issue.title,
     })).toBeVisible();
     expect(within(rows[1]).queryByRole("button", { name: "Segna come letta" })).not.toBeInTheDocument();
   });
@@ -81,7 +83,7 @@ describe("notifications register", () => {
     const mark = vi.spyOn(api, "put").mockRejectedValue(new NetworkError(false));
     const { router } = show();
     const register = await screen.findByRole("list", { name: "Registro delle notifiche" });
-    await userEvent.setup().click(within(register).getAllByRole("link", { name: "Apri" })[0]);
+    await userEvent.setup().click(within(register).getByRole("link", { name: unread.issue.title }));
     await screen.findByRole("heading", { name: "Dettaglio issue" });
     expect(mark).toHaveBeenCalledWith(`/notifications/${unread.id}/read`);
     expect(router.state.location.pathname).toBe(`/issues/${unread.issue.id}`);
@@ -93,9 +95,52 @@ describe("notifications register", () => {
     const mark = vi.spyOn(api, "put").mockResolvedValue(undefined);
     show();
     const register = await screen.findByRole("list", { name: "Registro delle notifiche" });
-    await userEvent.setup().click(within(register).getAllByRole("link", { name: "Apri" })[1]);
+    await userEvent.setup().click(within(register).getByRole("link", { name: read.issue.title }));
     await screen.findByRole("heading", { name: "Dettaglio issue" });
     expect(mark).not.toHaveBeenCalled();
+  });
+
+  it.each(["ctrlKey", "metaKey", "shiftKey", "altKey"])("preserves native navigation for an unread link with %s", async (modifier) => {
+    vi.spyOn(api, "get").mockResolvedValue(mixed);
+    const mark = vi.spyOn(api, "put").mockResolvedValue(undefined);
+    const { router } = show();
+    const link = await screen.findByRole("link", { name: unread.issue.title });
+    expect(fireEvent.click(link, { button: 0, [modifier]: true })).toBe(true);
+    expect(mark).not.toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/notifications");
+  });
+
+  it("recovers the last valid unread page after marking its only record", async () => {
+    let unreadItems = [
+      { ...unread, id: "first", issue: { ...unread.issue, title: "Prima notifica" } },
+      { ...unread, id: "second", issue: { ...unread.issue, title: "Seconda notifica" } },
+      unread,
+    ];
+    const get = vi.spyOn(api, "get").mockImplementation(async (url) => {
+      const params = new URLSearchParams(String(url).split("?")[1]);
+      const page = Number(params.get("page") ?? 0);
+      const size = Number(params.get("size") ?? 20);
+      return {
+        items: unreadItems.slice(page * size, (page + 1) * size),
+        page, size, totalElements: unreadItems.length,
+        totalPages: Math.ceil(unreadItems.length / size),
+      };
+    });
+    vi.spyOn(api, "put").mockImplementation(async () => {
+      unreadItems = unreadItems.filter((item) => item.id !== unread.id);
+    });
+    const { router } = show("/notifications?unreadOnly=true&page=1&size=2");
+    await screen.findByRole("link", { name: unread.issue.title });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Segna come letta" }));
+    expect(await screen.findByRole("link", { name: "Prima notifica" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Seconda notifica" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: unread.issue.title })).not.toBeInTheDocument();
+    expect(screen.getByText("2 notifiche")).toBeVisible();
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("page")).toBe("0");
+    expect(params.get("size")).toBe("2");
+    expect(params.get("unreadOnly")).toBe("true");
+    expect(get).toHaveBeenCalledTimes(3);
   });
 
   it("refreshes the notification query family after marking all records", async () => {
@@ -117,7 +162,7 @@ describe("notifications register", () => {
     vi.spyOn(api, "get").mockResolvedValue(mixed);
     const { router } = show("/notifications?page=2&size=50");
     await screen.findByText("Non letta");
-    await userEvent.setup().click(screen.getByRole("checkbox", { name: "Solo non lette" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "Non lette" }));
     await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("unreadOnly")).toBe("true"));
     const params = new URLSearchParams(router.state.location.search);
     expect(params.has("page")).toBe(false);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -7,10 +7,9 @@ import {
   normalizedName,
   parseAdminFilters,
   roleNames,
-  useMobileCards,
 } from "./adminPresentation";
 import type { AdminFilters } from "./adminPresentation";
-import type { UserAdmin, UserRole } from "../../api/types";
+import type { UserRole } from "../../api/types";
 import { Alert, ErrorAlert } from "../../components/Alert";
 import { Button } from "../../components/Button";
 import { LoadingState } from "../../components/LoadingState";
@@ -19,7 +18,7 @@ import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import "./admin.css";
 import { Avatar } from "../../components/Avatar";
-import { IconPlus, IconArrowRight } from "@tabler/icons-react";
+import { IconPlus, IconChevronRight } from "../../components/Icons";
 
 function Filters({
   filters,
@@ -28,84 +27,50 @@ function Filters({
   filters: AdminFilters;
   apply: (query: URLSearchParams) => void;
 }) {
-  const [q, setQ] = useState(filters.q),
-    [role, setRole] = useState(filters.role),
-    [active, setActive] = useState(filters.active),
-    [error, setError] = useState<string | undefined>();
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const invalid = normalizedName(q, 0, 100);
+  const [q, setQ] = useState(filters.q);
+  const [error, setError] = useState<string | undefined>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => { setQ(filters.q); }, [filters.q]);
+  useEffect(() => () => clearTimeout(searchTimer.current), []);
+  function update(value = q, role = filters.role, active = filters.active) {
+    clearTimeout(searchTimer.current);
+    const invalid = normalizedName(value, 0, 100);
     setError(invalid ?? undefined);
     if (invalid) return;
     const query = new URLSearchParams();
-    if (q.trim()) query.set("q", q.normalize("NFC").trim());
+    if (value.trim()) query.set("q", value.normalize("NFC").trim());
     if (role) query.set("role", role);
     if (active) query.set("active", active);
     if (filters.size !== 20) query.set("size", String(filters.size));
     apply(query);
   }
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    clearTimeout(searchTimer.current);
+    update();
+  }
   return (
     <form className="admin-filters admin-user-filters" onSubmit={submit}>
-      <TextField
-        label="Cerca nome o email"
-        value={q}
-        onChange={(event) => setQ(event.target.value)}
-        error={error}
-      />
-      <SelectField
-        label="Ruolo"
-        value={role}
-        onChange={(event) => setRole(event.target.value)}
-      >
+      <TextField label="Cerca nome o email" type="search" placeholder="Cerca nel team…"
+        value={q} onChange={(event) => {
+          const value = event.target.value;
+          setQ(value);
+          clearTimeout(searchTimer.current);
+          searchTimer.current = setTimeout(() => update(value), 300);
+        }} error={error} />
+      <SelectField label="Ruolo" value={filters.role} onChange={(event) => update(q, event.target.value)}>
         <option value="">Tutti i ruoli</option>
-        {Object.entries(roleNames).map(([value, name]) => (
-          <option key={value} value={value}>
-            {name}
-          </option>
-        ))}
+        {Object.entries(roleNames).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
       </SelectField>
-      <SelectField
-        label="Stato account"
-        value={active}
-        onChange={(event) => setActive(event.target.value)}
-      >
-        <option value="">Tutti gli stati</option>
-        <option value="true">Attivo</option>
-        <option value="false">Inattivo</option>
+      <SelectField label="Stato account" value={filters.active} onChange={(event) => update(q, filters.role, event.target.value)}>
+        <option value="">Tutti</option><option value="true">Attivi</option><option value="false">Inattivi</option>
       </SelectField>
-      <div className="actions">
-        <Button type="submit">
-          Applica filtri
-        </Button>
-        <Button onClick={() => apply(new URLSearchParams())}>
-          Pulisci filtri
-        </Button>
-      </div>
+      <Button variant="link" onClick={() => { clearTimeout(searchTimer.current); setQ(""); apply(new URLSearchParams()); }}>Pulisci</Button>
     </form>
   );
 }
-function AccountCard({ user }: { user: UserAdmin }) {
-  return (
-    <article className="admin-card">
-      <h2 className="admin-person"><Avatar name={user.displayName} id={user.id} />{user.displayName}</h2>
-      <dl>
-        <dt>Email</dt>
-        <dd>{user.email}</dd>
-        <dt>Ruolo</dt>
-        <dd>{roleNames[user.role]}</dd>
-        <dt>Stato</dt>
-        <dd><span className={`badge badge-${user.active ? "green" : "gray"}`}>{user.active ? "Attivo" : "Inattivo"}</span></dd>
-        <dt>Cambio password</dt>
-        <dd><span className={`badge badge-${user.mustChangePassword ? "amber" : "green"}`}>{user.mustChangePassword ? "Richiesto" : "Completato"}</span></dd>
-      </dl>
-      <Link className="button button-secondary" aria-label={`Gestisci ${user.displayName}`} to={`/admin/users/${user.id}/edit`}>
-        Gestisci <IconArrowRight size={20} stroke={2} aria-hidden="true" />
-      </Link>
-    </article>
-  );
-}
+
 export function UsersPage() {
-  const mobile = useMobileCards();
   const [params, setParams] = useSearchParams(),
     filters = parseAdminFilters(params);
   const query = new URLSearchParams(params);
@@ -132,8 +97,8 @@ export function UsersPage() {
     <section className="users-page">
       <div className="admin-heading">
         <div>
-          <h1 tabIndex={-1}>Utenti</h1>
-          <p className="muted">Account, ruoli e accesso al progetto.</p>
+          <h1 tabIndex={-1}>Team</h1>
+          <p className="muted">{snapshot.data ? `${snapshot.data.data.totalElements} account nel progetto` : "Account del progetto"}</p>
         </div>
         <Link className="button button-primary" to="/admin/users/new">
           <IconPlus size={20} stroke={2} aria-hidden="true" />
@@ -150,7 +115,6 @@ export function UsersPage() {
       ) : (
         <>
           <Filters
-            key={params.toString()}
             filters={filters}
             apply={setParams}
           />
@@ -170,21 +134,19 @@ export function UsersPage() {
                   </div>
                 ) : (
                   <>
-                    {!mobile && <div className="admin-register admin-table-wrap">
+                    <div className="admin-register admin-table-wrap" role="region" tabIndex={0} aria-label="Team del progetto">
                       <table className="admin-table admin-users-table">
                         <caption className="visually-hidden">Account del progetto</caption>
                         <thead>
                           <tr>
                             {[
-                              "Nome",
-                              "Email",
+                              "Persona",
                               "Ruolo",
                               "Stato",
-                              "Cambio password",
                               "Azioni",
                             ].map((title) => (
                               <th key={title} scope="col">
-                                {title}
+                                {title === "Azioni" ? <span className="sr-only">Azioni</span> : title}
                               </th>
                             ))}
                           </tr>
@@ -192,30 +154,19 @@ export function UsersPage() {
                         <tbody>
                           {snapshot.data.data.items.map((user) => (
                             <tr key={user.id}>
-                              <th scope="row"><span className="admin-person"><Avatar name={user.displayName} id={user.id} />{user.displayName}</span></th>
-                              <td>{user.email}</td>
+                              <th scope="row"><span className="admin-person"><Avatar name={user.displayName} id={user.id} /><span><strong>{user.displayName}</strong><span className="admin-person-email">{user.email}</span>{user.mustChangePassword && <span className="password-required">Cambio password richiesto</span>}</span></span></th>
                               <td>{roleNames[user.role as UserRole]}</td>
-                              <td><span className={`badge badge-${user.active ? "green" : "gray"}`}>{user.active ? "Attivo" : "Inattivo"}</span></td>
-                              <td>
-                                <span className={`badge badge-${user.mustChangePassword ? "amber" : "green"}`}>{user.mustChangePassword
-                                  ? "Richiesto"
-                                  : "Completato"}</span>
-                              </td>
+                              <td><span className={`account-state ${user.active ? "" : "inactive"}`}>{user.active ? "Attivo" : "Inattivo"}</span></td>
                               <td>
                                 <Link aria-label={`Gestisci ${user.displayName}`} to={`/admin/users/${user.id}/edit`}>
-                                  Gestisci
+                                  Gestisci <IconChevronRight size={14} aria-hidden="true" />
                                 </Link>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                    </div>}
-                    {mobile && <div className="admin-register admin-cards">
-                      {snapshot.data.data.items.map((user) => (
-                        <AccountCard key={user.id} user={user} />
-                      ))}
-                    </div>}
+                    </div>
                   </>
                 )}
                 <p className="admin-results-status" role="status">
@@ -224,14 +175,14 @@ export function UsersPage() {
                   {snapshot.isPlaceholderData &&
                     " · risultati dei filtri precedenti"}
                 </p>
-                <Pagination
+                {snapshot.data.data.totalPages > 1 && <Pagination
                   page={snapshot.data.data.page}
                   size={snapshot.data.data.size}
                   totalPages={snapshot.data.data.totalPages}
                   totalElements={snapshot.data.data.totalElements}
                   onPageChange={(page) => paginate(page)}
                   onSizeChange={(size) => paginate(0, size)}
-                />
+                />}
               </div>
             )
           )}

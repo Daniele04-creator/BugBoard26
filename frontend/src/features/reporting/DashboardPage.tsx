@@ -1,242 +1,93 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { IconRefresh } from "@tabler/icons-react";
+import { IconCalendar, IconUser } from "../../components/Icons";
 import { ErrorAlert } from "../../components/Alert";
-import { Button } from "../../components/Button";
 import { LoadingState } from "../../components/LoadingState";
-import { dateTime, roleNames } from "../users/adminPresentation";
+import { issueApi } from "../issues/issueApi";
 import { priorityNames, typeNames } from "../issues/issuePresentation";
 import { reportingApi } from "./reportingApi";
-import { Metrics, number, resolutionTime } from "./reportPresentation";
+import { AnalysisHeading, Distribution, number, ReportWidget, resolutionTime } from "./reportPresentation";
 import "./reporting.css";
+const openQuery = "status=TODO&status=IN_PROGRESS";
 export function DashboardPage() {
   const snapshot = useQuery({
-      queryKey: ["reporting", "dashboard"],
-      queryFn: ({ signal }) => reportingApi.dashboard(signal),
-    }),
-    data = snapshot.data;
-  return (
-    <section className="reporting-page">
-      <div className="reporting-heading">
-        <div>
-          <h1 tabIndex={-1}>Dashboard</h1>
-          <p className="muted">Situazione corrente del progetto</p>
-        </div>
-        <Button
-          busy={snapshot.isFetching}
-          onClick={() => void snapshot.refetch()}
-        >
-          <IconRefresh size={20} stroke={2} aria-hidden="true" />
-          Aggiorna dashboard
-        </Button>
-      </div>
-      <ErrorAlert error={snapshot.error} />
-      {snapshot.isPending ? (
-        <LoadingState />
-      ) : (
-        data && (
-          <div aria-busy={snapshot.isFetching} className="reporting-content">
-            <p className="reporting-context">
-              {snapshot.isFetching ? "Aggiornamento in corso. " : ""}Rilevata il{" "}
-              <time dateTime={data.asOf}>{dateTime(data.asOf)}</time> ·{" "}
-              {data.timezone}
-            </p>
-            <Metrics
-              items={[
-                {
-                  label: "Aperte",
-                  value: (
-                    <Link to="/issues?status=TODO&status=IN_PROGRESS">
-                      {number(data.openCount)}
-                    </Link>
-                  ),
-                },
-                {
-                  label: "In corso",
-                  value: (
-                    <Link to="/issues?status=IN_PROGRESS">
-                      {number(data.inProgressCount)}
-                    </Link>
-                  ),
-                },
-                {
-                  label: "Aperte senza responsabile",
-                  value: (
-                    <Link to="/issues?assignedTo=unassigned&status=TODO&status=IN_PROGRESS">
-                      {number(data.unassignedOpenCount)}
-                    </Link>
-                  ),
-                },
-                {
-                  label: "Scadute",
-                  value: (
-                    <Link to="/issues?overdue=true&status=TODO&status=IN_PROGRESS">
-                      {number(data.overdueOpenCount)}
-                    </Link>
-                  ),
-                },
-              ]}
-            />
-            <div className="reporting-workload">
-              <div className="reporting-register">
-                <table
-                  className="reporting-table reporting-table--responsive reporting-table--load"
-                  role="table"
-                >
-                  <caption>Carico corrente</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Nome</th>
-                      <th scope="col">Ruolo</th>
-                      <th scope="col">Issue aperte</th>
-                      <th scope="col">Azioni</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.openByAssignee.map((row) => (
-                      <tr key={row.user?.id ?? "unassigned"}>
-                        <th scope="row">
-                          {row.user?.displayName ?? "Senza responsabile"}
-                        </th>
-                        <td data-label="Ruolo">
-                          {row.user ? roleNames[row.user.role] : "—"}
-                        </td>
-                        <td data-label="Issue aperte">{number(row.openCount)}</td>
-                        <td className="reporting-row-action">
-                          <Link
-                            to={`/issues?assignedTo=${row.user?.id ?? "unassigned"}&status=TODO&status=IN_PROGRESS`}
-                            aria-label={`Apri elenco di ${row.user?.displayName ?? "issue senza responsabile"}`}
-                          >
-                            Apri elenco
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="reporting-breakdowns">
-                <div className="reporting-register">
-                  <table className="reporting-table reporting-table--breakdown">
-                    <caption>Aperte per tipo</caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Tipo</th>
-                        <th scope="col">Issue aperte</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(typeNames).map(([type, label]) => (
-                        <tr key={type}>
-                          <th scope="row">{label}</th>
-                          <td>
-                            {number(
-                              data.openByType[
-                                type as keyof typeof data.openByType
-                              ],
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="reporting-register">
-                  <table className="reporting-table reporting-table--breakdown">
-                    <caption>Aperte per priorità</caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Priorità</th>
-                        <th scope="col">Issue aperte</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(priorityNames).map(([priority, label]) => (
-                        <tr key={priority}>
-                          <th scope="row">{label}</th>
-                          <td>
-                            {number(
-                              data.openByPriority[
-                                priority as keyof typeof data.openByPriority
-                              ],
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <Metrics
-              columns={5}
-              items={[
-                { label: "Issue non archiviate", value: number(data.activeIssueCount) },
-                { label: "Risolte", value: number(data.resolvedCount) },
-                { label: "Duplicate", value: number(data.duplicateCount) },
-                {
-                  label: "Tempo medio del ciclo",
-                  value: resolutionTime(data.averageResolutionSeconds),
-                },
-                { label: "Cicli conclusi", value: number(data.resolutionCount) },
-              ]}
-            />
-            <div className="reporting-register">
-              <table
-                className="reporting-table reporting-table--responsive"
-                role="table"
-              >
-                <caption>Risoluzioni per assegnatario storico</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col">Cicli conclusi</th>
-                    <th scope="col">Tempo medio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.resolutionByAssignee.map((row) => (
-                    <tr key={row.user.id}>
-                      <th scope="row">
-                        {row.user.displayName}
-                        {!row.user.active && " · Inattivo"}
-                      </th>
-                      <td data-label="Cicli conclusi">
-                        {number(row.resolutionCount)}
-                      </td>
-                      <td data-label="Tempo medio">
-                        {resolutionTime(row.averageResolutionSeconds)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {data.resolutionByAssignee.length === 0 && (
-                <p className="reporting-empty">Nessuna risoluzione.</p>
-              )}
-            </div>
-            <details className="reporting-definition">
-              <summary>Come si calcolano le metriche</summary>
-              <p>
-                Aperte: stati Da fare e In corso, escluse le issue archiviate.
-                Il carico segue il responsabile attuale.
-              </p>
-              <p>
-                Il tempo medio è il tempo trascorso dalla creazione o riapertura
-                alla risoluzione, compresi attesa e giorni non lavorativi. Ogni
-                ciclo risolto conta una volta; l'attribuzione segue il
-                responsabile al momento della risoluzione.
-              </p>
-              <p>
-                La media usa tutti i cicli conclusi delle issue attualmente non
-                archiviate, anche se riaperte o duplicate. È calcolata dal
-                server sui secondi, prima dell'arrotondamento in ore. Il report
-                mensile include anche le issue oggi archiviate.
-              </p>
-            </details>
+    queryKey: ["reporting", "dashboard"],
+    queryFn: ({ signal }) => reportingApi.dashboard(signal),
+    refetchInterval: 60_000,
+  });
+  const attention = useQuery({
+    queryKey: ["reporting", "attention"],
+    queryFn: async ({ signal }) => {
+      const [overdue, unassigned] = await Promise.all([
+        issueApi.list(`${openQuery}&overdue=true&size=5`, signal),
+        issueApi.list(`${openQuery}&assignedTo=unassigned&size=5`, signal),
+      ]);
+      const rows = overdue.items.map(issue => ({ issue, reason: "Scaduta" }));
+      rows.push(...unassigned.items.filter(issue => !rows.some(row => row.issue.id === issue.id))
+        .map(issue => ({ issue, reason: "Senza responsabile" })));
+      return rows;
+    },
+    enabled: !!snapshot.data,
+    refetchInterval: 60_000,
+  });
+  const data = snapshot.data;
+  return <section className="reporting-page operations-view">
+    <AnalysisHeading />
+    <ErrorAlert error={snapshot.error} />
+    {snapshot.isPending ? <LoadingState /> : data && <div className="reporting-content" aria-busy={snapshot.isFetching}>
+      <div className="widget-grid">
+        <ReportWidget title="Issue per stato" to="/issues" note={`${number(data.activeIssueCount)} issue non archiviate · conteggi sulle barre · seleziona uno stato per aprire le issue`}>
+          <Distribution total={data.activeIssueCount} rows={[
+            { label: "Da fare", value: data.openCount - data.inProgressCount, color: "muted", to: "/issues?status=TODO" },
+            { label: "In corso", value: data.inProgressCount, color: "warning", to: "/issues?status=IN_PROGRESS" },
+            { label: "Risolte", value: data.resolvedCount, color: "success", to: "/issues?status=RESOLVED" },
+            { label: "Duplicate", value: data.duplicateCount, color: "done", to: "/issues?status=DUPLICATE" },
+          ]} />
+        </ReportWidget>
+        <ReportWidget title="Issue aperte per responsabile" to={`/issues?${openQuery}`} note={`${number(data.openCount)} issue aperte · conteggi sulle barre`}>
+          <Distribution total={data.openCount} rows={data.openByAssignee.map(row => ({
+            label: row.user?.displayName ?? "Non assegnate", value: row.openCount,
+            color: row.user ? "accent" : "muted",
+            to: `/issues?assignedTo=${encodeURIComponent(row.user?.id ?? "unassigned")}&${openQuery}`,
+          }))} />
+          {!data.openByAssignee.length && <p className="reporting-empty">Nessuna issue aperta.</p>}
+        </ReportWidget>
+        <ReportWidget title="Tempi di risoluzione" to="/admin/reports" note="Issue non archiviate · solo cicli conclusi">
+          <table className="widget-summary"><caption className="sr-only">Tempi di risoluzione complessivi</caption><tbody>
+            <tr><th scope="row">Tempo medio complessivo</th><td>{resolutionTime(data.averageResolutionSeconds)}</td></tr>
+            <tr><th scope="row">Risoluzioni concluse</th><td>{number(data.resolutionCount)}</td></tr>
+          </tbody></table>
+          <table className="widget-summary resolution-people"><caption>Tempo medio per persona</caption><thead><tr><th scope="col">Persona</th><th scope="col">Tempo medio</th></tr></thead><tbody>
+            {data.resolutionByAssignee.map(row => <tr key={row.user.id}><th scope="row">{row.user.displayName}{!row.user.active && " · Inattivo"}</th><td>{resolutionTime(row.averageResolutionSeconds)}</td></tr>)}
+            {!data.resolutionByAssignee.length && <tr><td colSpan={2}>Nessuna risoluzione.</td></tr>}
+          </tbody></table>
+        </ReportWidget>
+        <ReportWidget title="Issue da gestire">
+          <div className="attention-tabs">
+            <Link to={`/issues?overdue=true&${openQuery}`}><IconCalendar size={14} />{number(data.overdueOpenCount)} scadute</Link>
+            <Link to={`/issues?assignedTo=unassigned&${openQuery}`}><IconUser size={14} />{number(data.unassignedOpenCount)} senza responsabile</Link>
           </div>
-        )
-      )}
-    </section>
-  );
+          <ErrorAlert error={attention.error} />
+          {attention.isPending ? <LoadingState /> : <div className="widget-issue-list">
+            {attention.data?.map(({ issue, reason }) => <Link className="widget-issue" to={`/issues/${issue.id}`} key={issue.id}>
+              <span>BB-{issue.number} · {reason}</span><strong>{issue.title}</strong><span>{issue.assignee?.displayName ?? "Non assegnata"}</span>
+            </Link>)}
+            {attention.data?.length === 0 && <p className="reporting-empty">Nessuna issue richiede attenzione.</p>}
+          </div>}
+        </ReportWidget>
+      </div>
+      <details className="analysis-details"><summary>Distribuzione per tipo e priorità</summary><div className="widget-grid">
+        <ReportWidget title="Issue aperte per tipo" note={`${number(data.openCount)} issue aperte · conteggi sulle barre`}>
+          <Distribution total={data.openCount} rows={(["BUG", "FEATURE", "QUESTION", "DOCUMENTATION"] as const).map((type, index) => ({
+            label: typeNames[type], value: data.openByType[type], color: ["accent", "done", "warning", "success"][index], to: `/issues?type=${type}&${openQuery}`,
+          }))} />
+        </ReportWidget>
+        <ReportWidget title="Issue aperte per priorità" note={`${number(data.openCount)} issue aperte · conteggi sulle barre`}>
+          <Distribution total={data.openCount} rows={(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map((priority, index) => ({
+            label: priorityNames[priority], value: data.openByPriority[priority], color: ["danger", "warning", "accent", "muted"][index], to: `/issues?priority=${priority}&${openQuery}`,
+          }))} />
+        </ReportWidget>
+      </div></details>
+    </div>}
+  </section>;
 }

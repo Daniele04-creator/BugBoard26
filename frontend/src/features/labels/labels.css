@@ -1,184 +1,255 @@
-.labels-description {
-  margin-top: 24px;
+/* Primer label catalog and inline editors, as in the approved prototype. */
+.labels-page {
+  max-width:1120px;
+  margin-inline:auto;
+  min-width:0;
 }
-
 .labels-heading h1 {
-  margin-bottom: 0;
+  margin-bottom:0;
 }
-
-.admin-label-filters {
-  grid-template-columns: minmax(0,1fr) minmax(0,280px) auto;
+.admin-label-filters>.field:first-child {
+  max-width:400px;
 }
-
-.admin-labels-table th:nth-child(1) {
-  width: 37.5%;
+.admin-label-filters>.field:nth-child(2) {
+  width:150px;
 }
-
-.admin-labels-table th:nth-child(2) {
-  width: 16.7%;
-}
-
-.admin-labels-table th:nth-child(3) {
-  width: 13.9%;
-}
-
-.admin-labels-table th:nth-child(4) {
-  width: 31.9%;
-}
-
 .label-create-disclosure {
-  padding: 16px;
-  margin-bottom: 20px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--soft);
+  padding:16px;
+  margin-bottom:22px;
 }
-
-.label-create-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 4px;
+.label-create-heading h2 {
+  font-size:14px;
+  margin:0 0 14px;
+  font-weight:600;
 }
-
-.label-create-heading h2, .label-create-heading p {
-  margin: 0;
-}
-
-.label-create-heading p {
-  font-size: 14px;
-  color: var(--color-text-muted);
-}
-
 .label-create-fields {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 180px auto;
-  gap: 16px;
-  align-items: start;
+  display:flex;
+  gap:12px;
+  align-items:flex-end;
+  max-width:650px;
 }
-
+.label-create-fields>.field:first-child {
+  flex:1;
+}
+.label-create-fields>.field:nth-child(2) {
+  width:130px;
+}
 .label-create-fields .field {
-  margin: 0;
+  margin:0;
+  min-width:0;
 }
-
-.label-create-fields > .actions {
-  padding-top: 26px;
+.label-create-fields>.actions {
+  margin-bottom:2px;
 }
-
+.label-live-preview {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  min-width:0;
+  margin-top:14px;
+}
+.label-live-preview>span:first-child {
+  font-size:12px;
+  color:var(--muted);
+}
+.label-color-swatch {
+  display:inline-block;
+  width:12px;
+  height:12px;
+  flex-shrink:0;
+  border-radius:50%;
+  border:1px solid var(--line);
+  background:var(--muted);
+}
+.label-color-swatch.color-blue {
+  background:var(--accent);
+}
+.label-color-swatch.color-green {
+  background:var(--success);
+}
+.label-color-swatch.color-amber {
+  background:var(--warning);
+}
+.label-color-swatch.color-red {
+  background:var(--danger);
+}
+.label-color-swatch.color-purple {
+  background:var(--done);
+}
+.admin-labels-table th:first-child {
+  width:55%;
+}
+.admin-labels-table th:nth-child(2) {
+  width:15%;
+}
+.admin-labels-table td:last-child>.actions {
+  justify-content:flex-end;
+  flex-wrap:nowrap;
+  gap:6px;
+}
+.admin-labels-table .button {
+  min-height:28px;
+  font-size:12px;
+  padding:4px 8px;
+}
+.admin-labels-table .button svg {
+  width:14px;
+  height:14px;
+}
 .admin-label-editor {
-  padding: 16px;
-  max-width: 760px;
+  padding:4px;
+  background:var(--soft);
 }
-
 .admin-label-editor h2 {
-  overflow-wrap: anywhere;
+  font-size:13px;
+  margin:0 0 14px;
+  overflow-wrap:anywhere;
 }
-
 .label-editor-fields {
-  display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 20px;
+  display:grid;
+  grid-template-columns:minmax(140px,1fr) 140px;
+  gap:12px;
+  max-width:620px;
 }
-
 .label-editor-fields .field {
-  margin: 0;
+  margin:0;
+  min-width:0;
 }
-
-.admin-label-editor > .actions {
-  margin-top: 24px;
+.admin-label-editor>.actions {
+  margin-top:14px;
+  justify-content:flex-end;
 }
-
-.labels-page .admin-card .actions {
-  margin-top: 12px;
-}
-
-@media (max-width:1023px) {
-  .admin-label-filters {
-    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-  }
-  .admin-label-filters > .actions {
-    grid-column: 1/-1;
-    padding-top: 0;
-  }
-  .label-create-fields {
-    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-  }
-  .label-create-fields > .actions {
-    grid-column: 1/-1;
-    padding-top: 0;
-  }
-}
-
-@media (max-width:767px) {
-  .label-editor-fields {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width:639px) {
-  .labels-heading {
-    display: grid;
-    grid-template-columns: minmax(0,1fr) auto;
-    gap: 8px;
-  }
-  .labels-heading > .button {
-    width: auto;
-  }
-.labels-description {
-    font-size: 14px;
-    line-height: 20px;
-  }
-  .admin-label-filters {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .label-create-heading {
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-  .label-create-fields {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  .label-create-fields > .actions {
-    flex-wrap: wrap;
-  }
-  .label-create-fields > .actions .button {
-    flex: 1 1 100%;
-  }
-}
-
-@media (max-width:339px) {
-  .labels-heading {
-    grid-template-columns: 1fr;
-  }
-  .labels-heading > .button {
-    width: 100%;
-  }
-}
-
 .label-conflict-values {
-  display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 16px;
-  margin-block: 24px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin-block:24px;
 }
-
 .label-conflict-values dt {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size:12px;
+  font-weight:600;
+  margin-bottom:8px;
 }
-
 .label-conflict-values dd {
-  margin: 0;
-  padding: 12px;
-  background: var(--color-surface-subtle);
-  border-radius: var(--radius-control);
-  overflow-wrap: anywhere;
+  margin:0;
+  padding:12px;
+  background:var(--soft);
+  border-radius:6px;
+  overflow-wrap:anywhere;
+}
+@media(max-width:700px) {
+  .label-create-fields {
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .label-create-fields>.field:first-child {
+    flex-basis:100%;
+  }
+  .label-create-fields>.field:nth-child(2) {
+    width:auto;
+    flex:1;
+  }
+  .label-create-fields>.actions {
+    flex:1;
+  }
+  .label-create-fields>.actions>.button {
+    flex:1;
+    justify-content:center;
+  }
+  .admin-label-filters>.field:first-child {
+    max-width:none;
+  }
+  .label-editor-fields {
+    grid-template-columns:minmax(100px,1fr) 110px;
+  }
+  .admin-labels-table thead {
+    display:none;
+  }
+  .admin-labels-table tbody,.admin-labels-table tr,.admin-labels-table td,.admin-labels-table th {
+    display:block;
+  }
+  .admin-labels-table tr {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    padding:14px 12px;
+    gap:9px;
+    border-bottom:1px solid var(--line);
+  }
+  .admin-labels-table tr:last-child {
+    border:0;
+  }
+  .admin-labels-table th,.admin-labels-table td {
+    width:auto!important;
+    border:0;
+    padding:0;
+  }
+  .admin-labels-table th {
+    grid-column:1/-1;
+  }
+  .admin-labels-table td:last-child {
+    grid-column:2;
+  }
+  .admin-labels-table td[colspan] {
+    grid-column:1/-1;
+  }
+  .admin-labels-table .button {
+    min-height:40px;
+  }
+  .label-conflict-values {
+    grid-template-columns:1fr;
+  }
 }
 
-@media (max-width:639px) {
-  .label-conflict-values {
-    grid-template-columns: 1fr;
+/* Catalog rows retain the white surface used by the approved labels reference. */
+.admin-labels-table thead th {
+  padding:10px 16px;
+  background:var(--soft);
+  color:var(--muted);
+  border-bottom:1px solid var(--line);
+}
+.admin-labels-table tbody tr,
+.admin-labels-table tbody tr:nth-child(even) {
+  background:var(--surface);
+  height:64px;
+}
+.admin-labels-table tbody th,
+.admin-labels-table tbody td {
+  background:transparent;
+  padding:12px 16px;
+}
+.admin-labels-table tbody tr:hover {
+  background:var(--soft);
+}
+.labels-page .badge {
+  border-radius:2em;
+  font-size:12px;
+  font-weight:600;
+  line-height:20px;
+  padding:0 10px;
+}
+.admin-labels-table .button {
+  color:var(--muted);
+  background:transparent;
+  border-color:transparent;
+  font-size:11px;
+}
+@media(max-width:700px) {
+  .admin-labels-table tbody tr,
+  .admin-labels-table tbody tr:nth-child(even) {
+    height:auto;
   }
+  .admin-labels-table tbody th,
+  .admin-labels-table tbody td {
+    padding:0;
+  }
+}
+
+.admin-labels-table tbody th {
+  font-weight:400;
+}
+.label-create-fields > .actions {
+  flex-wrap:nowrap;
 }

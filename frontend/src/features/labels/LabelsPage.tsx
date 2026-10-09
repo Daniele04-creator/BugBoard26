@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -19,13 +19,11 @@ import {
   fieldErrors,
   normalizedName,
   parseAdminFilters,
-  useMobileCards,
 } from "../users/adminPresentation";
 import { labelApi } from "./labelApi";
 import { UnsavedChanges } from "../issues/UnsavedChanges";
 import "../users/admin.css";
 import "./labels.css";
-import { IconPlus, IconPencil, IconBan, IconRotate } from "@tabler/icons-react";
 const colors: Record<LabelColor, string> = {
   gray: "Grigio",
   blue: "Blu",
@@ -45,6 +43,7 @@ function ColorField({
     <SelectField
       label="Colore"
       value={value}
+      leadingVisual={(selected) => <span className={`label-color-swatch color-${selected}`} aria-hidden="true" />}
       onChange={(event) => onChange(event.target.value as LabelColor)}
     >
       {Object.entries(colors).map(([color, name]) => (
@@ -64,54 +63,37 @@ function Filters({
   active: string;
   apply: (q: string, a: string) => void;
 }) {
-  const [q, setQ] = useState(query),
-    [state, setState] = useState(active),
-    [error, setError] = useState<string | undefined>();
+  const [q, setQ] = useState(query);
+  const [error, setError] = useState<string | undefined>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => { setQ(query); }, [query]);
+  useEffect(() => () => clearTimeout(searchTimer.current), []);
+  function update(value: string, state = active) {
+    clearTimeout(searchTimer.current);
+    const invalid = normalizedName(value, 0, 100);
+    setError(invalid ?? undefined);
+    if (!invalid) apply(value.normalize("NFC").trim(), state);
+  }
   return (
-    <form
-      className="admin-filters admin-label-filters"
-      onSubmit={(event) => {
-        event.preventDefault();
-        const invalid = normalizedName(q, 0, 100);
-        setError(invalid ?? undefined);
-        if (invalid) return;
-        apply(q.normalize("NFC").trim(), state);
-      }}
-    >
-      <TextField
-        label="Cerca etichetta"
-        value={q}
-        onChange={(event) => setQ(event.target.value)}
-        error={error}
-      />
-      <SelectField
-        label="Stato etichetta"
-        value={state}
-        onChange={(event) => setState(event.target.value)}
-      >
-        <option value="all">Tutte</option>
-        <option value="true">Attive</option>
-        <option value="false">Inattive</option>
+    <form className="admin-filters admin-label-filters" onSubmit={(event) => { event.preventDefault(); clearTimeout(searchTimer.current); update(q); }}>
+      <TextField label="Cerca etichetta" type="search" placeholder="Cerca nel catalogo…" value={q} onChange={(event) => {
+        const value = event.target.value; setQ(value); clearTimeout(searchTimer.current);
+        searchTimer.current = setTimeout(() => update(value), 300);
+      }} error={error} />
+      <SelectField label="Stato etichetta" value={active} onChange={(event) => update(q, event.target.value)}>
+        <option value="true">Attive</option><option value="false">Inattive</option><option value="all">Tutte</option>
       </SelectField>
-      <div className="actions">
-        <Button type="submit">
-          Applica filtri
-        </Button>
-        <Button onClick={() => apply("", "all")}>Pulisci filtri</Button>
-      </div>
+      <Button variant="link" onClick={() => { clearTimeout(searchTimer.current); setQ(""); apply("", "true"); }}>Pulisci</Button>
     </form>
   );
 }
+
 export function LabelsPage() {
-  const [createOpen, setCreateOpen] = useState(false);
   const [discardCreate, setDiscardCreate] = useState(false);
-  useEffect(() => {
-    if (createOpen) document.getElementById("new-label-name")?.focus();
-  }, [createOpen]);
-  const mobile = useMobileCards();
   const cache = useQueryClient(),
-    [params, setParams] = useSearchParams(),
-    filters = parseAdminFilters(params, true);
+    [params, setParams] = useSearchParams();
+  const parsedFilters = parseAdminFilters(params, true);
+  const filters = { ...parsedFilters, active: params.has("active") ? parsedFilters.active : "true" };
   const query = new URLSearchParams(params);
   query.set("active", filters.active);
   query.set("page", String(filters.page));
@@ -123,7 +105,7 @@ export function LabelsPage() {
     placeholderData: keepPreviousData,
   });
   const [newName, setNewName] = useState(""),
-    [newColor, setNewColor] = useState<LabelColor>("blue"),
+    [newColor, setNewColor] = useState<LabelColor>("gray"),
     [editing, setEditing] = useState<Label | null>(null),
     [name, setName] = useState(""),
     [color, setColor] = useState<LabelColor>("blue");
@@ -144,7 +126,7 @@ export function LabelsPage() {
   function apply(q: string, active: string) {
     const next = new URLSearchParams();
     if (q) next.set("q", q);
-    if (active !== "all") next.set("active", active);
+    if (active !== "true") next.set("active", active);
     if (filters.size !== 20) next.set("size", String(filters.size));
     setParams(next);
   }
@@ -172,6 +154,7 @@ export function LabelsPage() {
     try {
       await labelApi.create(newName.normalize("NFC").trim(), newColor);
       setNewName("");
+      setNewColor("gray");
       setSuccess("Etichetta creata.");
       await invalidate();
     } catch (failure) {
@@ -257,7 +240,6 @@ export function LabelsPage() {
       noValidate
     >
       <h2>Modifica etichetta {editing.name}</h2>
-      <p>* Campo obbligatorio.</p>
       <ErrorAlert error={error} focus />
       {nameError && !error && (
         <Alert focus focusKey={nameError}>
@@ -275,6 +257,7 @@ export function LabelsPage() {
         />
         <ColorField value={color} onChange={setColor} />
       </div>
+      <div className="label-live-preview"><span>Anteprima</span><span className={`badge badge-${color}`}>{name.trim() || "Etichetta"}</span></div>
       <div className="actions">
         <Button
           type="submit"
@@ -298,7 +281,6 @@ export function LabelsPage() {
           onClick={() => edit(label)}
           aria-label={`Modifica etichetta ${label.name}`}
         >
-          <IconPencil size={20} stroke={2} aria-hidden="true" />
           Modifica
         </Button>
         <Button
@@ -310,7 +292,6 @@ export function LabelsPage() {
           }}
           aria-label={`${label.active ? "Disattiva" : "Riattiva"} etichetta ${label.name}`}
         >
-          {label.active ? <IconBan size={20} stroke={2} aria-hidden="true" /> : <IconRotate size={20} stroke={2} aria-hidden="true" />}
           {label.active ? "Disattiva" : "Riattiva"}
         </Button>
       </div>
@@ -320,37 +301,26 @@ export function LabelsPage() {
     <section className="labels-page">
       <UnsavedChanges
         dirty={Boolean(
-          newName ||
+          newName || newColor !== "gray" ||
           (editing && (name !== editing.name || color !== editing.color)),
         )}
       />
       <header className="admin-heading labels-heading">
         <div>
           <h1 tabIndex={-1}>Etichette</h1>
+          <p className="muted">Organizza le issue con termini condivisi.</p>
 
         </div>
-        <Button
-          variant={createOpen || editing ? "secondary" : "primary"}
-          aria-expanded={createOpen}
-          aria-controls="label-create-disclosure"
-          disabled={busy}
-          onClick={() => setCreateOpen((open) => !open)}
-        ><IconPlus size={20} stroke={2} aria-hidden="true" />Nuova etichetta</Button>
+
       </header>
       {success && <Alert variant="success">{success}</Alert>}
-      {filters.valid && <Filters
-        key={params.toString()}
-        query={filters.q}
-        active={filters.active}
-        apply={apply}
-      />}
-      {createOpen && <form
+      <form
         id="label-create-disclosure"
-        className="panel label-create-disclosure"
+        className="label-create-disclosure"
         onSubmit={(event) => void create(event)}
         noValidate
       >
-        <div className="label-create-heading"><h2>Nuova etichetta</h2><p>* Campo obbligatorio.</p></div>
+        <div className="label-create-heading"><h2>Nuova etichetta</h2></div>
         <ErrorAlert error={newError} focus />
         {newField && !newError && (
           <Alert focus focusKey={newField}>
@@ -360,25 +330,29 @@ export function LabelsPage() {
         <div className="label-create-fields">
           <TextField
             id="new-label-name"
-            label="Nome nuova etichetta"
+            label="Nome"
+            aria-label="Nome nuova etichetta *"
+            placeholder="Nome etichetta"
             required
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
             error={newField}
-            hint="Da 1 a 32 caratteri."
           />
           <ColorField value={newColor} onChange={setNewColor} />
           <div className="actions">
             <Button type="submit" variant={editing ? "secondary" : "primary"} busy={busy}>
               Crea etichetta
             </Button>
-            <Button disabled={busy} onClick={() => {
-              if (newName) setDiscardCreate(true);
-              else setCreateOpen(false);
-            }}>Annulla</Button>
+            {(newName || newColor !== "gray") && <Button disabled={busy} onClick={() => setDiscardCreate(true)}>Annulla</Button>}
           </div>
         </div>
-      </form>}
+      <div className="label-live-preview"><span>Anteprima</span><span className={`badge badge-${newColor}`}>{newName.trim() || "Etichetta"}</span></div>
+      </form>
+      {filters.valid && <Filters
+        query={filters.q}
+        active={filters.active}
+        apply={apply}
+      />}
       {!filters.valid ? (
         <Alert>
           Filtri non validi.{" "}
@@ -402,14 +376,12 @@ export function LabelsPage() {
                   </p>
                 ) : (
                   <>
-                    {!mobile && (
-                      <div className="admin-register admin-table-wrap">
+                      <div className="admin-register admin-table-wrap labels-list">
                         <table className="admin-table admin-labels-table">
                           <caption className="visually-hidden">Catalogo etichette</caption>
                           <thead>
                             <tr>
-                              <th scope="col">Nome</th>
-                              <th scope="col">Colore</th>
+                              <th scope="col">Etichetta</th>
                               <th scope="col">Stato</th>
                               <th scope="col">Azioni</th>
                             </tr>
@@ -425,15 +397,14 @@ export function LabelsPage() {
                                       {label.name}
                                     </span>
                                   </th>
-                                  <td>{colors[label.color]}</td>
                                   <td>
-                                    <span className={`badge badge-${label.active ? "green" : "gray"}`}>{label.active ? "Attiva" : "Inattiva"}</span>
+                                    <span className="muted">{label.active ? "Attiva" : "Inattiva"}</span>
                                   </td>
                                   <td>{actions(label)}</td>
                                 </tr>
                                 {editing?.id === label.id && (
                                   <tr>
-                                    <td colSpan={4}>{editor}</td>
+                                    <td colSpan={3}>{editor}</td>
                                   </tr>
                                 )}
                               </Fragment>
@@ -441,26 +412,7 @@ export function LabelsPage() {
                           </tbody>
                         </table>
                       </div>
-                    )}
-                    {mobile && (
-                      <div className="admin-register admin-cards">
-                        {list.data.items.map((label) => (
-                          <article key={label.id} className="admin-card">
-                            <h2>
-                              <span className={`badge badge-${label.color}`}>
-                                {label.name}
-                              </span>
-                            </h2>
-                            <p>
-                              {colors[label.color]} ·{" "}
-                              {label.active ? "Attiva" : "Inattiva"}
-                            </p>
-                            {actions(label)}
-                            {editing?.id === label.id && editor}
-                          </article>
-                        ))}
-                      </div>
-                    )}
+
                   </>
                 )}
                 {editing &&
@@ -472,23 +424,19 @@ export function LabelsPage() {
                   {list.isPlaceholderData &&
                     " · risultati dei filtri precedenti"}
                 </p>
-                <Pagination
+                {list.data.totalPages > 1 && <Pagination
                   page={list.data.page}
                   size={list.data.size}
                   totalElements={list.data.totalElements}
                   totalPages={list.data.totalPages}
                   onPageChange={(page) => paginate(page)}
                   onSizeChange={(size) => paginate(0, size)}
-                />
+                />}
               </div>
             )
           )}
         </>
       )}
-      <p className="muted labels-description">
-            Il catalogo del progetto. Le etichette disattivate restano sulle issue
-            già associate.
-          </p>
       <Dialog
         className="admin-compact-dialog"
         open={Boolean(toggle)}
@@ -581,14 +529,13 @@ export function LabelsPage() {
           <Button data-cancel onClick={() => setDiscardCreate(false)}>Continua a scrivere</Button>
           <Button variant="danger" onClick={() => {
             setNewName("");
-            setNewColor("blue");
+            setNewColor("gray");
             setNewError(null);
             setNewField(undefined);
-            setCreateOpen(false);
             setDiscardCreate(false);
           }}>Scarta bozza</Button>
         </>}
-      ><p>Il nome dell'etichetta non è stato salvato. Scartare la bozza e chiudere la creazione?</p></Dialog>
+      ><p>Il nome dell'etichetta non è stato salvato. Scartare la bozza?</p></Dialog>
     </section>
   );
 }

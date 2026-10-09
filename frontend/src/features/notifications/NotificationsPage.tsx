@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { IconCheck } from "@tabler/icons-react";
+import { Fragment } from "react";
+import { IconCheck, IconUser } from "../../components/Icons";
 import { api } from "../../api/ApiClient";
 import type { Notification, Page } from "../../api/types";
 import { Alert, ErrorAlert } from "../../components/Alert";
@@ -38,6 +39,15 @@ export function NotificationsPage() {
       api.get<Page<Notification>>(`/notifications?${params}`, { signal }),
     enabled: valid,
   });
+  useEffect(() => {
+    if (!valid || !query.isSuccess || query.isFetching || query.isPlaceholderData) return;
+    const lastPage = Math.max(0, query.data.totalPages - 1);
+    if (Number(params.get("page") ?? 0) > lastPage) {
+      const next = new URLSearchParams(params);
+      next.set("page", String(lastPage));
+      setParams(next, { replace: true });
+    }
+  }, [valid, query.isSuccess, query.isFetching, query.isPlaceholderData, query.data, params, setParams]);
   async function mark(id?: string, open?: string) {
     let readFailed = false;
     setBusy(true);
@@ -88,16 +98,11 @@ export function NotificationsPage() {
       ) : (
         <>
           <div className="notifications-toolbar">
-            <label className="notifications-filter">
-              <input
-                type="checkbox"
-                checked={params.get("unreadOnly") === "true"}
-                onChange={(e) => change("unreadOnly", String(e.target.checked))}
-              />
-              Solo non lette
-            </label>
-            <Button variant="secondary" busy={busy} onClick={() => void mark()}>
-              <IconCheck size={20} stroke={2} aria-hidden="true" />
+            <nav className="notifications-tabs" aria-label="Vista notifiche">
+              <Button variant="link" className={params.get("unreadOnly") === "true" ? "active" : ""} aria-pressed={params.get("unreadOnly") === "true"} onClick={() => change("unreadOnly", "true")}>Non lette</Button>
+              <Button variant="link" className={params.get("unreadOnly") !== "true" ? "active" : ""} aria-pressed={params.get("unreadOnly") !== "true"} onClick={() => change("unreadOnly", "false")}>Tutte</Button>
+            </nav>
+            <Button variant="link" busy={busy} onClick={() => void mark()}>
               Segna tutte come lette
             </Button>
           </div>
@@ -114,68 +119,31 @@ export function NotificationsPage() {
                     className="notifications-register"
                     aria-label="Registro delle notifiche"
                   >
-                    {query.data.items.map((notification) => (
-                      <li
-                        key={notification.id}
-                        className={
-                          notification.readAt
-                            ? "notifications-row"
-                            : "notifications-row notifications-row-unread"
-                        }
-                      >
-                        <p className="notifications-read-state">
-                          <span
-                            className="notifications-state-dot"
-                            aria-hidden="true"
-                          />
-                          {notification.readAt ? "Letta" : "Non letta"}
-                        </p>
-                        <div className="notifications-content">
-                          <h2>
-                            {notification.type === "ASSIGNED"
-                              ? "Ti è stata assegnata"
-                              : "È stata risolta"}{" "}
-                            <span className="notifications-issue-number">
-                              BB-{notification.issue.number}
-                            </span>
-                            {" — "}
-                            <span className="notifications-issue-title">
-                              {notification.issue.title}
-                            </span>
-                          </h2>
-                          <time
-                            dateTime={notification.createdAt}
-                            title={notification.createdAt}
-                          >
-                            {dateTime(notification.createdAt)}
-                          </time>
-                        </div>
-                        <div className="notifications-actions">
-                          <Link
-                            className="button button-link"
-                            to={`/issues/${notification.issue.id}`}
-                            onClick={(event) => {
-                              if (!notification.readAt) {
+                    {query.data.items.map((notification, index, rows) => {
+                      const day = new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "long", year: "numeric" }).format(new Date(notification.createdAt));
+                      const previousDay = index ? new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "long", year: "numeric" }).format(new Date(rows[index - 1].createdAt)) : null;
+                      return <Fragment key={notification.id}>
+                        {day !== previousDay && <li className="notifications-day"><h2>{day}</h2></li>}
+                        <li className={`notifications-row ${notification.readAt ? "" : "notifications-row-unread"}`}>
+                          <div className="notification-symbol" aria-hidden="true">{notification.type === "ASSIGNED" ? <IconUser size={16} /> : <IconCheck size={16} />}</div>
+                          <div className="notifications-content">
+                            <div className="notifications-meta"><strong>BB-{notification.issue.number}</strong><span>{notification.type === "ASSIGNED" ? "Assegnata a te" : "Risolta"}</span><span className="notifications-read-state">{notification.readAt ? "Letta" : "Non letta"}</span></div>
+                            <h2><Link to={`/issues/${notification.issue.id}`} onClick={(event) => {
+                              if (!notification.readAt && event.button === 0 &&
+                                !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
                                 event.preventDefault();
                                 void mark(notification.id, notification.issue.id);
                               }
-                            }}
-                          >
-                            Apri
-                          </Link>
-                          {!notification.readAt && (
-                            <Button
-                              variant="secondary"
-                              disabled={busy}
-                              onClick={() => void mark(notification.id)}
-                            >
-                              <IconCheck size={20} stroke={2} aria-hidden="true" />
-                              Segna come letta
-                            </Button>
-                          )}
-                        </div>
-                      </li>
-                    ))}
+                            }}>{notification.issue.title}</Link></h2>
+                          </div>
+                          <div className="notifications-actions">
+                            <time dateTime={notification.createdAt} title={dateTime(notification.createdAt)}>{new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(notification.createdAt))}</time>
+                            {!notification.readAt && <Button variant="link" disabled={busy} onClick={() => void mark(notification.id)}>Segna come letta</Button>}
+                          </div>
+                        </li>
+                      </Fragment>;
+                    })}
+
                   </ul>
                 )}
                 {query.data.totalElements === 0 && (
@@ -187,7 +155,8 @@ export function NotificationsPage() {
                     }
                   />
                 )}
-                <Pagination
+                <p className="notifications-results" role="status">{query.data.totalElements} notifiche</p>
+                {query.data.totalPages > 1 && <Pagination
                   {...query.data}
                   onPageChange={(page) => change("page", String(page))}
                   onSizeChange={(size) => {
@@ -196,7 +165,7 @@ export function NotificationsPage() {
                     next.delete("page");
                     setParams(next);
                   }}
-                />
+                />}
               </>
             )
           )}

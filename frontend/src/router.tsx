@@ -6,7 +6,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useEffect } from "react";
-import { IconFileSearch } from "@tabler/icons-react";
+import { IconFileSearch } from "./components/Icons";
 import { AppShell } from "./components/AppShell";
 import { RequireSession } from "./features/auth/RequireSession";
 import { RequireRole } from "./features/auth/RequireRole";

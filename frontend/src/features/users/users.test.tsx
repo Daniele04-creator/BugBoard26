@@ -9,6 +9,7 @@ import { AuthProvider } from "../auth/AuthProvider";
 import { authApi } from "../auth/authApi";
 import { UserEditPage } from "./UserEditPage";
 import { UserCreatePage } from "./UserCreatePage";
+import { UsersPage } from "./UsersPage";
 import { userApi } from "./userApi";
 import {
   parseAdminFilters,
@@ -53,7 +54,7 @@ function show(path: string) {
       { path: "/admin/users/new", element: <UserCreatePage /> },
       { path: "/admin/users/:userId/edit", element: <UserEditPage /> },
       { path: "/profile", element: <h1>Profilo</h1> },
-      { path: "/admin/users", element: <h1>Utenti</h1> },
+      { path: "/admin/users", element: <UsersPage /> },
     ],
     { initialEntries: [path] },
   );
@@ -71,6 +72,20 @@ function show(path: string) {
 }
 beforeEach(() => vi.restoreAllMocks());
 describe("administrator accounts", () => {
+  it("keeps one readable team table and hides pagination for a single page", async () => {
+    vi.spyOn(userApi, "list").mockResolvedValue({ items: [admin, member], page: 0, size: 20, totalElements: 2, totalPages: 1 });
+    show("/admin/users");
+    const table = await screen.findByRole("table", { name: "Account del progetto" });
+    expect(screen.getByRole("heading", { name: "Team" })).toBeVisible();
+    expect(within(table).getByText(member.email)).toBeVisible();
+    expect(within(table).getByRole("link", { name: "Gestisci Member" })).toHaveAttribute("href", `/admin/users/${member.id}/edit`);
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+    expect(screen.queryByRole("navigation", { name: /pagin/i })).not.toBeInTheDocument();
+    const input = screen.getByLabelText("Cerca nome o email");
+    await userEvent.setup().type(input, "Member");
+    await waitFor(() => expect(userApi.list).toHaveBeenLastCalledWith(expect.stringContaining("q=Member"), expect.any(AbortSignal)));
+    expect(input).toHaveFocus();
+  });
   it("validates URL filters without silently coercing unknown values", () => {
     expect(
       parseAdminFilters(
@@ -104,14 +119,13 @@ describe("administrator accounts", () => {
       .mockResolvedValue({ ...member, role: "VIEWER", version: 1 });
     show(`/admin/users/${member.id}/edit`);
     await screen.findByLabelText(/^Nome/);
-    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Member" })).toBeInTheDocument();
     expect(userApi.get).toHaveBeenCalledWith(
       member.id,
       expect.any(AbortSignal),
     );
-    await userEvent
-      .setup()
-      .selectOptions(screen.getByLabelText(/^Ruolo/), "VIEWER");
+    await userEvent.setup().click(screen.getByRole("button", { name: /^Ruolo/ }));
+    await userEvent.setup().click(screen.getByRole("option", { name: "Sola lettura" }));
     await userEvent
       .setup()
       .click(screen.getByRole("button", { name: "Salva modifiche" }));
@@ -148,7 +162,7 @@ describe("administrator accounts", () => {
       });
     show(`/admin/users/${member.id}/edit`);
     await screen.findByLabelText(/^Nome/);
-    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Member" })).toBeInTheDocument();
     const input = screen.getByLabelText(/^Nome/);
     await userEvent.setup().clear(input);
     await userEvent.setup().type(input, "My draft");
@@ -180,7 +194,7 @@ describe("administrator accounts", () => {
     vi.spyOn(userApi, "get").mockResolvedValue(admin);
     show(`/admin/users/${admin.id}/edit`);
     await screen.findByLabelText(/^Nome/);
-    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Admin" })).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Imposta password temporanea" }),
     ).not.toBeInTheDocument();
@@ -195,7 +209,7 @@ describe("administrator accounts", () => {
     const reset = vi.spyOn(userApi, "reset").mockResolvedValue();
     show(`/admin/users/${member.id}/edit`);
     await screen.findByLabelText(/^Nome/);
-    expect(screen.getByRole("heading", { name: "Gestisci utente" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Member" })).toBeInTheDocument();
     await userEvent
       .setup()
       .click(

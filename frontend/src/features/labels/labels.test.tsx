@@ -41,16 +41,19 @@ beforeEach(() => {
   });
 });
 describe("label catalog", () => {
-  it("requests inactive labels explicitly and confirms deactivation before changing associations", async () => {
+  it("starts with active labels, can include inactive labels and confirms deactivation before changing associations", async () => {
     const update = vi
       .spyOn(labelApi, "update")
       .mockResolvedValue({ ...label, active: false, version: 1 });
     show();
     await screen.findByRole("table", { name: "Catalogo etichette" });
     expect(labelApi.list).toHaveBeenCalledWith(
-      expect.stringContaining("active=all"),
+      expect.stringContaining("active=true"),
       expect.any(AbortSignal),
     );
+    await userEvent.setup().click(screen.getByRole("button", { name: /^Stato etichetta/ }));
+    await userEvent.setup().click(screen.getByRole("option", { name: "Tutte" }));
+    expect(labelApi.list).toHaveBeenLastCalledWith(expect.stringContaining("active=all"), expect.any(AbortSignal));
     await userEvent.setup().click(
       screen.getAllByRole("button", {
         name: "Disattiva etichetta Frontend",
@@ -93,7 +96,6 @@ describe("label catalog", () => {
     );
     show();
     await screen.findByRole("table", { name: "Catalogo etichette" });
-    await userEvent.setup().click(screen.getByRole("button", { name: "Nuova etichetta" }));
     const input = screen.getByLabelText(/^Nome nuova etichetta/);
     await userEvent.setup().type(input, "Frontend");
     await userEvent
@@ -103,15 +105,23 @@ describe("label catalog", () => {
     expect(input).toHaveValue("Frontend");
     expect(input).toHaveAttribute("aria-invalid", "true");
   });
-  it("starts with the catalog visible and focuses the disclosed creation field", async () => {
+  it("shows creation beside the catalog and previews the current draft", async () => {
     show();
     await screen.findByRole("table", { name: "Catalogo etichette" });
-    const trigger = screen.getByRole("button", { name: "Nuova etichetta" });
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByLabelText(/^Nome nuova etichetta/)).not.toBeInTheDocument();
-    await userEvent.setup().click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByLabelText(/^Nome nuova etichetta/)).toHaveFocus();
+    const input = screen.getByLabelText(/^Nome nuova etichetta/);
+    expect(input).toBeVisible();
+    await userEvent.setup().type(input, "Accessibilità");
+    const preview = screen.getByText("Anteprima").nextElementSibling;
+    expect(preview).toHaveTextContent("Accessibilità");
+    expect(preview).toHaveClass("badge-gray");
+    const color = screen.getByRole("button", { name: /^Colore/ });
+    await userEvent.setup().click(color);
+    const purple = screen.getByRole("option", { name: "Viola" });
+    expect(purple.querySelector(".label-color-swatch.color-purple")).toBeInTheDocument();
+    await userEvent.setup().click(purple);
+    expect(preview).toHaveClass("badge-purple");
+    expect(color.querySelector(".label-color-swatch.color-purple")).toBeInTheDocument();
+    expect(color).toHaveFocus();
     expect(screen.getByRole("table", { name: "Catalogo etichette" })).toBeInTheDocument();
   });
   it("preserves deactivation across a version conflict even when the current state is already inactive", async () => {
@@ -139,15 +149,11 @@ describe("label catalog", () => {
     });
     await screen.findByText("Etichetta disattivata. Le associazioni esistenti restano.");
   });
-  it("preserves a collapsed creation draft and requires explicit cancellation to discard it", async () => {
+  it("requires explicit cancellation to discard a creation draft", async () => {
     show();
     await screen.findByRole("table", { name: "Catalogo etichette" });
     const user = userEvent.setup();
-    const trigger = screen.getByRole("button", { name: "Nuova etichetta" });
-    await user.click(trigger);
     await user.type(screen.getByLabelText(/^Nome nuova etichetta/), "Bozza catalogo");
-    await user.click(trigger);
-    await user.click(trigger);
     expect(screen.getByLabelText(/^Nome nuova etichetta/)).toHaveValue("Bozza catalogo");
     await user.click(screen.getByRole("button", { name: "Annulla" }));
     const dialog = await screen.findByRole("dialog", { name: "Lasciare la bozza?" });
@@ -155,18 +161,14 @@ describe("label catalog", () => {
     expect(screen.getByLabelText(/^Nome nuova etichetta/)).toHaveValue("Bozza catalogo");
     await user.click(screen.getByRole("button", { name: "Annulla" }));
     await user.click(within(screen.getByRole("dialog", { name: "Lasciare la bozza?" })).getByRole("button", { name: "Scarta bozza" }));
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await user.click(trigger);
     expect(screen.getByLabelText(/^Nome nuova etichetta/)).toHaveValue("");
   });
   it("keeps creation and editing drafts independent with one primary editor action", async () => {
     show();
     await screen.findByRole("table", { name: "Catalogo etichette" });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Nuova etichetta" }));
     await user.type(screen.getByLabelText(/^Nome nuova etichetta/), "Nuova bozza");
     await user.click(screen.getByRole("button", { name: "Modifica etichetta Frontend" }));
-    expect(screen.getByRole("button", { name: "Nuova etichetta" })).toHaveClass("button-secondary");
     expect(screen.getByRole("button", { name: "Crea etichetta" })).toHaveClass("button-secondary");
     expect(screen.getByRole("button", { name: "Salva etichetta" })).toHaveClass("button-primary");
     await user.click(screen.getByRole("button", { name: "Annulla modifica" }));
