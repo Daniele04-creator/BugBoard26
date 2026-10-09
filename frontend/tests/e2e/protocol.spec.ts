@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { test, expect } from "./fixtures/session";
+import { test, expect, chooseSelect } from "./fixtures/session";
 import { apiRead, apiWrite } from "./fixtures/api";
 import type {
   IssueDetail,
@@ -42,8 +42,8 @@ test("VER08 U01→U02→U03 creates login evidence, assigns a verified minimum a
     .fill(
       "Il login fallisce dopo l’invio delle credenziali. Screenshot della risposta allegato.",
     );
-  await memberPage.getByLabel("Tipo *").selectOption("BUG");
-  await memberPage.getByLabel("Priorità").selectOption("HIGH");
+  await chooseSelect(memberPage, "Tipo", "Bug");
+  await chooseSelect(memberPage, "Priorità", "Alta");
   await memberPage
     .getByRole("checkbox", { name: label.name, exact: true })
     .check();
@@ -130,7 +130,7 @@ test("VER08 U01→U02→U03 creates login evidence, assigns a verified minimum a
   expect(chosen.count).toBe(
     Math.min(...verifiedCounts.map((value) => value.count)),
   );
-  await adminPage.getByRole("button", { name: "Assegna", exact: true }).click();
+  await adminPage.getByRole("button", { name: /^Responsabile:/ }).click();
   let dialog = adminPage.getByRole("dialog");
   await dialog
     .getByLabel("Cerca utenti per nome")
@@ -179,9 +179,9 @@ test("VER08 U01→U02→U03 creates login evidence, assigns a verified minimum a
   started = performance.now();
   await memberPage.goto("/issues?assignedTo=me");
   await memberPage
-    .getByLabel("Cerca nel titolo o nella descrizione")
+    .getByLabel("Cerca issue")
     .fill(title);
-  await memberPage.getByRole("button", { name: "Cerca", exact: true }).click();
+  await memberPage.getByLabel("Cerca issue").press("Enter");
   await memberPage
     .getByRole("link", { name: `BB-${stored.number} · ${title}`, exact: true })
     .click();
@@ -197,7 +197,7 @@ test("VER08 U01→U02→U03 creates login evidence, assigns a verified minimum a
     ["Risolta", "Segna come risolta", "RESOLVED"],
   ]) {
     await memberPage
-      .getByRole("button", { name: "Cambia stato", exact: true })
+      .getByRole("button", { name: /^Stato:/ })
       .click();
     dialog = memberPage.getByRole("dialog");
     await dialog.getByRole("radio", { name, exact: true }).check();

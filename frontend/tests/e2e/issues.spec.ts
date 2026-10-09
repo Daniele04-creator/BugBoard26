@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { test, expect } from "./fixtures/session";
+import { test, expect, chooseSelect } from "./fixtures/session";
 import { apiRead, apiWrite, createIssue } from "./fixtures/api";
 import type { IssueDetail, Page, IssueSummary } from "../../src/api/types";
 test("validates an oversized image locally and persists, displays and removes a valid attachment", async ({
@@ -69,8 +69,8 @@ test("creates a persisted issue and finds literal wildcard text through the URL"
   await page
     .getByLabel("Descrizione *")
     .fill("Passaggi precisi per riprodurre il problema di salvataggio.");
-  await page.getByLabel("Tipo *").selectOption("DOCUMENTATION");
-  await page.getByLabel("Priorità").selectOption("CRITICAL");
+  await chooseSelect(page, "Tipo", "Documentazione");
+  await chooseSelect(page, "Priorità", "Critica");
   await page.getByRole("button", { name: "Crea issue", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
@@ -86,8 +86,8 @@ test("creates a persisted issue and finds literal wildcard text through the URL"
     reporter: { id: member.user.id },
   });
   await page.goto("/issues");
-  await page.getByLabel("Cerca nel titolo o nella descrizione").fill(title);
-  await page.getByRole("button", { name: "Cerca", exact: true }).click();
+  await page.getByLabel("Cerca issue").fill(title);
+  await page.getByLabel("Cerca issue").press("Enter");
   await expect(page).toHaveURL(/q=/);
   await expect(
     page.getByRole("link", {
@@ -97,7 +97,7 @@ test("creates a persisted issue and finds literal wildcard text through the URL"
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByLabel("Cerca nel titolo o nella descrizione"),
+    page.getByLabel("Cerca issue"),
   ).toHaveValue(title);
   const resultLink = page.getByRole("link", {
     name: `BB-${stored.number} · ${title}`,
@@ -109,7 +109,7 @@ test("creates a persisted issue and finds literal wildcard text through the URL"
   ).toBeVisible();
   await page.goBack();
   await expect(
-    page.getByLabel("Cerca nel titolo o nella descrizione"),
+    page.getByLabel("Cerca issue"),
   ).toHaveValue(title);
   await expect(resultLink).toBeFocused();
   const result = await apiRead<Page<IssueSummary>>(
@@ -128,12 +128,16 @@ test("invalid filter URL offers an explicit reset", async ({ viewer }) => {
   await expect(page).toHaveURL(/\/issues$/);
 });
 
-test("out of range pages recover without discarding filters, page size or sort", async ({
+test("archive out of range pages recover without discarding filters, page size or sort", async ({
   admin,
 }) => {
   const issue = await createIssue(admin.request, {
     title: `Pagina ${randomUUID().slice(0, 8)}`,
     priority: "HIGH",
+  });
+  await apiWrite(admin.request, `/issues/${issue.id}/archive`, "PUT", {
+    archived: true,
+    expectedVersion: issue.version,
   });
   const filters = new URLSearchParams({
     q: issue.title,
@@ -144,12 +148,12 @@ test("out of range pages recover without discarding filters, page size or sort",
     sort: "priority,desc",
   });
   const page = await admin.context.newPage();
-  await page.goto(`/issues?${filters}`);
+  await page.goto(`/archive?${filters}`);
   await expect(
     page.getByRole("heading", { name: /Pagina fuori intervallo/ }),
   ).toBeVisible();
   await expect(
-    page.getByText("Nessuna issue corrisponde ai filtri.", { exact: true }),
+    page.getByText("Nessuna issue in questa vista", { exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Prima pagina", exact: true }).click();
   await expect(
@@ -209,4 +213,50 @@ test("concurrent edits preserve the draft and use a freshly confirmed version", 
     title: "Bozza UI da conservare",
     version: remote.version + 1,
   });
+});
+
+
+test("personal board preserves filters through detail navigation and exports only matching work", async ({ admin, member }) => {
+  const token = `Bacheca ${randomUUID().slice(0, 8)}`;
+  let assigned = await createIssue(admin.request, { title: `${token} assegnata`, priority: "HIGH" });
+  const other = await createIssue(admin.request, { title: `${token} non assegnata`, priority: "HIGH" });
+  assigned = await apiWrite<IssueDetail>(admin.request, `/issues/${assigned.id}/assignment`, "PUT", {
+    assigneeId: member.user.id, expectedVersion: assigned.version,
+  });
+  const page = await member.context.newPage();
+  const filters = new URLSearchParams({ q: token, priority: "HIGH", status: "TODO", sort: "title,asc" });
+  await page.goto(`/issues?${filters}`);
+  await expect(page.getByRole("region", { name: "Bacheca issue", exact: true }).locator("a[data-issue-id]")).toHaveCount(2);
+  await page.getByRole("link", { name: "Assegnate a me", exact: true }).click();
+  const personal = new URL(page.url()).searchParams;
+  expect(personal.get("assignedTo")).toBe("me");
+  for (const [key, value] of filters) expect(personal.get(key)).toBe(value);
+  await expect(page.locator(".issue-results-footer").getByRole("status")).toHaveText("1 issue");
+  const card = page.locator(`a[data-issue-id="${assigned.id}"]`);
+  await card.click();
+  await expect(page.getByRole("heading", { name: assigned.title, exact: true })).toBeVisible();
+  await page.locator(".issue-context > a").click();
+  expect(new URL(page.url()).searchParams.toString()).toBe(personal.toString());
+  await expect(card).toBeFocused();
+  await page.getByRole("button", { name: "Filtri", exact: true }).click();
+  await chooseSelect(page, "Tipo", "Bug");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Filtri", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("button", { name: "Rimuovi filtro Priorità: Alta", exact: true }).click();
+  const remaining = new URL(page.url()).searchParams;
+  expect(remaining.get("assignedTo")).toBe("me");
+  expect(remaining.get("type")).toBe("BUG");
+  expect(remaining.get("status")).toBe("TODO");
+  expect(remaining.has("priority")).toBe(false);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Esporta", exact: true }).click();
+  const csv = await download;
+  expect(csv.suggestedFilename()).toMatch(/\.csv$/);
+  const path = await csv.path();
+  expect(path).not.toBeNull();
+  const content = await readFile(path!, "utf8");
+  expect(content).toContain(assigned.title);
+  expect(content).not.toContain(other.title);
+  const server = await apiRead<Page<IssueSummary>>(member.request, `/issues?${remaining}&archived=false`);
+  expect(server.items.map(issue => issue.id)).toEqual([assigned.id]);
 });

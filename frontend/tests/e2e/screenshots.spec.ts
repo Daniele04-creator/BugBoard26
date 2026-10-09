@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/session";
+import { test, expect, chooseSelect } from "./fixtures/session";
 import { apiRead, login } from "./fixtures/api";
 import type { IssueDetail } from "../../src/api/types";
 
@@ -31,9 +31,7 @@ test("mockup ad alta risoluzione dei tre casi significativi da flussi e dati rea
       .fill(
         "Quando confermo le nuove impostazioni il sistema mostra un errore. Il problema si riproduce dopo aver modificato il nome del progetto e selezionato Salva.",
       );
-    await memberPage
-      .getByLabel("Priorità", { exact: false })
-      .selectOption("HIGH");
+    await chooseSelect(memberPage, "Priorità", "Alta");
     await expect(
       memberPage.getByRole("button", { name: "Crea issue", exact: true }),
     ).toBeEnabled();
@@ -50,7 +48,7 @@ test("mockup ad alta risoluzione dei tre casi significativi da flussi e dati rea
     const id = new URL(memberPage.url()).pathname.split("/").at(-1)!;
     await adminPage.goto(`/issues/${id}`);
     await adminPage
-      .getByRole("button", { name: "Assegna", exact: true })
+      .getByRole("button", { name: /^Responsabile:/ })
       .click();
     const assignment = adminPage.getByRole("dialog");
     await expect(assignment).toBeVisible();
@@ -76,7 +74,7 @@ test("mockup ad alta risoluzione dei tre casi significativi da flussi e dati rea
     await expect(assignment).toHaveCount(0);
     await memberPage.goto(`/issues/${id}`);
     await memberPage
-      .getByRole("button", { name: "Cambia stato", exact: true })
+      .getByRole("button", { name: /^Stato:/ })
       .click();
     const resolution = memberPage.getByRole("dialog");
     await resolution

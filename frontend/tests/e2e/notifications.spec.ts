@@ -16,14 +16,13 @@ test("opening an assignment notification marks it read and preserves issue navig
   const page = await member.context.newPage();
   await page.goto("/notifications?unreadOnly=true");
   const row = page.locator("li").filter({
-    has: page.getByRole("heading", {
-      name: new RegExp(`BB-${issue.number} —`),
-    }),
+    has: page.getByRole("link", { name: issue.title, exact: true }),
   });
   await expect(row).toContainText("Non letta");
-  await row.getByRole("link", { name: "Apri", exact: true }).click();
+  await row.getByRole("link", { name: issue.title, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/issues/${issue.id}$`));
   await expect(
-    page.getByRole("heading", { name: issue.title, exact: true }),
+    page.getByRole("heading", { name: issue.title, exact: true, level: 1 }),
   ).toBeVisible();
   const inbox = await apiRead<Page<Notification>>(
     member.request,

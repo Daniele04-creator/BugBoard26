@@ -120,7 +120,7 @@ test("login, creazione, assegnazione, risoluzione, ricerca ed export sono operab
     await adminPage.goto(`/issues/${id}`);
     await activate(
       adminPage,
-      adminPage.getByRole("button", { name: "Assegna", exact: true }),
+      adminPage.getByRole("button", { name: /^Responsabile:/ }),
     );
     let dialog = adminPage.getByRole("dialog");
     await tabTo(
@@ -148,7 +148,7 @@ test("login, creazione, assegnazione, risoluzione, ricerca ed export sono operab
     await page.reload();
     await activate(
       page,
-      page.getByRole("button", { name: "Cambia stato", exact: true }),
+      page.getByRole("button", { name: /^Stato:/ }),
     );
     dialog = page.getByRole("dialog");
     await chooseRadio(
@@ -166,20 +166,17 @@ test("login, creazione, assegnazione, risoluzione, ricerca ed export sono operab
     await page.goto("/issues");
     await tabTo(
       page,
-      page.getByLabel("Cerca nel titolo o nella descrizione", { exact: true }),
+      page.getByLabel("Cerca issue", { exact: true }),
     );
     await page.keyboard.insertText(title);
-    await activate(
-      page,
-      page.getByRole("button", { name: "Cerca", exact: true }),
-    );
+    await page.keyboard.press("Enter");
     await expect(
       page.getByRole("link", { name: new RegExp(title) }),
     ).toBeVisible();
     const downloaded = page.waitForEvent("download");
     await activate(
       page,
-      page.getByRole("button", { name: "Esporta CSV", exact: true }),
+      page.getByRole("button", { name: "Esporta", exact: true }),
     );
     expect((await downloaded).suggestedFilename()).toMatch(/\.csv$/);
   } finally {
@@ -240,28 +237,26 @@ test("errori recuperabili, ricerca vuota e dialoghi di assegnazione e stato rest
   await expect(page.getByRole("alert")).toBeVisible();
   await verifyAccessible(page, "issue-validation", testInfo);
   await page.goto(`/issues?q=${randomUUID()}`);
-  await expect(
-    page.getByRole("heading", {
-      name: "Nessuna issue corrisponde ai filtri.",
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(page.locator(".issue-results-footer").getByRole("status")).toHaveText("0 issue");
+  const emptyBoard = page.getByRole("region", { name: "Bacheca issue", exact: true });
+  await expect(emptyBoard.locator("a[data-issue-id]")).toHaveCount(0);
+  await expect(emptyBoard.getByText("Nessuna issue", { exact: true })).toHaveCount(4);
   await verifyAccessible(page, "issue-empty", testInfo);
   const issue = await createIssue(admin.request);
   await page.goto(`/issues/${issue.id}`);
-  await page.getByRole("button", { name: "Assegna", exact: true }).click();
+  await page.getByRole("button", { name: /^Responsabile:/ }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await verifyAccessible(page, "assignment-dialog", testInfo);
   await page.keyboard.press("Escape");
   await expect(
-    page.getByRole("button", { name: "Assegna", exact: true }),
+    page.getByRole("button", { name: /^Responsabile:/ }),
   ).toBeFocused();
   await apiWrite(admin.request, `/issues/${issue.id}/assignment`, "PUT", {
     assigneeId: member.user.id,
     expectedVersion: issue.version,
   });
   await page.reload();
-  await page.getByRole("button", { name: "Cambia stato", exact: true }).click();
+  await page.getByRole("button", { name: /^Stato:/ }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await verifyAccessible(page, "state-dialog", testInfo);
 });

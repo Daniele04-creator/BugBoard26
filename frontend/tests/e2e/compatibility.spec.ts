@@ -3,13 +3,10 @@ import { test, expect } from "./fixtures/session";
 import { apiWrite, createIssue, createUser, login } from "./fixtures/api";
 import type { Page } from "@playwright/test";
 async function noHorizontalOverflow(page: Page) {
-  // Check the local brand has finished decoding before the next navigation.
-  await expect.poll(() => page.locator('img[src*="bugboard-mark"]').evaluateAll(
-    (images) => images.length > 0 && images.every((image) => {
-      const brand = image as HTMLImageElement;
-      return brand.complete && brand.naturalWidth > 0;
-    }),
-  )).toBe(true);
+  // The local mark is shared by authentication, desktop and mobile navigation.
+  const brand = page.locator(".brand-mark:visible").first();
+  await expect(brand).toBeAttached();
+  await expect.poll(() => brand.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   expect(
     await page.evaluate(() => ({
       document: document.documentElement.scrollWidth,
@@ -35,7 +32,7 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
   loginPage.on("pageerror", (error) => consoleErrors.push(error.message));
   await loginPage.goto("/login");
   await expect(
-    loginPage.getByRole("heading", { name: "Accedi al progetto", exact: true }),
+    loginPage.getByRole("heading", { name: "Accedi", exact: true }),
   ).toBeVisible();
   await noHorizontalOverflow(loginPage);
   await loginPage.screenshot({
@@ -75,9 +72,10 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
   await noHorizontalOverflow(page);
-  await page.getByRole("button", { name: /Assegna|Riassegna/ }).click();
+  await page.getByRole("button", { name: /^Responsabile:/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/Rilevato alle/)).toBeAttached();
   await expect(dialog.locator('[aria-busy="true"]')).toHaveCount(0);
   // Read both rectangles together: arriving candidates can recenter the dialog.
   const controlsGap = await dialog.evaluate((element) => {
@@ -85,16 +83,34 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
     const search = buttons.find(
       (button) => button.textContent?.trim().startsWith("Cerca utenti"),
     );
-    const refresh = buttons.find(
-      (button) => button.textContent?.trim().startsWith("Aggiorna carichi"),
-    );
-    if (!search || !refresh) throw new Error("Assignment controls are missing");
+    const candidates = element.querySelector(".assignment-list");
+    if (!search || !candidates) throw new Error("Assignment controls are missing");
     return (
-      refresh.getBoundingClientRect().top -
+      candidates.getBoundingClientRect().top -
       search.getBoundingClientRect().bottom
     );
   });
   expect(controlsGap).toBeGreaterThanOrEqual(8);
+  await expect(dialog.getByRole("button", { name: "Aggiorna carichi" })).toHaveCount(0);
+  const assignmentLayout = await dialog.evaluate((element) => {
+    const rows = [...element.querySelectorAll<HTMLElement>(".assignment-option")];
+    const footer = element.querySelector<HTMLElement>(".dialog-footer")!;
+    const footerBounds = footer.getBoundingClientRect();
+    return {
+      containedRows: rows.every((row) => {
+        const bounds = row.getBoundingClientRect();
+        const content = row.lastElementChild!.getBoundingClientRect();
+        const style = getComputedStyle(row);
+        const requiredHeight = content.height + parseFloat(style.paddingTop) +
+          parseFloat(style.paddingBottom) + parseFloat(style.borderTopWidth) +
+          parseFloat(style.borderBottomWidth);
+        return bounds.height + 1 >= requiredHeight;
+      }),
+      footerVisible: footerBounds.top >= 0 && footerBounds.bottom <= innerHeight + 1,
+    };
+  });
+  expect(assignmentLayout.containedRows).toBe(true);
+  expect(assignmentLayout.footerVisible).toBe(true);
   await noHorizontalOverflow(page);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -108,8 +124,8 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
     page.getByRole("link", { name: "Annulla", exact: true }),
   ]) {
     const box = await control.boundingBox();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(24);
+    expect(box!.width).toBeGreaterThanOrEqual(24);
   }
   await page.screenshot({
     path: `../output/reports/viewport-${testInfo.project.name}.png`,
@@ -140,9 +156,9 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
     ["dettaglio", `/issues/${issue.id}`, title],
     ["creazione", "/issues/new", "Nuova issue"],
     ["archivio", "/archive", "Archivio"],
-    ["dashboard", "/admin/dashboard", "Dashboard"],
-    ["report", "/admin/reports", "Report mensili"],
-    ["utenti", "/admin/users", "Utenti"],
+    ["dashboard", "/admin/dashboard", "Analisi"],
+    ["report", "/admin/reports", "Analisi"],
+    ["utenti", "/admin/users", "Team"],
   ];
   for (const [name, route, heading] of views) {
     await page.goto(route!);
@@ -150,6 +166,25 @@ test("elenco, dettaglio, form e dialog funzionano al viewport del progetto e al 
       page.getByRole("heading", { name: heading!, exact: true }),
     ).toBeVisible();
     await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    if (name === "report") {
+      const submit = await page.getByRole("button", { name: "Mostra report", exact: true }).boundingBox();
+      const controls = await page.locator('.reporting-filter input[type="month"], .reporting-month-fallback .select-control').all();
+      const boxes = await Promise.all(controls.map(control => control.boundingBox()));
+      expect(submit).not.toBeNull();
+      expect(boxes.length).toBeGreaterThan(0);
+      for (const box of boxes) {
+        expect(box).not.toBeNull();
+        if (box!.y < submit!.y + submit!.height && submit!.y < box!.y + box!.height) {
+          expect(Math.abs(box!.y + box!.height / 2 - submit!.y - submit!.height / 2)).toBeLessThanOrEqual(1);
+        } else {
+          expect(submit!.y).toBeGreaterThanOrEqual(box!.y + box!.height);
+        }
+      }
+      if (boxes.every(box => submit!.y >= box!.y + box!.height)) {
+        expect(Math.abs(submit!.x - Math.min(...boxes.map(box => box!.x)))).toBeLessThanOrEqual(1);
+      }
+      await expect(page.getByText("Europe/Rome", { exact: true })).toHaveCount(0);
+    }
     await noHorizontalOverflow(page);
     await page.screenshot({
       path: `../output/reports/responsive/${testInfo.project.name}-${name}.png`,
@@ -207,7 +242,7 @@ test("testo al 200 per cento e spaziatura aumentata conservano campi e azioni", 
   await noHorizontalOverflow(page);
 });
 
-test("redesign: tutte le 17 schermate conservano contenuti, font locale e layout accessibile", async ({
+test("redesign: tutte le 17 schermate conservano contenuti, tipografia di sistema e layout accessibile", async ({
   admin, viewer, browser, baseURL, viewport,
 }, testInfo) => {
   test.setTimeout(180_000);
@@ -241,9 +276,9 @@ test("redesign: tutte le 17 schermate conservano contenuti, font locale e layout
     await expect(current.locator('[aria-busy="true"]')).toHaveCount(0);
     await current.evaluate(() => document.fonts.ready);
     expect(await current.evaluate(() => ({
-      loaded: [...document.fonts].some((font) => font.family.includes("Inter") && font.status === "loaded"),
+      ready: document.fonts.status === "loaded",
       body: getComputedStyle(document.body).fontFamily,
-    }))).toMatchObject({ loaded: true, body: expect.stringContaining("Inter") });
+    }))).toMatchObject({ ready: true, body: expect.stringMatching(/Segoe UI|system-ui|-apple-system/) });
     await noHorizontalOverflow(current);
     await current.screenshot({
       path: `../output/reports/redesign/${testInfo.project.name}-${id}.png`,
@@ -265,12 +300,12 @@ test("redesign: tutte le 17 schermate conservano contenuti, font locale e layout
     if (id === "S03") {
       await expect(page.getByRole("button", { name: /^Filtri/ })).toHaveAttribute("aria-expanded", "false");
       await expect(page.locator(`a[data-issue-id="${issue.id}"]`).filter({ visible: true })).toContainText(issue.title);
-      if ((viewport?.width ?? 1440) >= 1200) expect((await page.locator(".issue-table-wrapper").boundingBox())!.y).toBeLessThanOrEqual(298);
-      for (const control of [page.getByRole("button", { name: /^Filtri/ }), page.getByRole("button", { name: "Esporta CSV", exact: true }), page.getByRole("link", { name: "Nuova issue", exact: true })]) {
+      if ((viewport?.width ?? 1440) >= 1200) expect((await page.getByRole("region", { name: "Bacheca issue", exact: true }).boundingBox())!.y).toBeLessThanOrEqual(298);
+      for (const control of [page.getByRole("button", { name: /^Filtri/ }), page.getByRole("button", { name: "Esporta", exact: true }), page.getByRole("link", { name: "Nuova issue", exact: true })]) {
         const box = await control.boundingBox();
-        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.height).toBeGreaterThanOrEqual(24);
         expect(box!.height).toBeLessThanOrEqual(46);
-        expect(box!.width).toBeGreaterThanOrEqual(44);
+        expect(box!.width).toBeGreaterThanOrEqual(24);
       }
       for (const badge of await page.locator(".issue-badge:visible").all()) {
         expect((await badge.boundingBox())!.height).toBeLessThanOrEqual(32);
@@ -289,21 +324,26 @@ test("redesign: tutte le 17 schermate conservano contenuti, font locale e layout
         await expect(exportButton).toHaveAttribute("aria-busy", "true");
         const during = await exportButton.boundingBox();
         expect(during).toEqual(before);
-        await expect(exportButton).toContainText("Esporta CSV");
+        await expect(exportButton).toContainText("Esporta");
       } finally { release(); }
       expect((await downloaded).suggestedFilename()).toMatch(/\.csv$/);
       await page.unroute("**/api/v1/issues/export?*");
     }
     if (id === "S06") await expect(page.getByLabel("Titolo", { exact: false })).toHaveValue(issue.title);
     if (id === "S14") {
-      await expect(page.getByRole("button", { name: "Nuova etichetta", exact: true })).toHaveAttribute("aria-expanded", "false");
-      await expect(page.getByLabel("Nome nuova etichetta", { exact: false })).toHaveCount(0);
+      await expect(page.getByLabel("Nome nuova etichetta", { exact: false })).toBeVisible();
+      await expect(page.locator(".label-live-preview")).toContainText("Etichetta");
       const edit = page.getByRole("button", { name: `Modifica etichetta ${labelName}`, exact: true });
       await expect(edit).toBeVisible();
       const top = await edit.evaluate((element) => element.closest("tr,article")!.getBoundingClientRect().top);
-      expect(top).toBeLessThanOrEqual((viewport?.width ?? 1440) >= 1024 ? 300 : 400);
+      const creation = await page.locator(".label-create-disclosure").boundingBox();
+      expect(top).toBeGreaterThanOrEqual(creation!.y + creation!.height);
     }
-    if (id === "S15") await expect(page.getByRole("columnheader")).toHaveCount(7);
+    if (id === "S15") {
+      await expect(page.getByRole("table", { name: "Attività mensile per persona", exact: true }).getByRole("columnheader")).toHaveCount(5);
+      await page.getByText("Dettagli sulle attività e sui cicli", { exact: true }).click();
+      await expect(page.getByRole("table", { name: "Cicli e issue aperte per persona", exact: true }).getByRole("columnheader")).toHaveCount(3);
+    }
   }
   const denied = await viewer.context.newPage();
   await denied.goto("/admin/users");

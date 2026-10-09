@@ -19,7 +19,7 @@ test("assigns an eligible user in the load dialog and atomically notifies that u
   const issue = await createIssue(admin.request);
   const page = await admin.context.newPage();
   await page.goto(`/issues/${issue.id}`);
-  await page.getByRole("button", { name: "Assegna", exact: true }).click();
+  await page.getByRole("button", { name: /^Responsabile:/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(
     dialog.getByText("Un solo responsabile.", { exact: false }),
@@ -35,7 +35,7 @@ test("assigns an eligible user in the load dialog and atomically notifies that u
     .check();
   await dialog.getByRole("button", { name: "Conferma assegnazione" }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "Riassegna" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Responsabile:/ })).toBeVisible();
   const stored = await apiRead<IssueDetail>(
     admin.request,
     `/issues/${issue.id}`,
@@ -114,7 +114,7 @@ test("manual assignment survives pagination when workload service is unavailable
       }),
   );
   await page.goto(`/issues/${issue.id}`);
-  await page.getByRole("button", { name: "Riassegna", exact: true }).click();
+  await page.getByRole("button", { name: /^Responsabile:/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(
     dialog.getByText(/Carico non disponibile\. Puoi scegliere/),

@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/session";
+import { test, expect, issueAction } from "./fixtures/session";
 import { apiRead, apiWrite, createIssue } from "./fixtures/api";
 import type { IssueDetail, UserAdmin } from "../../src/api/types";
 test("archive is read-only and restoring removes a now ineligible assignee", async ({
@@ -20,12 +20,12 @@ test("archive is read-only and restoring removes a now ineligible assignee", asy
   );
   const page = await admin.context.newPage();
   await page.goto(`/issues/${issue.id}`);
-  await page.getByRole("button", { name: "Archivia", exact: true }).click();
+  await (await issueAction(page, "Archivia")).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Archivia", exact: true })
     .click();
-  await expect(page.getByRole("button", { name: "Ripristina" })).toBeVisible();
+  await expect((await issueAction(page, "Ripristina"))).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Modifica", exact: true }),
   ).toHaveCount(0);
@@ -40,12 +40,12 @@ test("archive is read-only and restoring removes a now ineligible assignee", asy
     active: true,
     expectedVersion: account.version,
   });
-  await page.getByRole("button", { name: "Ripristina", exact: true }).click();
+  await (await issueAction(page, "Ripristina")).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("verrà rimosso");
   await dialog.getByRole("button", { name: "Ripristina", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Assegna", exact: true }),
+    page.getByRole("button", { name: /^Responsabile:/ }),
   ).toBeVisible();
   expect(
     await apiRead<IssueDetail>(admin.request, `/issues/${issue.id}`),
@@ -81,19 +81,34 @@ test("VER08 U05 archives a completed issue, finds it in archive and restores the
   page.on("pageerror", (error) => errors.push(error.message));
   const started = performance.now();
   await page.goto(`/issues/${issue.id}`);
-  await page.getByRole("button", { name: "Archivia", exact: true }).click();
+  await (await issueAction(page, "Archivia")).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Archivia", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Ripristina", exact: true }),
+    (await issueAction(page, "Ripristina")),
   ).toBeVisible();
   await page.goto(`/issues?q=${encodeURIComponent(issue.title)}`);
-  await expect(
-    page.getByText("Nessuna issue corrisponde ai filtri.", { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".issue-results-footer").getByRole("status")).toHaveText("0 issue");
+  await expect(page.getByRole("region", { name: "Bacheca issue", exact: true }).locator("a[data-issue-id]")).toHaveCount(0);
   await page.goto(`/archive?q=${encodeURIComponent(issue.title)}`);
+  const initialViewport = page.viewportSize();
+  for (const width of [621, 760, 761]) {
+    await page.setViewportSize({ width, height: 800 });
+    const archivedLink = page.getByRole("link", {
+      name: `BB-${issue.number} · ${issue.title}`,
+      exact: true,
+    });
+    await expect(archivedLink).toBeVisible();
+    const box = await archivedLink.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    expect(await page.evaluate(() =>
+      document.documentElement.scrollWidth <= window.innerWidth,
+    )).toBe(true);
+  }
+  if (initialViewport) await page.setViewportSize(initialViewport);
   await page
     .getByRole("link", {
       name: `BB-${issue.number} · ${issue.title}`,
@@ -101,13 +116,13 @@ test("VER08 U05 archives a completed issue, finds it in archive and restores the
     })
     .click();
   expect(new URL(page.url()).pathname).toBe(`/issues/${issue.id}`);
-  await page.getByRole("button", { name: "Ripristina", exact: true }).click();
+  await (await issueAction(page, "Ripristina")).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Ripristina", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Archivia", exact: true }),
+    (await issueAction(page, "Archivia")),
   ).toBeVisible();
   await page.goto(`/issues?q=${encodeURIComponent(issue.title)}`);
   await expect(

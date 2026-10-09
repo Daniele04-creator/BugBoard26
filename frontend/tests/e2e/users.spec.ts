@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { test, expect } from "./fixtures/session";
+import { test, expect, chooseSelect } from "./fixtures/session";
 import { apiRead, apiWrite, createIssue } from "./fixtures/api";
 import type { IssueDetail, UserAdmin } from "../../src/api/types";
 
@@ -20,9 +20,9 @@ test("administrator creates an account, confirms access changes and resets its t
   await page.getByRole("button", { name: "Crea utente", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/users\/[0-9a-f-]+\/edit$/);
   await expect(
-    page.getByRole("heading", { name: "Gestisci utente", exact: true }),
+    page.getByRole("heading", { name, exact: true }),
   ).toBeVisible();
-  await page.getByLabel("Ruolo", { exact: false }).selectOption("VIEWER");
+  await chooseSelect(page, "Ruolo", "Sola lettura");
   await page
     .getByRole("button", { name: "Salva modifiche", exact: true })
     .click();
@@ -107,7 +107,7 @@ test("a real concurrent profile update preserves the draft and requires explicit
   const page = await admin.context.newPage();
   await page.goto(`/admin/users/${member.user.id}/edit`);
   await expect(
-    page.getByRole("heading", { name: "Gestisci utente", exact: true }),
+    page.getByRole("heading", { name: member.user.displayName, exact: true }),
   ).toBeVisible();
   const current = await apiRead<UserAdmin>(
     admin.request,

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { test, expect } from "./fixtures/session";
+import { test, expect, issueAction } from "./fixtures/session";
 import { apiRead, apiWrite, createIssue } from "./fixtures/api";
 import type { IssueDetail, Comment, Page } from "../../src/api/types";
 test("member resolves assigned work, keeps comment text plain, and starts a new cycle on reopen", async ({
@@ -31,12 +31,12 @@ test("member resolves assigned work, keeps comment text plain, and starts a new 
     `/issues/${issue.id}/comments`,
   );
   expect(comments.items.some((item) => item.body === comment)).toBe(true);
-  await page.getByRole("button", { name: "Cambia stato" }).click();
+  await page.getByRole("button", { name: /^Stato:/ }).click();
   let dialog = page.getByRole("dialog");
   await dialog.getByRole("radio", { name: "Risolta", exact: true }).check();
   await dialog.getByRole("button", { name: "Segna come risolta" }).click();
   await expect(
-    page.getByRole("button", { name: "Riapri", exact: true }),
+    page.getByRole("button", { name: "Stato: Risolta", exact: true }),
   ).toBeVisible();
   const resolved = await apiRead<IssueDetail>(
     member.request,
@@ -44,7 +44,7 @@ test("member resolves assigned work, keeps comment text plain, and starts a new 
   );
   expect(resolved.status).toBe("RESOLVED");
   expect(resolved.resolvedAt).not.toBeNull();
-  await page.getByRole("button", { name: "Riapri", exact: true }).click();
+  await page.getByRole("button", { name: "Stato: Risolta", exact: true }).click();
   dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("nuovo ciclo");
   await dialog.getByRole("radio", { name: "Da fare" }).check();
@@ -70,13 +70,12 @@ test("admin sets a deadline and marks duplicate through a searched canonical iss
   });
   const page = await admin.context.newPage();
   await page.goto(`/issues/${source.id}`);
-  await page.getByRole("button", { name: "Scadenza", exact: true }).click();
+  await page.getByRole("button", { name: /^Scadenza:/ }).click();
   let dialog = page.getByRole("dialog");
   await dialog.getByLabel("Data", { exact: true }).fill("2100-12-31");
   await dialog.getByRole("button", { name: "Salva scadenza" }).click();
   await expect(page.getByText("31/12/2100", { exact: true })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Segna duplicato", exact: true })
+  await (await issueAction(page, "Segna duplicato"))
     .click();
   dialog = page.getByRole("dialog");
   await dialog
@@ -90,7 +89,7 @@ test("admin sets a deadline and marks duplicate through a searched canonical iss
     .getByRole("button", { name: "Segna duplicato", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Annulla duplicazione" }),
+    (await issueAction(page, "Annulla duplicazione")),
   ).toBeVisible();
   await expect(page.getByLabel("Commento", { exact: true })).toHaveCount(0);
   const stored = await apiRead<IssueDetail>(

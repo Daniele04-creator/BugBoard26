@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { test, expect } from "./fixtures/session";
+import { test, expect, chooseSelect } from "./fixtures/session";
 import { apiRead, createIssue } from "./fixtures/api";
 import type { IssueDetail, Label, Page } from "../../src/api/types";
 test("label creation, rename and deactivation retain the existing issue association", async ({
@@ -8,9 +8,9 @@ test("label creation, rename and deactivation retain the existing issue associat
   const page = await admin.context.newPage(),
     name = `UI-${randomUUID().slice(0, 8)}`;
   await page.goto("/admin/labels");
-  await page.getByRole("button", { name: "Nuova etichetta", exact: true }).click();
   await page.getByLabel("Nome nuova etichetta", { exact: false }).fill(name);
-  await page.getByLabel("Colore", { exact: true }).selectOption("purple");
+  await chooseSelect(page, "Colore", "Viola");
+  await expect(page.locator(".label-live-preview .badge-purple")).toHaveText(name);
   await page
     .getByRole("button", { name: "Crea etichetta", exact: true })
     .click();
@@ -24,10 +24,8 @@ test("label creation, rename and deactivation retain the existing issue associat
     label = labels.items.find((value) => value.name === name)!;
   expect(label).toBeTruthy();
   const issue = await createIssue(admin.request, { labelIds: [label.id] });
+  await chooseSelect(page, "Stato etichetta", "Tutte");
   await page.getByLabel("Cerca etichetta", { exact: true }).fill(name);
-  await page
-    .getByRole("button", { name: "Applica filtri", exact: true })
-    .click();
   await page
     .getByRole("button", { name: `Modifica etichetta ${name}`, exact: true })
     .click();

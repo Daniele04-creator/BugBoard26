@@ -1,5 +1,5 @@
 import { test as base, expect } from "@playwright/test";
-import type { APIRequestContext, BrowserContext } from "@playwright/test";
+import type { APIRequestContext, BrowserContext, Locator, Page } from "@playwright/test";
 import type { Me, UserRole } from "../../../src/api/types";
 import { adminEmail, adminPassword, apiWrite, createUser, login } from "./api";
 
@@ -83,3 +83,22 @@ async function authenticateCreated(
   return user;
 }
 export { expect };
+
+/** Select through the visible control and its accessible option panel. */
+export async function chooseSelect(page: Page, label: string, option: string, scope: Locator = page.locator("body")) {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const trigger = scope.getByRole("button", { name: new RegExp(`^${escaped}(?:\\s|:|$)`) });
+  await trigger.click();
+  await page.getByRole("listbox").getByRole("option", { name: option, exact: true }).click();
+  await expect(trigger).toContainText(option);
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+}
+
+/** Reveal contextual commands before testing or activating them. */
+export async function issueAction(page: Page, name: string) {
+  const actions = page.locator(".issue-actions-menu");
+  if (!(await actions.evaluate(element => element.hasAttribute("open"))))
+    await actions.locator('summary[aria-label="Altre azioni sulla issue"]').click();
+  await expect(actions).toHaveAttribute("open", "");
+  return actions.getByRole("button", { name, exact: true });
+}

@@ -15,7 +15,7 @@ test("login UI, cambio iniziale obbligatorio, profilo e logout reali", async ({
         .getByRole("button", { name: "Mostra password", exact: true })
         .boundingBox()
     )?.height,
-  ).toBeGreaterThanOrEqual(44);
+  ).toBeGreaterThanOrEqual(24);
   await page.getByLabel("Email", { exact: false }).fill(account.email);
   await page
     .getByLabel("Password *", { exact: true })

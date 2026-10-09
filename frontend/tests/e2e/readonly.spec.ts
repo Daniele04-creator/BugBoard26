@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures/session";
+import { test, expect, chooseSelect } from "./fixtures/session";
 import { csrf, createIssue } from "./fixtures/api";
 test("viewer can read and export but sees no issue mutation controls", async ({
   admin,
@@ -19,9 +19,9 @@ test("viewer can read and export but sees no issue mutation controls", async ({
     page.getByRole("heading", { name: issue.title, exact: true }),
   ).toBeVisible();
   for (const name of [
-    "Assegna",
-    "Scadenza",
-    "Cambia stato",
+    /^Responsabile:/,
+    /^Scadenza:/,
+    /^Stato:/,
     "Segna duplicato",
     "Archivia",
     "Gestisci immagine",
@@ -29,6 +29,7 @@ test("viewer can read and export but sees no issue mutation controls", async ({
     await expect(page.getByRole("button", { name, exact: true })).toHaveCount(
       0,
     );
+  await expect(page.locator('.issue-actions-menu')).toHaveCount(0);
   await expect(page.getByLabel("Commento", { exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Modifica", exact: true }),
@@ -43,7 +44,12 @@ test("viewer can read and export but sees no issue mutation controls", async ({
     if (message.type() === "error") errors.push(message.text());
   });
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto(`/issues?q=login&priority=HIGH`);
+  await page.getByRole("link", { name: "BugBoard26", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Cerca issue", exact: true }).fill("login");
+  await page.getByRole("searchbox", { name: "Cerca issue", exact: true }).press("Enter");
+  await expect(page).toHaveURL(/\/issues\?q=login$/);
+  await page.getByRole("button", { name: "Filtri", exact: true }).click();
+  await chooseSelect(page, "Priorità", "Alta");
   await expect(
     page.getByRole("link", {
       name: `BB-${issue.number} · ${issue.title}`,
@@ -60,7 +66,7 @@ test("viewer can read and export but sees no issue mutation controls", async ({
     page.getByRole("link", { name: "Nuova issue", exact: true }),
   ).toHaveCount(0);
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Esporta CSV" }).click();
+  await page.getByRole("button", { name: "Esporta" }).click();
   expect((await download).suggestedFilename()).toMatch(
     /^bugboard26-issue-.*\.csv$/,
   );
