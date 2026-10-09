@@ -1,6 +1,15 @@
-# Private planning sources stay on this machine.
+# Internal planning and documentation sources stay on this machine.
 /docs/
 /design-qa.md
+/public-artifacts/
+/scripts/build-technical-documents.ps1
+/scripts/build-technical-documents.py
+/scripts/render-docs.ps1
+/scripts/render-data-model.py
+/scripts/render-design-diagrams.py
+/scripts/verify-docs.ps1
+/scripts/report-versioning.ps1
+/frontend/tests/e2e/fixtures/collect-ui-evidence.mjs
 
 # Build, dependencies, runtime evidence, and private configuration.
 **/target/

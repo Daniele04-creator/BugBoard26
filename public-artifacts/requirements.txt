@@ -1,4 +1,0 @@
-reportlab==4.4.9
-pypdf==6.7.2
-beautifulsoup4==4.14.3
-svglib==1.6.0

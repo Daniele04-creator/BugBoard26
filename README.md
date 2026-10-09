@@ -61,6 +61,8 @@ Scelta del responsabile con indicazione del carico e suggerimento del candidato.
 
 Il documento descrive requisiti e casi d'uso, architettura del sistema, design del software, persistenza, diagrammi UML e verifiche di qualità.
 
+Il repository contiene il PDF e le schermate in `assets/`. I sorgenti e gli strumenti interni usati per preparare la documentazione e raccogliere le evidenze non fanno parte del materiale pubblicato.
+
 ## Provare il progetto
 
 ### Prerequisiti
@@ -126,3 +128,39 @@ pwsh -File scripts/start-local.ps1
 ```
 
 Le porte predefinite sono `8088` per l'interfaccia, `8080` per le API e `55433` per PostgreSQL. Se una porta è occupata, lo script lo segnala: modifica rispettivamente `FRONTEND_PORT`, `SERVER_PORT` o `DB_HOST_PORT` in `deploy/.env`. Se cambi la porta frontend, aggiorna anche `PUBLIC_BASE_URL` e l'origine corrispondente in `CORS_ALLOWED_ORIGINS`. Questo file contiene segreti locali ed è escluso da Git.
+
+## Test automatici
+
+Il repository include test del backend, del frontend e dei flussi nel browser, oltre ai controlli di qualità eseguiti da GitHub Actions. Per eseguirli localmente servono **JDK 21**, **Node.js 24** e Docker operativo.
+
+Dalla cartella principale, su Windows:
+
+```powershell
+cd backend
+.\mvnw.cmd -B -ntp verify
+cd ../frontend
+npm ci
+npm run lint
+npm test
+npm run build
+cd ..
+```
+
+Su Linux e macOS usa `./mvnw` al posto di `.\mvnw.cmd`.
+
+Per i test nel browser, avvia l'istanza isolata e usa i dati di collaudo:
+
+```powershell
+pwsh -File scripts/start-local.ps1 -Test
+cd frontend
+npx playwright install chromium firefox
+$env:E2E_BASE_URL = 'http://localhost:8089'
+npm run test:e2e
+cd ..
+```
+
+I test browser creano e modificano dati nell'istanza isolata. Per arrestarla conservando il suo database:
+
+```powershell
+docker compose --env-file deploy/.env -f deploy/compose.yaml -f deploy/compose.test.yaml down
+```
