@@ -8,7 +8,8 @@ License: licenses/octicons-MIT.txt. No remote runtime asset dependency.
 
 Palette: Primer semantic colors from the approved mockup, with the existing AA warning adjustment. Original BugBoard26 brand: #0f6270, hover #0b4d58, soft #eaf4f5. Brand actions and focus are separate from semantic success, information and priority colors.
 
-Original mark: assets/brand/bugboard-symbol.png, generated with OpenAI Image Gen on 2026-10-09 for BugBoard26. Transparent PNG; combines a bug silhouette and resolution check. Shared by BrandMark.tsx and favicon. Source archived in output/identity-refresh-2026-10-09/logo-source.txt.
+Original mark: generated with OpenAI Image Gen on 2026-10-09 for BugBoard26. Transparent PNG; combines a bug silhouette and resolution check. Source archived in output/identity-refresh-2026-10-09/logo-source.txt.
+Web assets: assets/brand/bugboard-symbol.png (160x160, BrandMark.tsx) and assets/brand/bugboard-favicon.png (32x32, favicon). Both were resized from the same original with Lanczos resampling and lossless PNG compression on 2026-10-10. Colors, transparency, proportions and layout are preserved; the 160px mark covers the largest 40px display at four device pixels per CSS pixel. No extra runtime dependency.
 Typography: operating-system font stack; no downloaded web font.
 
 Historical PNG, Inter font and Tabler icon assets were removed from the frontend after verifying no imports remain. Approved mockup and older output artifacts retain their original source assets.
