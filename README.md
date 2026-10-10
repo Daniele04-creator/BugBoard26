@@ -127,6 +127,8 @@ Le porte predefinite sono `8088` per l'interfaccia, `8080` per le API e `55433` 
 
 Il repository include i test del backend. GitHub Actions esegue la stessa suite, con analisi statica e verifica della copertura. Per eseguirla localmente servono **JDK 21** e Docker operativo.
 
+La suite verifica anche ordine e paginazione di commenti e cronologia, i dati aggiornati degli autori e un numero costante di query anche con autori diversi.
+
 Dalla cartella principale, su Windows:
 
 ```powershell

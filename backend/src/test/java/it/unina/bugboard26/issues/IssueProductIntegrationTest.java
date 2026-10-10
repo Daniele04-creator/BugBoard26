@@ -25,7 +25,10 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import jakarta.persistence.EntityManager;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -171,6 +175,64 @@ class IssueProductIntegrationTest {
         assertEquals(1, count("comments")); assertEquals(3, count("issue_events"));
         assertEquals("ISSUE_READ_ONLY", assertThrows(DomainException.class,
                 () -> comments.create(issue.id(), new IssueDtos.CreateComment("Archived discussion"), UUID.randomUUID())).code());
+    }
+
+    @Test
+    void commentPagesPreserveChronologyAndCurrentAuthorsWithoutPerAuthorQueries() {
+        var discussion = discussionWithThreeAuthors();
+        List<IssueDtos.CommentRef> expected = discussion.comments();
+        assertEquals(1, expected.stream().map(IssueDtos.CommentRef::createdAt).distinct().count());
+        assertEquals(expected.stream().map(IssueDtos.CommentRef::sequence).sorted().toList(),
+                expected.stream().map(IssueDtos.CommentRef::sequence).toList());
+
+        var first = readDiscussionPage(() -> comments.comments(discussion.issueId(), 0, 1));
+        assertEquals(List.of(expected.getFirst()), first.items()); assertEquals(3, first.totalElements());
+        assertEquals(0, first.page()); assertEquals(1, first.size()); assertEquals(3, first.totalPages());
+        var complete = readDiscussionPage(() -> comments.comments(discussion.issueId(), 0, 20));
+        assertEquals(expected, complete.items()); assertEquals(3, complete.totalElements());
+        assertEquals(1, complete.totalPages());
+        var next = readDiscussionPage(() -> comments.comments(discussion.issueId(), 1, 2));
+        assertEquals(List.of(expected.getLast()), next.items()); assertEquals(3, next.totalElements());
+        assertEquals(1, next.page()); assertEquals(2, next.size()); assertEquals(2, next.totalPages());
+        var empty = readDiscussionPage(() -> comments.comments(discussion.issueId(), 3, 1));
+        assertTrue(empty.items().isEmpty()); assertEquals(3, empty.totalElements());
+        authenticate(admin); var withoutComments = create(); authenticate(viewer);
+        var noMatches = readDiscussionPage(() -> comments.comments(withoutComments.id(), 0, 20));
+        assertTrue(noMatches.items().isEmpty()); assertEquals(0, noMatches.totalElements());
+    }
+
+    @Test
+    void historyPagesPreserveChronologyJsonAndCurrentActorsWithoutPerActorQueries() {
+        var discussion = discussionWithThreeAuthors();
+        var complete = readDiscussionPage(() -> comments.history(discussion.issueId(), 0, 20));
+        List<IssueDtos.IssueEvent> expected = complete.items();
+        assertEquals(4, complete.totalElements()); assertEquals(4, expected.size());
+        assertEquals(1, expected.stream().map(IssueDtos.IssueEvent::occurredAt).distinct().count());
+        assertEquals(expected.stream().map(IssueDtos.IssueEvent::eventSequence).sorted().toList(),
+                expected.stream().map(IssueDtos.IssueEvent::eventSequence).toList());
+        var created = expected.getFirst();
+        assertEquals("ISSUE_CREATED", created.eventType()); assertEquals(0L, created.issueVersion());
+        assertEquals(UserDtos.ref(admin), created.actor()); assertEquals(discussion.issueId(), created.issueId());
+        assertEquals("Product issue", created.snapshot().get("title"));
+        assertEquals(admin.getId().toString(), created.snapshot().get("reporterId"));
+        assertNull(created.snapshot().get("assigneeId"));
+        for (int index = 0; index < discussion.comments().size(); index++) {
+            var comment = discussion.comments().get(index); var event = expected.get(index + 1);
+            assertEquals(comment.author(), event.actor()); assertEquals("COMMENT_ADDED", event.eventType());
+            assertEquals(comment.createdAt(), event.occurredAt()); assertEquals(discussion.issueId(), event.issueId());
+            assertNull(event.issueVersion()); assertNull(event.snapshot());
+            Map<String, Object> change = new java.util.LinkedHashMap<>();
+            change.put("before", null); change.put("after", comment.id().toString());
+            assertEquals(Map.of("commentId", change), event.changes());
+        }
+        var first = readDiscussionPage(() -> comments.history(discussion.issueId(), 0, 1));
+        assertEquals(List.of(expected.getFirst()), first.items()); assertEquals(4, first.totalElements());
+        assertEquals(0, first.page()); assertEquals(1, first.size()); assertEquals(4, first.totalPages());
+        var next = readDiscussionPage(() -> comments.history(discussion.issueId(), 1, 2));
+        assertEquals(expected.subList(2, 4), next.items()); assertEquals(4, next.totalElements());
+        assertEquals(1, next.page()); assertEquals(2, next.size()); assertEquals(2, next.totalPages());
+        var empty = readDiscussionPage(() -> comments.history(discussion.issueId(), 4, 1));
+        assertTrue(empty.items().isEmpty()); assertEquals(4, empty.totalElements());
     }
 
     @Test
@@ -347,6 +409,36 @@ class IssueProductIntegrationTest {
         assertEquals("ASSIGNEE_NOT_ELIGIBLE", assertThrows(DomainException.class,
                 () -> workflow.assign(unassigned.id(), new IssueDtos.Assignment(member.getId(), 0L))).code());
     }
+
+    private Discussion discussionWithThreeAuthors() {
+        var issue = create(); List<IssueDtos.CommentRef> created = new java.util.ArrayList<>();
+        for (UserAccount author : List.of(admin, member, other)) {
+            authenticate(author);
+            created.add(comments.create(issue.id(), new IssueDtos.CreateComment("Investigation by " + author.getDisplayName()), UUID.randomUUID()));
+        }
+        jdbc.update("update user_accounts set display_name='Renamed author',role='VIEWER',active=false,auth_version=auth_version+1 where id=?", other.getId());
+        authenticate(viewer);
+        List<IssueDtos.CommentRef> expected = created.stream().map(comment -> new IssueDtos.CommentRef(comment.id(),
+                comment.issueId(), comment.author().id().equals(other.getId())
+                        ? new UserDtos.UserRef(other.getId(), "Renamed author", UserRole.VIEWER, false) : comment.author(),
+                comment.body(), comment.createdAt(), comment.sequence())).toList();
+        return new Discussion(issue.id(), expected);
+    }
+
+    private <T> T readDiscussionPage(Supplier<T> read) {
+        entityManager.clear();
+        Statistics statistics = entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
+        boolean enabled = statistics.isStatisticsEnabled(); statistics.setStatisticsEnabled(true); statistics.clear();
+        clearInvocations(jdbc);
+        try {
+            T page = read.get();
+            assertEquals(1, statistics.getPrepareStatementCount(), "Only the authenticated user needs an ORM lookup");
+            verify(jdbc, times(3)).query(any(PreparedStatementCreator.class), any(PreparedStatementSetter.class), any(ResultSetExtractor.class));
+            return page;
+        } finally { statistics.setStatisticsEnabled(enabled); }
+    }
+
+    private record Discussion(UUID issueId, List<IssueDtos.CommentRef> comments) { }
 
     private IssueDtos.IssueDetail create() {
         return service.create(new IssueDtos.CreateIssue("Product issue", "Detailed reproduction instructions", IssueType.BUG, Priority.MEDIUM, List.of()), null, UUID.randomUUID());

@@ -11,7 +11,10 @@ import it.unina.bugboard26.shared.application.IdempotencyService;
 import it.unina.bugboard26.shared.domain.Actor;
 import it.unina.bugboard26.shared.domain.DomainException;
 import it.unina.bugboard26.shared.domain.InputValidation;
+import it.unina.bugboard26.users.api.UserDtos;
 import it.unina.bugboard26.users.domain.UserRole;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -68,9 +71,13 @@ public class CommentService {
     public PageResponse<IssueDtos.CommentRef> comments(UUID id, int page, int size) {
         queries.requireReadable(); QueryParameters.pagination(page, size); issues.find(id);
         Long total = jdbc.queryForObject("select count(*) from comments where issue_id=?", Long.class, id);
-        List<IssueDtos.CommentRef> items = jdbc.query("select * from comments where issue_id=? order by created_at,sequence limit ? offset ?",
-                (rs, row) -> ref(new Comment(rs.getObject("id", UUID.class), id, rs.getObject("author_id", UUID.class),
-                        rs.getString("body"), IssueRepository.instant(rs, "created_at"), rs.getLong("sequence"))), id, size, (long) page * size);
+        List<IssueDtos.CommentRef> items = jdbc.query("""
+                select c.id,c.body,c.created_at,c.sequence,
+                  u.id user_id,u.display_name user_name,u.role user_role,u.active user_active
+                from comments c join user_accounts u on u.id=c.author_id
+                where c.issue_id=? order by c.created_at,c.sequence limit ? offset ?
+                """, (rs, row) -> new IssueDtos.CommentRef(rs.getObject("id", UUID.class), id, userRef(rs),
+                        rs.getString("body"), IssueRepository.instant(rs, "created_at"), rs.getLong("sequence")), id, size, (long) page * size);
         return PageResponse.of(items, page, size, total == null ? 0 : total);
     }
 
@@ -78,12 +85,21 @@ public class CommentService {
     public PageResponse<IssueDtos.IssueEvent> history(UUID id, int page, int size) {
         queries.requireReadable(); QueryParameters.pagination(page, size); issues.find(id);
         Long total = jdbc.queryForObject("select count(*) from issue_events where issue_id=?", Long.class, id);
-        List<IssueDtos.IssueEvent> items = jdbc.query("select * from issue_events where issue_id=? order by occurred_at,event_sequence limit ? offset ?",
+        List<IssueDtos.IssueEvent> items = jdbc.query("""
+                select e.id,e.event_sequence,e.occurred_at,e.event_type,e.issue_version,e.changes,e.snapshot,
+                  u.id user_id,u.display_name user_name,u.role user_role,u.active user_active
+                from issue_events e join user_accounts u on u.id=e.actor_id
+                where e.issue_id=? order by e.occurred_at,e.event_sequence limit ? offset ?
+                """,
                 (rs, row) -> new IssueDtos.IssueEvent(rs.getObject("id", UUID.class), rs.getLong("event_sequence"), id,
-                        queries.ref(rs.getObject("actor_id", UUID.class)), IssueRepository.instant(rs, "occurred_at"), rs.getString("event_type"),
+                        userRef(rs), IssueRepository.instant(rs, "occurred_at"), rs.getString("event_type"),
                         rs.getObject("issue_version", Long.class), mapper.readValue(rs.getString("changes"), new TypeReference<>() { }),
                         rs.getString("snapshot") == null ? null : mapper.readValue(rs.getString("snapshot"), new TypeReference<>() { })), id, size, (long) page * size);
         return PageResponse.of(items, page, size, total == null ? 0 : total);
+    }
+    private UserDtos.UserRef userRef(ResultSet rs) throws SQLException {
+        return new UserDtos.UserRef(rs.getObject("user_id", UUID.class), rs.getString("user_name"),
+                UserRole.valueOf(rs.getString("user_role")), rs.getBoolean("user_active"));
     }
     private IssueDtos.CommentRef ref(Comment comment) {
         return new IssueDtos.CommentRef(comment.id(), comment.issueId(), queries.ref(comment.authorId()), comment.body(), comment.createdAt(), comment.sequence());
